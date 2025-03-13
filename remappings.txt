@@ -1,0 +1,6 @@
+ds-test/=lib/forge-std/lib/ds-test/src/
+forge-std/=lib/forge-std/src/
+@openzeppelin/contracts/=lib/openzeppelin-contracts/contracts/
+@automata-network/dcap-attestation/contracts=lib/automata-dcap-attestation/contracts/
+@automata-network/dcap-attestation/test=lib/automata-dcap-attestation/forge-test/
+solady/=lib/automata-dcap-attestation/lib/automata-on-chain-pccs/lib/solady/src
