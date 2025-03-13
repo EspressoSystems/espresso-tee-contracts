@@ -14,9 +14,7 @@ import {IEspressoTEEVerifier} from "./interface/IEspressoTEEVerifier.sol";
 contract EspressoTEEVerifier is Ownable2Step, IEspressoTEEVerifier {
     IEspressoSGXTEEVerifier public espressoSGXTEEVerifier;
 
-    constructor(
-        IEspressoSGXTEEVerifier _espressoSGXTEEVerifier
-    ) Ownable(msg.sender) {
+    constructor(IEspressoSGXTEEVerifier _espressoSGXTEEVerifier) Ownable(msg.sender) {
         espressoSGXTEEVerifier = _espressoSGXTEEVerifier;
     }
 
@@ -25,10 +23,7 @@ contract EspressoTEEVerifier is Ownable2Step, IEspressoTEEVerifier {
      *     @param signature The signature of the user data
      *     @param userDataHash The hash of the user data
      */
-    function verify(
-        bytes memory signature,
-        bytes32 userDataHash
-    ) external view {
+    function verify(bytes memory signature, bytes32 userDataHash) external view {
         address signer = ECDSA.recover(userDataHash, signature);
 
         if (!espressoSGXTEEVerifier.registeredSigners(signer)) {
@@ -42,11 +37,9 @@ contract EspressoTEEVerifier is Ownable2Step, IEspressoTEEVerifier {
         which can be any additiona data that is required for registering a signer
         @param teeType The type of TEE
      */
-    function registerSigner(
-        bytes calldata attestation,
-        bytes calldata data,
-        TeeType teeType
-    ) external {
+    function registerSigner(bytes calldata attestation, bytes calldata data, TeeType teeType)
+        external
+    {
         if (teeType == TeeType.SGX) {
             espressoSGXTEEVerifier.registerSigner(attestation, data);
             return;
@@ -59,10 +52,7 @@ contract EspressoTEEVerifier is Ownable2Step, IEspressoTEEVerifier {
      *     @param signer The address of the signer
      *     @param teeType The type of TEE
      */
-    function registeredSigners(
-        address signer,
-        TeeType teeType
-    ) external view returns (bool) {
+    function registeredSigners(address signer, TeeType teeType) external view returns (bool) {
         if (teeType == TeeType.SGX) {
             return espressoSGXTEEVerifier.registeredSigners(signer);
         }
@@ -74,10 +64,11 @@ contract EspressoTEEVerifier is Ownable2Step, IEspressoTEEVerifier {
      *     @param enclaveHash The hash of the enclave
      *     @param teeType The type of TEE
      */
-    function registeredEnclaveHashes(
-        bytes32 enclaveHash,
-        TeeType teeType
-    ) external view returns (bool) {
+    function registeredEnclaveHashes(bytes32 enclaveHash, TeeType teeType)
+        external
+        view
+        returns (bool)
+    {
         if (teeType == TeeType.SGX) {
             return espressoSGXTEEVerifier.registeredEnclaveHash(enclaveHash);
         }
@@ -89,13 +80,13 @@ contract EspressoTEEVerifier is Ownable2Step, IEspressoTEEVerifier {
      *     @param enclaveSigner The enclave signer
      *     @param teeType The type of TEE
      */
-    function registeredEnclaveSigners(
-        bytes32 enclaveSigner,
-        TeeType teeType
-    ) external view returns (bool) {
+    function registeredEnclaveSigners(bytes32 enclaveSigner, TeeType teeType)
+        external
+        view
+        returns (bool)
+    {
         if (teeType == TeeType.SGX) {
-            return
-                espressoSGXTEEVerifier.registeredEnclaveSigner(enclaveSigner);
+            return espressoSGXTEEVerifier.registeredEnclaveSigner(enclaveSigner);
         }
         revert UnsupportedTeeType();
     }
@@ -104,9 +95,10 @@ contract EspressoTEEVerifier is Ownable2Step, IEspressoTEEVerifier {
         @notice Set the EspressoSGXTEEVerifier
         @param _espressoSGXTEEVerifier The address of the EspressoSGXTEEVerifier
      */
-    function setEspressoSGXTEEVerifier(
-        IEspressoSGXTEEVerifier _espressoSGXTEEVerifier
-    ) public onlyOwner {
+    function setEspressoSGXTEEVerifier(IEspressoSGXTEEVerifier _espressoSGXTEEVerifier)
+        public
+        onlyOwner
+    {
         espressoSGXTEEVerifier = _espressoSGXTEEVerifier;
     }
 }
