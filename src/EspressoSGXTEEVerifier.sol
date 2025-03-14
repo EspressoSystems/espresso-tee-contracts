@@ -33,6 +33,9 @@ contract EspressoSGXTEEVerifier is IEspressoSGXTEEVerifier, Ownable2Step {
     constructor(bytes32 enclaveHash, bytes32 enclaveSigner, address _quoteVerifier)
         Ownable(msg.sender)
     {
+        if (_quoteVerifier == address(0) || _quoteVerifier.code.length <= 0) {
+            revert InvalidQuoteVerifierAddress();
+        }
         quoteVerifier = V3QuoteVerifier(_quoteVerifier);
         registeredEnclaveHash[enclaveHash] = true;
         registeredEnclaveSigner[enclaveSigner] = true;
@@ -99,9 +102,10 @@ contract EspressoSGXTEEVerifier is IEspressoSGXTEEVerifier, Ownable2Step {
         if (data.length != 20) {
             revert InvalidDataLength();
         }
-        bytes32 paddedSignerAddress = keccak256(data);
-        // Convert data to address
-        EnclaveReport memory localReport = verify(attestation, paddedSignerAddress);
+
+        bytes32 signerAddressHash = keccak256(data);
+
+        EnclaveReport memory localReport = verify(attestation, signerAddressHash);
 
         if (localReport.reportData.length < 20) {
             revert ReportDataTooShort();
@@ -114,7 +118,10 @@ contract EspressoSGXTEEVerifier is IEspressoSGXTEEVerifier, Ownable2Step {
             revert InvalidSignerAddress(); // Custom revert if the address is invalid
         }
         // Mark the signer as registered
-        registeredSigners[signer] = true;
+        if (!registeredSigners[signer]) {
+            registeredSigners[signer] = true;
+            emit SignerResgistered(signer, localReport.mrEnclave, localReport.mrSigner);
+        }
     }
 
     /*
@@ -173,7 +180,10 @@ contract EspressoSGXTEEVerifier is IEspressoSGXTEEVerifier, Ownable2Step {
         emit EnclaveSignerSet(enclaveSigner, valid);
     }
 
-    function deleteRegisteredSigner(address signer) external onlyOwner {
-        delete registeredSigners[signer];
+    function deleteRegisteredSigners(address[] memory signers) external onlyOwner {
+        for (uint256 i = 0; i < signers.length; i++) {
+            delete registeredSigners[signers[i]];
+            emit DeletedRegisteredSigner(signers[i]);
+        }
     }
 }

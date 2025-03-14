@@ -4,6 +4,7 @@ pragma solidity ^0.8.20;
 import "forge-std/Test.sol";
 import {EspressoSGXTEEVerifier} from "../src/EspressoSGXTEEVerifier.sol";
 import {IEspressoSGXTEEVerifier} from "../src/interface/IEspressoSGXTEEVerifier.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 
 contract EspressoSGXTEEVerifierTest is Test {
     address proxyAdmin = address(140);
@@ -105,8 +106,18 @@ contract EspressoSGXTEEVerifierTest is Test {
         vm.stopPrank();
 
         vm.startPrank(adminTEE);
-        espressoSGXTEEVerifier.deleteRegisteredSigner(batchPosterAddress);
+        address[] memory batchPosters = new address[](1);
+        batchPosters[0] = batchPosterAddress;
+        espressoSGXTEEVerifier.deleteRegisteredSigners(batchPosters);
         assertEq(espressoSGXTEEVerifier.registeredSigners(batchPosterAddress), false);
+        vm.stopPrank();
+
+        // Check that only owner can delete the signer
+        vm.startPrank(fakeAddress);
+        vm.expectRevert(
+            abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, fakeAddress)
+        );
+        espressoSGXTEEVerifier.deleteRegisteredSigners(batchPosters);
         vm.stopPrank();
     }
 
@@ -194,6 +205,13 @@ contract EspressoSGXTEEVerifierTest is Test {
         espressoSGXTEEVerifier.setEnclaveHash(newMrEnclave, false);
         assertEq(espressoSGXTEEVerifier.registeredEnclaveHash(newMrEnclave), false);
         vm.stopPrank();
+        // Check that only owner can set the hash
+        vm.startPrank(fakeAddress);
+        vm.expectRevert(
+            abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, fakeAddress)
+        );
+        espressoSGXTEEVerifier.setEnclaveHash(newMrEnclave, true);
+        vm.stopPrank();
     }
 
     function testSetEnclaveSigner() public {
@@ -203,6 +221,13 @@ contract EspressoSGXTEEVerifierTest is Test {
         assertEq(espressoSGXTEEVerifier.registeredEnclaveSigner(newMrSigner), true);
         espressoSGXTEEVerifier.setEnclaveSigner(newMrSigner, false);
         assertEq(espressoSGXTEEVerifier.registeredEnclaveSigner(newMrSigner), false);
+        vm.stopPrank();
+        // Check that only owner can set the signer
+        vm.startPrank(fakeAddress);
+        vm.expectRevert(
+            abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, fakeAddress)
+        );
+        espressoSGXTEEVerifier.setEnclaveSigner(newMrSigner, true);
         vm.stopPrank();
     }
 

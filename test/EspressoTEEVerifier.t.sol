@@ -6,6 +6,7 @@ import {EspressoTEEVerifier} from "../src/EspressoTEEVerifier.sol";
 import {IEspressoTEEVerifier} from "../src/interface/IEspressoTEEVerifier.sol";
 import {EspressoSGXTEEVerifier} from "../src/EspressoSGXTEEVerifier.sol";
 import {IEspressoSGXTEEVerifier} from "../src/interface/IEspressoSGXTEEVerifier.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 
 contract EspressoTEEVerifierTest is Test {
     address adminTEE = address(141);
@@ -37,6 +38,16 @@ contract EspressoTEEVerifierTest is Test {
         bytes memory sampleQuote = vm.readFileBinary(inputFile);
         address batchPosterAddress = address(0xe2148eE53c0755215Df69b2616E552154EdC584f);
         bytes memory data = abi.encodePacked(batchPosterAddress);
+        espressoTEEVerifier.registerSigner(sampleQuote, data, IEspressoTEEVerifier.TeeType.SGX);
+    }
+
+    function testRegisterSignerWithInvalidQuote() public {
+        string memory quotePath = "/test/configs/invalid_quote.bin";
+        string memory inputFile = string.concat(vm.projectRoot(), quotePath);
+        bytes memory sampleQuote = vm.readFileBinary(inputFile);
+        address batchPosterAddress = address(0xe2148eE53c0755215Df69b2616E552154EdC584f);
+        bytes memory data = abi.encodePacked(batchPosterAddress);
+        vm.expectRevert(IEspressoSGXTEEVerifier.InvalidQuote.selector);
         espressoTEEVerifier.registerSigner(sampleQuote, data, IEspressoTEEVerifier.TeeType.SGX);
     }
 
@@ -85,7 +96,14 @@ contract EspressoTEEVerifierTest is Test {
             address(espressoTEEVerifier.espressoSGXTEEVerifier()),
             address(newEspressoSGXTEEVerifier)
         );
-
+        vm.stopPrank();
+        // Non admine should not be able to set the new espressoSGXTEEVerifier
+        vm.startPrank(fakeAddress);
+        // [FAIL: Error != expected error: OwnableUnauthorizedAccount(0x0000000000000000000000000000000000000091) != custom error 0x118cdaa7]
+        vm.expectRevert(
+            abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, fakeAddress)
+        );
+        espressoTEEVerifier.setEspressoSGXTEEVerifier(newEspressoSGXTEEVerifier);
         vm.stopPrank();
     }
 

@@ -23,9 +23,13 @@ interface IEspressoSGXTEEVerifier {
     error InvalidDataLength();
     // This error is thrown when the signer address is invalid
     error InvalidSignerAddress();
+    // This error is thrown when the quote verifier address is invalid
+    error InvalidQuoteVerifierAddress();
 
     event EnclaveHashSet(bytes32 enclaveHash, bool valid);
     event EnclaveSignerSet(bytes32 enclaveSigner, bool valid);
+    event SignerResgistered(address signer, bytes32 enclaveHash, bytes32 enclaveSigner);
+    event DeletedRegisteredSigner(address signer);
 
     function registeredSigners(address signer) external view returns (bool);
     function registeredEnclaveHash(bytes32 enclaveHash) external view returns (bool);
@@ -50,5 +54,5 @@ interface IEspressoSGXTEEVerifier {
 
     function setEnclaveHash(bytes32 enclaveHash, bool valid) external;
     function setEnclaveSigner(bytes32 enclaveSigner, bool valid) external;
-    function deleteRegisteredSigner(address signer) external;
+    function deleteRegisteredSigners(address[] memory signers) external;
 }
