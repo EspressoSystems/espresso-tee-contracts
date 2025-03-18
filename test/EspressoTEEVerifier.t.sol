@@ -99,9 +99,7 @@ contract EspressoTEEVerifierTest is Test {
             address(newEspressoSGXTEEVerifier)
         );
         vm.stopPrank();
-        // Non admine should not be able to set the new espressoSGXTEEVerifier
         vm.startPrank(fakeAddress);
-        // [FAIL: Error != expected error: OwnableUnauthorizedAccount(0x0000000000000000000000000000000000000091) != custom error 0x118cdaa7]
         vm.expectRevert(
             abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, fakeAddress)
         );
