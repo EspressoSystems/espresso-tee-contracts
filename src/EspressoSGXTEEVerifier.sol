@@ -27,18 +27,14 @@ contract EspressoSGXTEEVerifier is IEspressoSGXTEEVerifier, Ownable2Step {
     V3QuoteVerifier public quoteVerifier;
 
     mapping(bytes32 => bool) public registeredEnclaveHash;
-    mapping(bytes32 => bool) public registeredEnclaveSigner;
     mapping(address => bool) public registeredSigners;
 
-    constructor(bytes32 enclaveHash, bytes32 enclaveSigner, address _quoteVerifier)
-        Ownable(msg.sender)
-    {
+    constructor(bytes32 enclaveHash, address _quoteVerifier) Ownable(msg.sender) {
         if (_quoteVerifier == address(0) || _quoteVerifier.code.length <= 0) {
             revert InvalidQuoteVerifierAddress();
         }
         quoteVerifier = V3QuoteVerifier(_quoteVerifier);
         registeredEnclaveHash[enclaveHash] = true;
-        registeredEnclaveSigner[enclaveSigner] = true;
     }
 
     /*
@@ -79,10 +75,6 @@ contract EspressoSGXTEEVerifier is IEspressoSGXTEEVerifier, Ownable2Step {
             revert InvalidEnclaveHash();
         }
 
-        if (!registeredEnclaveSigner[localReport.mrSigner]) {
-            revert InvalidEnclaveSigner();
-        }
-
         //  Verify that the reportDataHash if the hash signed by the TEE
         // We do not check the signature because `quoteVerifier.verifyQuote` already does that
         if (reportDataHash != bytes32(localReport.reportData.substring(0, 32))) {
@@ -120,7 +112,7 @@ contract EspressoSGXTEEVerifier is IEspressoSGXTEEVerifier, Ownable2Step {
         // Mark the signer as registered
         if (!registeredSigners[signer]) {
             registeredSigners[signer] = true;
-            emit SignerResgistered(signer, localReport.mrEnclave, localReport.mrSigner);
+            emit SignerRegistered(signer, localReport.mrEnclave);
         }
     }
 
@@ -173,11 +165,6 @@ contract EspressoSGXTEEVerifier is IEspressoSGXTEEVerifier, Ownable2Step {
     function setEnclaveHash(bytes32 enclaveHash, bool valid) external onlyOwner {
         registeredEnclaveHash[enclaveHash] = valid;
         emit EnclaveHashSet(enclaveHash, valid);
-    }
-
-    function setEnclaveSigner(bytes32 enclaveSigner, bool valid) external onlyOwner {
-        registeredEnclaveSigner[enclaveSigner] = valid;
-        emit EnclaveSignerSet(enclaveSigner, valid);
     }
 
     function deleteRegisteredSigners(address[] memory signers) external onlyOwner {

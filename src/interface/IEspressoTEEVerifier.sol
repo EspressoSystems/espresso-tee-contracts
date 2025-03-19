@@ -33,11 +33,6 @@ interface IEspressoTEEVerifier {
         view
         returns (bool);
 
-    function registeredEnclaveSigners(bytes32 enclaveSigner, TeeType teeType)
-        external
-        view
-        returns (bool);
-
     // Function to set the EspressoSGXTEEVerifier
     function setEspressoSGXTEEVerifier(IEspressoSGXTEEVerifier _espressoSGXTEEVerifier) external;
 }

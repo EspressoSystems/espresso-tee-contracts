@@ -16,8 +16,6 @@ contract EspressoTEEVerifierTest is Test {
     EspressoSGXTEEVerifier espressoSGXTEEVerifier;
     bytes32 enclaveHash =
         bytes32(0x01f7290cb6bbaa427eca3daeb25eecccb87c4b61259b1ae2125182c4d77169c0);
-    bytes32 enclaveSigner =
-        bytes32(0x5fc862cb2e7e1f449f36a18b18aca08c20feaed0d411247816c281d596420cbb);
     //  Address of the automata V3QuoteVerifier deployed on sepolia
     address v3QuoteVerifier = address(0x6E64769A13617f528a2135692484B681Ee1a7169);
 
@@ -28,8 +26,7 @@ contract EspressoTEEVerifierTest is Test {
         // Get the instance of the DCAP Attestation QuoteVerifier on the Arbitrum Sepolia Rollup
         vm.startPrank(adminTEE);
 
-        espressoSGXTEEVerifier =
-            new EspressoSGXTEEVerifier(enclaveHash, enclaveSigner, v3QuoteVerifier);
+        espressoSGXTEEVerifier = new EspressoSGXTEEVerifier(enclaveHash, v3QuoteVerifier);
         espressoTEEVerifier = new EspressoTEEVerifier(espressoSGXTEEVerifier);
         vm.stopPrank();
     }
@@ -79,20 +76,10 @@ contract EspressoTEEVerifierTest is Test {
         );
     }
 
-    function testRegisteredEnclaveSigner() public {
-        assertEq(
-            espressoTEEVerifier.registeredEnclaveSigners(
-                bytes32(0x5fc862cb2e7e1f449f36a18b18aca08c20feaed0d411247816c281d596420cbb),
-                IEspressoTEEVerifier.TeeType.SGX
-            ),
-            true
-        );
-    }
-
     function testSetEspressoSGXTEEVerifier() public {
         vm.startPrank(adminTEE);
         IEspressoSGXTEEVerifier newEspressoSGXTEEVerifier =
-            new EspressoSGXTEEVerifier(enclaveHash, enclaveSigner, v3QuoteVerifier);
+            new EspressoSGXTEEVerifier(enclaveHash, v3QuoteVerifier);
         espressoTEEVerifier.setEspressoSGXTEEVerifier(newEspressoSGXTEEVerifier);
         assertEq(
             address(espressoTEEVerifier.espressoSGXTEEVerifier()),

@@ -13,8 +13,6 @@ interface IEspressoSGXTEEVerifier {
     error FailedToParseEnclaveReport();
     // This error is thrown when the mrEnclave don't match
     error InvalidEnclaveHash();
-    // This error is thrown when the mrSigner don't match
-    error InvalidEnclaveSigner();
     // This error is thrown when the reportDataHash doesn't match the hash signed by the TEE
     error InvalidReportDataHash();
     // This error is thrown when the reportData is too short
@@ -27,13 +25,11 @@ interface IEspressoSGXTEEVerifier {
     error InvalidQuoteVerifierAddress();
 
     event EnclaveHashSet(bytes32 enclaveHash, bool valid);
-    event EnclaveSignerSet(bytes32 enclaveSigner, bool valid);
-    event SignerResgistered(address signer, bytes32 enclaveHash, bytes32 enclaveSigner);
+    event SignerRegistered(address signer, bytes32 enclaveHash);
     event DeletedRegisteredSigner(address signer);
 
     function registeredSigners(address signer) external view returns (bool);
     function registeredEnclaveHash(bytes32 enclaveHash) external view returns (bool);
-    function registeredEnclaveSigner(bytes32 enclaveSigner) external view returns (bool);
 
     function registerSigner(bytes calldata attestation, bytes calldata data) external;
 
@@ -53,6 +49,5 @@ interface IEspressoSGXTEEVerifier {
         returns (bool success, EnclaveReport memory enclaveReport);
 
     function setEnclaveHash(bytes32 enclaveHash, bool valid) external;
-    function setEnclaveSigner(bytes32 enclaveSigner, bool valid) external;
     function deleteRegisteredSigners(address[] memory signers) external;
 }
