@@ -75,22 +75,6 @@ contract EspressoTEEVerifier is Ownable2Step, IEspressoTEEVerifier {
         revert UnsupportedTeeType();
     }
 
-    /**
-     * @notice This function retrieves whether an enclave signer is registered or not
-     *     @param enclaveSigner The enclave signer
-     *     @param teeType The type of TEE
-     */
-    function registeredEnclaveSigners(bytes32 enclaveSigner, TeeType teeType)
-        external
-        view
-        returns (bool)
-    {
-        if (teeType == TeeType.SGX) {
-            return espressoSGXTEEVerifier.registeredEnclaveSigner(enclaveSigner);
-        }
-        revert UnsupportedTeeType();
-    }
-
     /*
         @notice Set the EspressoSGXTEEVerifier
         @param _espressoSGXTEEVerifier The address of the EspressoSGXTEEVerifier
