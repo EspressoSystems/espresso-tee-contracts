@@ -29,27 +29,24 @@ interface IEspressoSGXTEEVerifier {
     event DeletedRegisteredSigner(address signer);
 
     function registeredSigners(address signer) external view returns (bool);
-    function registeredEnclaveHash(
-        bytes32 enclaveHash
-    ) external view returns (bool);
+    function registeredEnclaveHash(bytes32 enclaveHash) external view returns (bool);
 
-    function registerSigner(
-        bytes calldata attestation,
-        bytes calldata data
-    ) external;
+    function registerSigner(bytes calldata attestation, bytes calldata data) external;
 
-    function verify(
-        bytes calldata rawQuote,
-        bytes32 reportDataHash
-    ) external view returns (EnclaveReport memory);
+    function verify(bytes calldata rawQuote, bytes32 reportDataHash)
+        external
+        view
+        returns (EnclaveReport memory);
 
-    function parseQuoteHeader(
-        bytes calldata rawQuote
-    ) external pure returns (Header memory header);
+    function parseQuoteHeader(bytes calldata rawQuote)
+        external
+        pure
+        returns (Header memory header);
 
-    function parseEnclaveReport(
-        bytes memory rawEnclaveReport
-    ) external pure returns (bool success, EnclaveReport memory enclaveReport);
+    function parseEnclaveReport(bytes memory rawEnclaveReport)
+        external
+        pure
+        returns (bool success, EnclaveReport memory enclaveReport);
 
     function setEnclaveHash(bytes32 enclaveHash, bool valid) external;
     function deleteRegisteredSigners(address[] memory signers) external;
