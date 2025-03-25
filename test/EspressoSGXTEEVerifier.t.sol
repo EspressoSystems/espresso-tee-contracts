@@ -16,8 +16,7 @@ contract EspressoSGXTEEVerifierTest is Test {
         bytes32(0x38f8abca50cdede6a00d405856857bc3d81135624ee0e287640956d11cc22d5e);
     bytes32 enclaveHash =
         bytes32(0x01f7290cb6bbaa427eca3daeb25eecccb87c4b61259b1ae2125182c4d77169c0);
-    bytes32 enclaveSigner =
-        bytes32(0x5fc862cb2e7e1f449f36a18b18aca08c20feaed0d411247816c281d596420cbb);
+
     //  Address of the automata V3QuoteVerifier deployed on sepolia
     address v3QuoteVerifier = address(0x6E64769A13617f528a2135692484B681Ee1a7169);
 
@@ -27,8 +26,7 @@ contract EspressoSGXTEEVerifierTest is Test {
         );
         // Get the instance of the DCAP Attestation QuoteVerifier on the Arbitrum Sepolia Rollup
         vm.startPrank(adminTEE);
-        espressoSGXTEEVerifier =
-            new EspressoSGXTEEVerifier(enclaveHash, enclaveSigner, v3QuoteVerifier);
+        espressoSGXTEEVerifier = new EspressoSGXTEEVerifier(enclaveHash, v3QuoteVerifier);
         vm.stopPrank();
     }
 
@@ -194,22 +192,8 @@ contract EspressoSGXTEEVerifierTest is Test {
         bytes memory sampleQuote = vm.readFileBinary(inputFile);
         bytes32 incorrectMrEnclave =
             bytes32(0x51dfe95acffa8a4075b716257c836895af9202a5fd56c8c2208dacb79c659ff1);
-        espressoSGXTEEVerifier =
-            new EspressoSGXTEEVerifier(incorrectMrEnclave, enclaveSigner, v3QuoteVerifier);
+        espressoSGXTEEVerifier = new EspressoSGXTEEVerifier(incorrectMrEnclave, v3QuoteVerifier);
         vm.expectRevert(IEspressoSGXTEEVerifier.InvalidEnclaveHash.selector);
-        espressoSGXTEEVerifier.verify(sampleQuote, reportDataHash);
-    }
-
-    function testIncorrectEnclaveSigner() public {
-        vm.startPrank(adminTEE);
-        string memory quotePath = "/test/configs/attestation.bin";
-        string memory inputFile = string.concat(vm.projectRoot(), quotePath);
-        bytes memory sampleQuote = vm.readFileBinary(inputFile);
-        bytes32 incorrectMrSigner =
-            bytes32(0x51dfe95acffa8a4075b716257c836895af9202a5fd56c8c2208dacb79c659ff1);
-        espressoSGXTEEVerifier =
-            new EspressoSGXTEEVerifier(enclaveHash, incorrectMrSigner, v3QuoteVerifier);
-        vm.expectRevert(IEspressoSGXTEEVerifier.InvalidEnclaveSigner.selector);
         espressoSGXTEEVerifier.verify(sampleQuote, reportDataHash);
     }
 
@@ -227,23 +211,6 @@ contract EspressoSGXTEEVerifierTest is Test {
             abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, fakeAddress)
         );
         espressoSGXTEEVerifier.setEnclaveHash(newMrEnclave, true);
-        vm.stopPrank();
-    }
-
-    function testSetEnclaveSigner() public {
-        vm.startPrank(adminTEE);
-        bytes32 newMrSigner = bytes32(hex"01");
-        espressoSGXTEEVerifier.setEnclaveSigner(newMrSigner, true);
-        assertEq(espressoSGXTEEVerifier.registeredEnclaveSigner(newMrSigner), true);
-        espressoSGXTEEVerifier.setEnclaveSigner(newMrSigner, false);
-        assertEq(espressoSGXTEEVerifier.registeredEnclaveSigner(newMrSigner), false);
-        vm.stopPrank();
-        // Check that only owner can set the signer
-        vm.startPrank(fakeAddress);
-        vm.expectRevert(
-            abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, fakeAddress)
-        );
-        espressoSGXTEEVerifier.setEnclaveSigner(newMrSigner, true);
         vm.stopPrank();
     }
 
