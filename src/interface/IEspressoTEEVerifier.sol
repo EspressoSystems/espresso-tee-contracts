@@ -10,10 +10,11 @@ interface IEspressoTEEVerifier {
      * @notice This enum is used to specify the type of TEE
      */
     enum TeeType {
-        SGX
+        SGX,
+        Nitro
     }
-    // This error is thrown when the signature is invalid
 
+    // This error is thrown when the signature is invalid
     error InvalidSignature();
     // This error is thrown when the TEE type is not supported
     error UnsupportedTeeType();
@@ -22,17 +23,25 @@ interface IEspressoTEEVerifier {
     function verify(bytes memory signature, bytes32 userDataHash) external;
 
     // Function to register a signer which has been attested by the TEE
-    function registerSigner(bytes calldata attestation, bytes calldata data, TeeType teeType)
-        external;
+    function registerSigner(
+        bytes calldata attestation,
+        bytes calldata data,
+        TeeType teeType
+    ) external;
 
     // Function to retrieve whether a signer is registered or not
-    function registeredSigners(address signer, TeeType teeType) external view returns (bool);
+    function registeredSigners(
+        address signer,
+        TeeType teeType
+    ) external view returns (bool);
 
-    function registeredEnclaveHashes(bytes32 enclaveHash, TeeType teeType)
-        external
-        view
-        returns (bool);
+    function registeredEnclaveHashes(
+        bytes32 enclaveHash,
+        TeeType teeType
+    ) external view returns (bool);
 
     // Function to set the EspressoSGXTEEVerifier
-    function setEspressoSGXTEEVerifier(IEspressoSGXTEEVerifier _espressoSGXTEEVerifier) external;
+    function setEspressoSGXTEEVerifier(
+        IEspressoSGXTEEVerifier _espressoSGXTEEVerifier
+    ) external;
 }

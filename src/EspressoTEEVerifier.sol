@@ -4,6 +4,7 @@ pragma solidity ^0.8.0;
 import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import "@openzeppelin/contracts/access/Ownable2Step.sol";
 import {IEspressoSGXTEEVerifier} from "./interface/IEspressoSGXTEEVerifier.sol";
+import {IEspressoNitroTEEVerifier} from "./interface/IEspressoNitroTEEVerifier.sol";
 import {IEspressoTEEVerifier} from "./interface/IEspressoTEEVerifier.sol";
 
 /**
@@ -13,17 +14,19 @@ import {IEspressoTEEVerifier} from "./interface/IEspressoTEEVerifier.sol";
  */
 contract EspressoTEEVerifier is Ownable2Step, IEspressoTEEVerifier {
     IEspressoSGXTEEVerifier public espressoSGXTEEVerifier;
+    IEspressoNitroTEEVerifier public espressoNitroTEEVerifier;
 
-    constructor(IEspressoSGXTEEVerifier _espressoSGXTEEVerifier) Ownable(msg.sender) {
-        espressoSGXTEEVerifier = _espressoSGXTEEVerifier;
-    }
+    constructor() Ownable(msg.sender) {}
 
     /**
      * @notice This function is used to verify the signature of the user data
      *     @param signature The signature of the user data
      *     @param userDataHash The hash of the user data
      */
-    function verify(bytes memory signature, bytes32 userDataHash) external view {
+    function verify(
+        bytes memory signature,
+        bytes32 userDataHash
+    ) external view {
         address signer = ECDSA.recover(userDataHash, signature);
 
         if (!espressoSGXTEEVerifier.registeredSigners(signer)) {
@@ -37,11 +40,17 @@ contract EspressoTEEVerifier is Ownable2Step, IEspressoTEEVerifier {
         which can be any additiona data that is required for registering a signer
         @param teeType The type of TEE
      */
-    function registerSigner(bytes calldata attestation, bytes calldata data, TeeType teeType)
-        external
-    {
+    function registerSigner(
+        bytes calldata attestation,
+        bytes calldata data,
+        TeeType teeType
+    ) external {
         if (teeType == TeeType.SGX) {
             espressoSGXTEEVerifier.registerSigner(attestation, data);
+            return;
+        }
+        if (teeType == TeeType.Nitro) {
+            espressoNitroTEEVerifier.registerSigner(attestation, data);
             return;
         }
         revert UnsupportedTeeType();
@@ -52,7 +61,10 @@ contract EspressoTEEVerifier is Ownable2Step, IEspressoTEEVerifier {
      *     @param signer The address of the signer
      *     @param teeType The type of TEE
      */
-    function registeredSigners(address signer, TeeType teeType) external view returns (bool) {
+    function registeredSigners(
+        address signer,
+        TeeType teeType
+    ) external view returns (bool) {
         if (teeType == TeeType.SGX) {
             return espressoSGXTEEVerifier.registeredSigners(signer);
         }
@@ -64,11 +76,10 @@ contract EspressoTEEVerifier is Ownable2Step, IEspressoTEEVerifier {
      *     @param enclaveHash The hash of the enclave
      *     @param teeType The type of TEE
      */
-    function registeredEnclaveHashes(bytes32 enclaveHash, TeeType teeType)
-        external
-        view
-        returns (bool)
-    {
+    function registeredEnclaveHashes(
+        bytes32 enclaveHash,
+        TeeType teeType
+    ) external view returns (bool) {
         if (teeType == TeeType.SGX) {
             return espressoSGXTEEVerifier.registeredEnclaveHash(enclaveHash);
         }
@@ -79,10 +90,19 @@ contract EspressoTEEVerifier is Ownable2Step, IEspressoTEEVerifier {
         @notice Set the EspressoSGXTEEVerifier
         @param _espressoSGXTEEVerifier The address of the EspressoSGXTEEVerifier
      */
-    function setEspressoSGXTEEVerifier(IEspressoSGXTEEVerifier _espressoSGXTEEVerifier)
-        public
-        onlyOwner
-    {
+    function setEspressoSGXTEEVerifier(
+        IEspressoSGXTEEVerifier _espressoSGXTEEVerifier
+    ) public onlyOwner {
         espressoSGXTEEVerifier = _espressoSGXTEEVerifier;
+    }
+
+    /*
+        @notice Set the EspressoNitroTEEVerifier
+        @param _espressoNitroTEEVerifier The address of the EspressoNitroTEEVerifier
+     */
+    function setEspressoNitroTEEVerifier(
+        IEspressoNitroTEEVerifier _espressoNitroTEEVerifier
+    ) public onlyOwner {
+        espressoNitroTEEVerifier = _espressoNitroTEEVerifier;
     }
 }
