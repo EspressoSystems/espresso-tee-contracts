@@ -15,6 +15,7 @@ interface IEspressoTEEVerifier {
         NITRO
     }
     // This error is thrown when the signature is invalid
+
     error InvalidSignature();
     // This error is thrown when the TEE type is not supported
     error UnsupportedTeeType();
@@ -38,5 +39,6 @@ interface IEspressoTEEVerifier {
     function setEspressoSGXTEEVerifier(IEspressoSGXTEEVerifier _espressoSGXTEEVerifier) external;
 
     // Function to set the EspressoNitroTEEVerifier
-    function setEspressoNitroTEEVerifier(IEspressoNitroTEEVerifier _espressoNitroTEEVerifier) external;
+    function setEspressoNitroTEEVerifier(IEspressoNitroTEEVerifier _espressoNitroTEEVerifier)
+        external;
 }

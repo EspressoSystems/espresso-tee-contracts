@@ -10,14 +10,6 @@ via_ir = true
 solc_version = '0.8.25'
 fs_permissions = [{ access = "read", path = "./"}]
 
-[profile.default.settings.optimizer_details]
-yul = true
-
-[profile.default.settings.optimizer_details.yul_details]
-stack_allocation = false
-optimizer_steps = "dhfoDgvulfnTUtnIf[xarrscLM]"
-
-
 [fmt]
 number_underscore = 'thousands'
 line_length = 100

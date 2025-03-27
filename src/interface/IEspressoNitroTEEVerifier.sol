@@ -16,8 +16,6 @@ interface IEspressoNitroTEEVerifier {
     error InvalidDataLength();
     // This error is thrown when the signer address is invalid
     error InvalidSignerAddress();
-    // This error is thrown when the quote verifier address is invalid
-    error InvalidQuoteVerifierAddress();
     error AttestationTooOld();
 
     event EnclaveHashSet(bytes32 enclaveHash, bool valid);

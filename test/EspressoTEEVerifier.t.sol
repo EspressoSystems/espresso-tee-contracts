@@ -32,7 +32,8 @@ contract EspressoTEEVerifierTest is Test {
 
         espressoSGXTEEVerifier = new EspressoSGXTEEVerifier(enclaveHash, v3QuoteVerifier);
         espressoNitroTEEVerifier = new EspressoNitroTEEVerifier(new CertManager());
-        espressoTEEVerifier = new EspressoTEEVerifier(espressoSGXTEEVerifier, espressoNitroTEEVerifier);
+        espressoTEEVerifier =
+            new EspressoTEEVerifier(espressoSGXTEEVerifier, espressoNitroTEEVerifier);
         vm.stopPrank();
     }
 
