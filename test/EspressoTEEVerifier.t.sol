@@ -93,9 +93,7 @@ contract EspressoTEEVerifierTest is Test {
         );
         vm.stopPrank();
         vm.startPrank(fakeAddress);
-        vm.expectRevert(
-            abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, fakeAddress)
-        );
+        vm.expectRevert("Ownable: caller is not the owner");
         espressoTEEVerifier.setEspressoSGXTEEVerifier(newEspressoSGXTEEVerifier);
         vm.stopPrank();
     }

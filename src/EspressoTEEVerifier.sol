@@ -19,9 +19,10 @@ contract EspressoTEEVerifier is Ownable2Step, IEspressoTEEVerifier {
     constructor(
         IEspressoSGXTEEVerifier _espressoSGXTEEVerifier,
         IEspressoNitroTEEVerifier _espressoNitroTEEVerifier
-    ) Ownable(msg.sender) {
+    ) Ownable() {
         espressoSGXTEEVerifier = _espressoSGXTEEVerifier;
         espressoNitroTEEVerifier = _espressoNitroTEEVerifier;
+        _transferOwnership(msg.sender);
     }
 
     /**

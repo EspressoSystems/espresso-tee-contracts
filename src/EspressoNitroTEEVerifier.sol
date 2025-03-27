@@ -27,9 +27,10 @@ contract EspressoNitroTEEVerifier is NitroValidator, IEspressoNitroTEEVerifier, 
 
     constructor(bytes32 enclaveHash, CertManager certManager)
         NitroValidator(certManager)
-        Ownable(msg.sender)
+        Ownable()
     {
         registeredEnclaveHash[enclaveHash] = true;
+        _transferOwnership(msg.sender);
     }
 
     function registerSigner(bytes calldata attestationTbs, bytes calldata signature) external {

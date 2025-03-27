@@ -114,9 +114,8 @@ contract EspressoSGXTEEVerifierTest is Test {
 
         // Check that only owner can delete the signer
         vm.startPrank(fakeAddress);
-        vm.expectRevert(
-            abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, fakeAddress)
-        );
+        vm.expectRevert("Ownable: caller is not the owner");
+
         espressoSGXTEEVerifier.deleteRegisteredSigners(batchPosters);
         vm.stopPrank();
     }
@@ -207,9 +206,7 @@ contract EspressoSGXTEEVerifierTest is Test {
         vm.stopPrank();
         // Check that only owner can set the hash
         vm.startPrank(fakeAddress);
-        vm.expectRevert(
-            abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, fakeAddress)
-        );
+        vm.expectRevert("Ownable: caller is not the owner");
         espressoSGXTEEVerifier.setEnclaveHash(newMrEnclave, true);
         vm.stopPrank();
     }
