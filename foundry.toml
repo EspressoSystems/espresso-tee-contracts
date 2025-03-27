@@ -4,11 +4,14 @@
 src = 'src/'
 out = 'out'
 libs = [ 'lib']
-optimizer = false
+optimizer = true
 optimizer_runs = 1
 via_ir = true
 solc_version = '0.8.25'
 fs_permissions = [{ access = "read", path = "./"}]
+
+[profile.default.optimizer_details]
+yul = false
 
 [fmt]
 number_underscore = 'thousands'
