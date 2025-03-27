@@ -13,6 +13,7 @@ import {EnclaveReport} from "@automata-network/dcap-attestation/contracts/types/
 import {BytesUtils} from "@automata-network/dcap-attestation/contracts/utils/BytesUtils.sol";
 import "@openzeppelin/contracts/access/Ownable2Step.sol";
 import {IEspressoSGXTEEVerifier} from "./interface/IEspressoSGXTEEVerifier.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 
 /**
  *
