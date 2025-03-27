@@ -29,12 +29,13 @@ contract EspressoSGXTEEVerifier is IEspressoSGXTEEVerifier, Ownable2Step {
     mapping(bytes32 => bool) public registeredEnclaveHash;
     mapping(address => bool) public registeredSigners;
 
-    constructor(bytes32 enclaveHash, address _quoteVerifier) Ownable(msg.sender) {
+    constructor(bytes32 enclaveHash, address _quoteVerifier) Ownable() {
         if (_quoteVerifier == address(0) || _quoteVerifier.code.length <= 0) {
             revert InvalidQuoteVerifierAddress();
         }
         quoteVerifier = V3QuoteVerifier(_quoteVerifier);
         registeredEnclaveHash[enclaveHash] = true;
+        _transferOwnership(msg.sender);
     }
 
     /*

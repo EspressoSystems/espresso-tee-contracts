@@ -14,8 +14,9 @@ import {IEspressoTEEVerifier} from "./interface/IEspressoTEEVerifier.sol";
 contract EspressoTEEVerifier is Ownable2Step, IEspressoTEEVerifier {
     IEspressoSGXTEEVerifier public espressoSGXTEEVerifier;
 
-    constructor(IEspressoSGXTEEVerifier _espressoSGXTEEVerifier) Ownable(msg.sender) {
+    constructor(IEspressoSGXTEEVerifier _espressoSGXTEEVerifier) Ownable() {
         espressoSGXTEEVerifier = _espressoSGXTEEVerifier;
+        _transferOwnership(msg.sender);
     }
 
     /**
