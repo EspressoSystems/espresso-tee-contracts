@@ -5,7 +5,10 @@ import "forge-std/Test.sol";
 import {EspressoTEEVerifier} from "../src/EspressoTEEVerifier.sol";
 import {IEspressoTEEVerifier} from "../src/interface/IEspressoTEEVerifier.sol";
 import {EspressoSGXTEEVerifier} from "../src/EspressoSGXTEEVerifier.sol";
+import {EspressoNitroTEEVerifier} from "../src/EspressoNitroTEEVerifier.sol";
 import {IEspressoSGXTEEVerifier} from "../src/interface/IEspressoSGXTEEVerifier.sol";
+import {CertManager} from "@nitro-validator/CertManager.sol";
+
 import "@openzeppelin/contracts/access/Ownable.sol";
 
 contract EspressoTEEVerifierTest is Test {
@@ -14,6 +17,7 @@ contract EspressoTEEVerifierTest is Test {
 
     EspressoTEEVerifier espressoTEEVerifier;
     EspressoSGXTEEVerifier espressoSGXTEEVerifier;
+    EspressoNitroTEEVerifier espressoNitroTEEVerifier;
     bytes32 enclaveHash =
         bytes32(0x01f7290cb6bbaa427eca3daeb25eecccb87c4b61259b1ae2125182c4d77169c0);
     //  Address of the automata V3QuoteVerifier deployed on sepolia
@@ -27,7 +31,8 @@ contract EspressoTEEVerifierTest is Test {
         vm.startPrank(adminTEE);
 
         espressoSGXTEEVerifier = new EspressoSGXTEEVerifier(enclaveHash, v3QuoteVerifier);
-        espressoTEEVerifier = new EspressoTEEVerifier(espressoSGXTEEVerifier);
+        espressoNitroTEEVerifier = new EspressoNitroTEEVerifier(new CertManager());
+        espressoTEEVerifier = new EspressoTEEVerifier(espressoSGXTEEVerifier, espressoNitroTEEVerifier);
         vm.stopPrank();
     }
 

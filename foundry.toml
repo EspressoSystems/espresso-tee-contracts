@@ -4,11 +4,18 @@
 src = 'src/'
 out = 'out'
 libs = [ 'lib']
-optimizer = true
+optimizer = false
 optimizer_runs = 1
 via_ir = true
 solc_version = '0.8.25'
 fs_permissions = [{ access = "read", path = "./"}]
+
+[profile.default.settings.optimizer_details]
+yul = true
+
+[profile.default.settings.optimizer_details.yul_details]
+stack_allocation = false
+optimizer_steps = "dhfoDgvulfnTUtnIf[xarrscLM]"
 
 
 [fmt]
