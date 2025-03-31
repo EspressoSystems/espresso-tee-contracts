@@ -19,8 +19,6 @@ contract EspressoNitroTEEVerifier is NitroValidator, IEspressoNitroTEEVerifier, 
     using LibBytes for bytes;
     using LibCborElement for CborElement;
 
-    uint256 public constant MAX_AGE = 30 minutes;
-
     mapping(bytes32 => bool) public registeredEnclaveHash;
 
     mapping(address => bool) public registeredSigners;
@@ -38,9 +36,6 @@ contract EspressoNitroTEEVerifier is NitroValidator, IEspressoNitroTEEVerifier, 
         bytes32 pcr0 = attestationTbs.keccak(ptrs.pcrs[0]);
         if (!registeredEnclaveHash[pcr0]) {
             revert InvalidEnclaveHash();
-        }
-        if (ptrs.timestamp + MAX_AGE < block.timestamp) {
-            revert AttestationTooOld();
         }
         // The publicKey's first byte 0x04 byte followed which only determine if the public key is compressed or not.
         // so we ignore the first byte.
