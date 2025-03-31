@@ -93,7 +93,7 @@ contract EspressoTEEVerifier is Ownable2Step, IEspressoTEEVerifier {
             return espressoSGXTEEVerifier.registeredEnclaveHash(enclaveHash);
         }
 
-        if (teeType == TeeType.SGX) {
+        if (teeType == TeeType.NITRO) {
             return espressoNitroTEEVerifier.registeredEnclaveHash(enclaveHash);
         }
         revert UnsupportedTeeType();
