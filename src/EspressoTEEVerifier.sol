@@ -6,7 +6,6 @@ import "@openzeppelin/contracts/access/Ownable2Step.sol";
 import {IEspressoSGXTEEVerifier} from "./interface/IEspressoSGXTEEVerifier.sol";
 import {IEspressoNitroTEEVerifier} from "./interface/IEspressoNitroTEEVerifier.sol";
 import {IEspressoTEEVerifier} from "./interface/IEspressoTEEVerifier.sol";
-import "forge-std/console.sol";
 
 /**
  * @title EspressoTEEVerifier
@@ -36,9 +35,8 @@ contract EspressoTEEVerifier is Ownable2Step, IEspressoTEEVerifier {
         view
         returns (bool)
     {
-        console.log("signer");
         address signer = ECDSA.recover(userDataHash, signature);
-        console.log("here1");
+
         if (teeType == TeeType.SGX) {
             if (!espressoSGXTEEVerifier.registeredSigners(signer)) {
                 revert InvalidSignature();
@@ -47,8 +45,6 @@ contract EspressoTEEVerifier is Ownable2Step, IEspressoTEEVerifier {
         }
 
         if (teeType == TeeType.NITRO) {
-            console.log("here");
-            console.logAddress(signer);
             if (!espressoNitroTEEVerifier.registeredSigners(signer)) {
                 revert InvalidSignature();
             }
