@@ -163,6 +163,39 @@ contract EspressoTEEVerifierTest is Test {
         vm.stopPrank();
     }
 
+    function testEspressoNitroTEEVerifySignature() public {
+        vm.warp(1_743_620_000);
+        string memory attestationPath = "/test/configs/nitro-verify-attestation.bin";
+        string memory inputFile = string.concat(vm.projectRoot(), attestationPath);
+        bytes memory attestation = vm.readFileBinary(inputFile);
+
+        string memory signaturePath = "/test/configs/nitro-verify-signature.bin";
+        string memory sigFile = string.concat(vm.projectRoot(), signaturePath);
+        bytes memory signature = vm.readFileBinary(sigFile);
+
+        bytes memory pubKey =
+            hex"88195346c675ad5c352ee257ec027c092c995dabd8aa54d2c68f3fac378faf9f402e8eee3418bb434f6feeec541658cd99eec502ace6b145aa2e03ce231ec4e6";
+        bytes32 publicKeyHash = keccak256(pubKey);
+        address signerAddr = address(uint160(uint256(publicKeyHash)));
+        espressoTEEVerifier.registerSigner(
+            attestation, signature, IEspressoTEEVerifier.TeeType.NITRO
+        );
+
+        assertEq(
+            espressoTEEVerifier.registeredSigners(signerAddr, IEspressoTEEVerifier.TeeType.NITRO),
+            true
+        );
+
+        bytes32 dataHash =
+            bytes32(0xe6e6afefbcd45eac66b314ee8dd955f00cc55de22b504cbf6a0e3fe47715c822);
+        bytes memory dataSignature =
+            hex"00bdcf15ff1635e99be3dfa38f621ba104ec92e2be97f58c8af3eeacf0cf612c133a6964998903d490bc913ac4217849db5f1f490f6abe0f6814b7336f900ea501";
+        if (uint8(dataSignature[64]) < 27) {
+            dataSignature[64] = bytes1(uint8(dataSignature[64]) + 27);
+        }
+        espressoTEEVerifier.verify(dataSignature, dataHash, IEspressoTEEVerifier.TeeType.NITRO);
+    }
+
     // Test Ownership transfer using Ownable2Step contract
     function testOwnershipTransfer() public {
         vm.startPrank(adminTEE);

@@ -6,6 +6,7 @@ import "@openzeppelin/contracts/access/Ownable2Step.sol";
 import {IEspressoSGXTEEVerifier} from "./interface/IEspressoSGXTEEVerifier.sol";
 import {IEspressoNitroTEEVerifier} from "./interface/IEspressoNitroTEEVerifier.sol";
 import {IEspressoTEEVerifier} from "./interface/IEspressoTEEVerifier.sol";
+import "forge-std/console.sol";
 
 /**
  * @title EspressoTEEVerifier
@@ -30,16 +31,30 @@ contract EspressoTEEVerifier is Ownable2Step, IEspressoTEEVerifier {
      *     @param signature The signature of the user data
      *     @param userDataHash The hash of the user data
      */
-    function verify(bytes memory signature, bytes32 userDataHash) external view {
+    function verify(bytes memory signature, bytes32 userDataHash, TeeType teeType)
+        external
+        view
+        returns (bool)
+    {
+        console.log("signer");
         address signer = ECDSA.recover(userDataHash, signature);
-
-        if (!espressoSGXTEEVerifier.registeredSigners(signer)) {
-            revert InvalidSignature();
+        console.log("here1");
+        if (teeType == TeeType.SGX) {
+            if (!espressoSGXTEEVerifier.registeredSigners(signer)) {
+                revert InvalidSignature();
+            }
+            return true;
         }
 
-        if (!espressoNitroTEEVerifier.registeredSigners(signer)) {
-            revert InvalidSignature();
+        if (teeType == TeeType.NITRO) {
+            console.log("here");
+            console.logAddress(signer);
+            if (!espressoNitroTEEVerifier.registeredSigners(signer)) {
+                revert InvalidSignature();
+            }
+            return true;
         }
+        revert UnsupportedTeeType();
     }
 
     /* @notice Register a new signer by verifying a quote from the TEE

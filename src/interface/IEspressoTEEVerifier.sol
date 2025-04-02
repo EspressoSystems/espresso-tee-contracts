@@ -21,7 +21,10 @@ interface IEspressoTEEVerifier {
     error UnsupportedTeeType();
 
     // Function to verify the signature of the user data is from a registered signer
-    function verify(bytes memory signature, bytes32 userDataHash) external;
+    function verify(bytes memory signature, bytes32 userDataHash, TeeType teeType)
+        external
+        view
+        returns (bool);
 
     // Function to register a signer which has been attested by the TEE
     function registerSigner(bytes calldata attestation, bytes calldata data, TeeType teeType)
