@@ -165,6 +165,7 @@ contract EspressoTEEVerifierTest is Test {
 
     function testEspressoNitroTEEVerifySignature() public {
         vm.warp(1_743_620_000);
+        // Using attestations where we have a created signature over data
         string memory attestationPath = "/test/configs/nitro-verify-attestation.bin";
         string memory inputFile = string.concat(vm.projectRoot(), attestationPath);
         bytes memory attestation = vm.readFileBinary(inputFile);
@@ -186,13 +187,11 @@ contract EspressoTEEVerifierTest is Test {
             true
         );
 
+        // Hash and signature which was created sample go code in AWS Nitro Enclave
         bytes32 dataHash =
             bytes32(0xe6e6afefbcd45eac66b314ee8dd955f00cc55de22b504cbf6a0e3fe47715c822);
         bytes memory dataSignature =
             hex"00bdcf15ff1635e99be3dfa38f621ba104ec92e2be97f58c8af3eeacf0cf612c133a6964998903d490bc913ac4217849db5f1f490f6abe0f6814b7336f900ea501";
-        if (uint8(dataSignature[64]) < 27) {
-            dataSignature[64] = bytes1(uint8(dataSignature[64]) + 27);
-        }
         espressoTEEVerifier.verify(dataSignature, dataHash, IEspressoTEEVerifier.TeeType.NITRO);
     }
 
