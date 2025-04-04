@@ -192,6 +192,16 @@ contract EspressoTEEVerifierTest is Test {
             bytes32(0xe6e6afefbcd45eac66b314ee8dd955f00cc55de22b504cbf6a0e3fe47715c822);
         bytes memory dataSignature =
             hex"00bdcf15ff1635e99be3dfa38f621ba104ec92e2be97f58c8af3eeacf0cf612c133a6964998903d490bc913ac4217849db5f1f490f6abe0f6814b7336f900ea501";
+
+        // Verify we can recover the signer and we are registered
+        assertEq(
+            espressoTEEVerifier.verify(dataSignature, dataHash, IEspressoTEEVerifier.TeeType.NITRO),
+            true
+        );
+
+        // invalidate the hash, expect revert
+        dataHash = bytes32(0x00e6afefbcd45eac66b314ee8dd955f00cc55de22b504cbf6a0e3fe47715c822);
+        vm.expectRevert(IEspressoTEEVerifier.InvalidSignature.selector);
         espressoTEEVerifier.verify(dataSignature, dataHash, IEspressoTEEVerifier.TeeType.NITRO);
     }
 
