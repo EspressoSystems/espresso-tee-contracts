@@ -10,7 +10,7 @@ import {IEspressoNitroTEEVerifier} from "./interface/IEspressoNitroTEEVerifier.s
 
 /**
  * @title  Verifies quotes from the AWS Nitro Enclave (TEE) and attests on-chain
- * @notice Contains the logic to verify a quote from the TEE and attest on-chain. It uses the NitroValidator contract
+ * @notice Contains the logic to verify an attestation and signature from the TEE and attest on-chain. It uses the NitroValidator contract
  *         from `base` to verify the quote. Along with some additional verification logic.
  *         (https://github.com/base/nitro-validator)
  * The code of this contract is inspired from SystemConfigGlobal.sol
