@@ -35,13 +35,6 @@ contract EspressoTEEVerifier is Ownable2Step, IEspressoTEEVerifier {
         view
         returns (bool)
     {
-        // Adjusting ECDSA signature 'v' value for Ethereum compatibility
-        // Get `v` from the signature and verify the byte is in expected format for openzeppelin `ECDSA.recover`
-        // https://github.com/ethereum/go-ethereum/issues/19751#issuecomment-504900739
-        uint8 v = uint8(signature[64]);
-        if (v == 0 || v == 1) {
-            signature[64] = bytes1(v + 27);
-        }
         address signer = ECDSA.recover(userDataHash, signature);
 
         if (teeType == TeeType.SGX) {

@@ -43,7 +43,7 @@ contract EspressoNitroTEEVerifier is NitroValidator, IEspressoNitroTEEVerifier, 
         Ptrs memory ptrs = validateAttestation(attestation, signature);
         bytes32 pcr0Hash = attestation.keccak(ptrs.pcrs[0]);
         if (!registeredEnclaveHash[pcr0Hash]) {
-            revert InvalidEnclaveHash();
+            revert InvalidAWSEnclaveHash();
         }
         // The publicKey's first byte 0x04 byte followed which only determine if the public key is compressed or not.
         // so we ignore the first byte.
@@ -57,19 +57,19 @@ contract EspressoNitroTEEVerifier is NitroValidator, IEspressoNitroTEEVerifier, 
         // Mark the signer as registered
         if (!registeredSigners[enclaveAddress]) {
             registeredSigners[enclaveAddress] = true;
-            emit SignerRegistered(enclaveAddress, pcr0Hash);
+            emit AWSSignerRegistered(enclaveAddress, pcr0Hash);
         }
     }
 
     function setEnclaveHash(bytes32 enclaveHash, bool valid) external onlyOwner {
         registeredEnclaveHash[enclaveHash] = valid;
-        emit EnclaveHashSet(enclaveHash, valid);
+        emit AWSEnclaveHashSet(enclaveHash, valid);
     }
 
     function deleteRegisteredSigners(address[] memory signers) external onlyOwner {
         for (uint256 i = 0; i < signers.length; i++) {
             delete registeredSigners[signers[i]];
-            emit DeletedRegisteredSigner(signers[i]);
+            emit DeletedAWSRegisteredSigner(signers[i]);
         }
     }
 }

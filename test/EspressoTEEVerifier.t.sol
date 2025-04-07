@@ -193,6 +193,13 @@ contract EspressoTEEVerifierTest is Test {
         bytes memory dataSignature =
             hex"00bdcf15ff1635e99be3dfa38f621ba104ec92e2be97f58c8af3eeacf0cf612c133a6964998903d490bc913ac4217849db5f1f490f6abe0f6814b7336f900ea501";
 
+        // Adjusting ECDSA signature 'v' value for Ethereum compatibility
+        // Get `v` from the signature and verify the byte is in expected format for openzeppelin `ECDSA.recover`
+        // https://github.com/ethereum/go-ethereum/issues/19751#issuecomment-504900739
+        uint8 v = uint8(dataSignature[64]);
+        if (v == 0 || v == 1) {
+            dataSignature[64] = bytes1(v + 27);
+        }
         // Verify we can recover the signer and we are registered
         assertEq(
             espressoTEEVerifier.verify(dataSignature, dataHash, IEspressoTEEVerifier.TeeType.NITRO),
