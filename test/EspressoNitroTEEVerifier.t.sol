@@ -105,4 +105,80 @@ contract EspressoSGXTEEVerifierTest is Test {
         espressoNitroTEEVerifier.registerSigner(attestation, signature);
         vm.stopPrank();
     }
+
+    // Test Ownership transfer using Ownable2Step contract
+    function testNitroOwnershipTransfer() public {
+        vm.startPrank(adminTEE);
+        assertEq(address(espressoNitroTEEVerifier.owner()), adminTEE);
+        espressoNitroTEEVerifier.transferOwnership(fakeAddress);
+        vm.stopPrank();
+        vm.startPrank(fakeAddress);
+        espressoNitroTEEVerifier.acceptOwnership();
+        assertEq(address(espressoNitroTEEVerifier.owner()), fakeAddress);
+        vm.stopPrank();
+    }
+
+    // Test transfer Ownership failure
+    function testNitroOwnershipTransferFailure() public {
+        vm.startPrank(fakeAddress);
+        assertEq(address(espressoNitroTEEVerifier.owner()), adminTEE);
+        vm.expectRevert(bytes("Ownable: caller is not the owner"));
+        espressoNitroTEEVerifier.transferOwnership(address(150));
+    }
+
+    // Test setting Enclave hash for owner and non-owner
+    function testSetNitroEnclaveHash() public {
+        vm.startPrank(adminTEE);
+        espressoNitroTEEVerifier.setEnclaveHash(pcr0Hash, true);
+        assertEq(espressoNitroTEEVerifier.registeredEnclaveHash(pcr0Hash), true);
+        espressoNitroTEEVerifier.setEnclaveHash(pcr0Hash, false);
+        assertEq(espressoNitroTEEVerifier.registeredEnclaveHash(pcr0Hash), false);
+        vm.stopPrank();
+        // Check that only owner can set the hash
+        vm.startPrank(fakeAddress);
+        vm.expectRevert("Ownable: caller is not the owner");
+        espressoNitroTEEVerifier.setEnclaveHash(pcr0Hash, true);
+        vm.stopPrank();
+    }
+
+    /**
+     * Test we can delete a registered signer with only the correct admin address
+     */
+    function testDeleteRegisterSignerOwnership() public {
+        // register signer
+        vm.startPrank(adminTEE);
+        vm.warp(1_743_110_000);
+        string memory attestationPath = "/test/configs/nitro-attestation.bin";
+        string memory inputFile = string.concat(vm.projectRoot(), attestationPath);
+        bytes memory attestation = vm.readFileBinary(inputFile);
+
+        string memory signaturePath = "/test/configs/nitro-valid-signature.bin";
+        string memory sigFile = string.concat(vm.projectRoot(), signaturePath);
+        bytes memory signature = vm.readFileBinary(sigFile);
+
+        // register and verify signer exists
+        espressoNitroTEEVerifier.registerSigner(attestation, signature);
+        bytes memory pubKey =
+            hex"090e39a638094d9805b89a831b7e710db345e701bb0e9865a60b6b50089b3f4b89c168fbf2219ba79b6e86eb63decac3be0dd3e8fb4c0f1b39d4ecd4589704ff";
+        address signer = address(uint160(uint256(keccak256(pubKey))));
+        assertEq(espressoNitroTEEVerifier.registeredSigners(signer), true);
+
+        // start with incorrect admin address
+        vm.stopPrank();
+        vm.startPrank(fakeAddress);
+        address[] memory signersToDelete = new address[](1);
+        signersToDelete[0] = signer;
+
+        // verify we cant delete
+        vm.expectRevert("Ownable: caller is not the owner");
+        espressoNitroTEEVerifier.deleteRegisteredSigners(signersToDelete);
+
+        // start with correct admin address
+        vm.stopPrank();
+        vm.startPrank(adminTEE);
+
+        // delete and verify signer address is gone
+        espressoNitroTEEVerifier.deleteRegisteredSigners(signersToDelete);
+        assertEq(espressoNitroTEEVerifier.registeredSigners(signer), false);
+    }
 }
