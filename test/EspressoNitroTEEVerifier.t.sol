@@ -43,6 +43,29 @@ contract EspressoSGXTEEVerifierTest is Test {
     }
 
     /**
+     * Test register signer fails upon invalid attestation pcr0
+     */
+    function testRegisterSignerInvalidPCR0Hash() public {
+        vm.startPrank(adminTEE);
+        vm.warp(1_743_110_000);
+        string memory attestationPath = "/test/configs/nitro-attestation.bin";
+        string memory inputFile = string.concat(vm.projectRoot(), attestationPath);
+        bytes memory attestation = vm.readFileBinary(inputFile);
+
+        string memory signaturePath = "/test/configs/nitro-valid-signature.bin";
+        string memory sigFile = string.concat(vm.projectRoot(), signaturePath);
+        bytes memory signature = vm.readFileBinary(sigFile);
+
+        // Disable pcr0 hash
+        espressoNitroTEEVerifier.setEnclaveHash(pcr0Hash, false);
+        assertEq(espressoNitroTEEVerifier.registeredEnclaveHash(pcr0Hash), false);
+
+        vm.expectRevert(IEspressoNitroTEEVerifier.InvalidAWSEnclaveHash.selector);
+        espressoNitroTEEVerifier.registerSigner(attestation, signature);
+        vm.stopPrank();
+    }
+
+    /**
      * Test validate attestation reverts if an invalid signature is passed in
      */
     function testInvalidSignature() public {

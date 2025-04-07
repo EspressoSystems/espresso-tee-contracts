@@ -212,6 +212,32 @@ contract EspressoTEEVerifierTest is Test {
         espressoTEEVerifier.verify(dataSignature, dataHash, IEspressoTEEVerifier.TeeType.NITRO);
     }
 
+    /**
+     * Test nitro register signer fails upon invalid attestation pcr0
+     */
+    function testNitroRegisterSignerInvalidPCR0Hash() public {
+        vm.startPrank(adminTEE);
+        vm.warp(1_743_110_000);
+        string memory attestationPath = "/test/configs/nitro-attestation.bin";
+        string memory inputFile = string.concat(vm.projectRoot(), attestationPath);
+        bytes memory attestation = vm.readFileBinary(inputFile);
+
+        string memory signaturePath = "/test/configs/nitro-valid-signature.bin";
+        string memory sigFile = string.concat(vm.projectRoot(), signaturePath);
+        bytes memory signature = vm.readFileBinary(sigFile);
+
+        // Disable pcr0 hash
+        espressoNitroTEEVerifier.setEnclaveHash(pcr0Hash, false);
+        assertEq(espressoNitroTEEVerifier.registeredEnclaveHash(pcr0Hash), false);
+
+        // Expect revert
+        vm.expectRevert(IEspressoNitroTEEVerifier.InvalidAWSEnclaveHash.selector);
+        espressoTEEVerifier.registerSigner(
+            attestation, signature, IEspressoTEEVerifier.TeeType.NITRO
+        );
+        vm.stopPrank();
+    }
+
     // Test Ownership transfer using Ownable2Step contract
     function testOwnershipTransfer() public {
         vm.startPrank(adminTEE);
