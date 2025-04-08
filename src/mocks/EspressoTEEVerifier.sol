@@ -17,7 +17,7 @@ contract EspressoTEEVerifierMock {
 
     constructor() {}
 
-    function verify(bytes calldata signature, bytes32 userDataHash) external view returns (bool) {
+    function verify(bytes calldata signature, bytes32 userDataHash, TeeType teeType) external view returns (bool) {
         return true;
     }
 
