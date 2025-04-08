@@ -4,6 +4,7 @@ pragma solidity ^0.8.0;
 import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import "@openzeppelin/contracts/access/Ownable2Step.sol";
 import {IEspressoSGXTEEVerifier} from "./interface/IEspressoSGXTEEVerifier.sol";
+import {IEspressoNitroTEEVerifier} from "./interface/IEspressoNitroTEEVerifier.sol";
 import {IEspressoTEEVerifier} from "./interface/IEspressoTEEVerifier.sol";
 
 /**
@@ -13,9 +14,14 @@ import {IEspressoTEEVerifier} from "./interface/IEspressoTEEVerifier.sol";
  */
 contract EspressoTEEVerifier is Ownable2Step, IEspressoTEEVerifier {
     IEspressoSGXTEEVerifier public espressoSGXTEEVerifier;
+    IEspressoNitroTEEVerifier public espressoNitroTEEVerifier;
 
-    constructor(IEspressoSGXTEEVerifier _espressoSGXTEEVerifier) Ownable() {
+    constructor(
+        IEspressoSGXTEEVerifier _espressoSGXTEEVerifier,
+        IEspressoNitroTEEVerifier _espressoNitroTEEVerifier
+    ) Ownable() {
         espressoSGXTEEVerifier = _espressoSGXTEEVerifier;
+        espressoNitroTEEVerifier = _espressoNitroTEEVerifier;
         _transferOwnership(msg.sender);
     }
 
@@ -24,12 +30,27 @@ contract EspressoTEEVerifier is Ownable2Step, IEspressoTEEVerifier {
      *     @param signature The signature of the user data
      *     @param userDataHash The hash of the user data
      */
-    function verify(bytes memory signature, bytes32 userDataHash) external view {
+    function verify(bytes memory signature, bytes32 userDataHash, TeeType teeType)
+        external
+        view
+        returns (bool)
+    {
         address signer = ECDSA.recover(userDataHash, signature);
 
-        if (!espressoSGXTEEVerifier.registeredSigners(signer)) {
-            revert InvalidSignature();
+        if (teeType == TeeType.SGX) {
+            if (!espressoSGXTEEVerifier.registeredSigners(signer)) {
+                revert InvalidSignature();
+            }
+            return true;
         }
+
+        if (teeType == TeeType.NITRO) {
+            if (!espressoNitroTEEVerifier.registeredSigners(signer)) {
+                revert InvalidSignature();
+            }
+            return true;
+        }
+        revert UnsupportedTeeType();
     }
 
     /* @notice Register a new signer by verifying a quote from the TEE
@@ -45,6 +66,11 @@ contract EspressoTEEVerifier is Ownable2Step, IEspressoTEEVerifier {
             espressoSGXTEEVerifier.registerSigner(attestation, data);
             return;
         }
+
+        if (teeType == TeeType.NITRO) {
+            espressoNitroTEEVerifier.registerSigner(attestation, data);
+            return;
+        }
         revert UnsupportedTeeType();
     }
 
@@ -56,6 +82,10 @@ contract EspressoTEEVerifier is Ownable2Step, IEspressoTEEVerifier {
     function registeredSigners(address signer, TeeType teeType) external view returns (bool) {
         if (teeType == TeeType.SGX) {
             return espressoSGXTEEVerifier.registeredSigners(signer);
+        }
+
+        if (teeType == TeeType.NITRO) {
+            return espressoNitroTEEVerifier.registeredSigners(signer);
         }
         revert UnsupportedTeeType();
     }
@@ -73,6 +103,10 @@ contract EspressoTEEVerifier is Ownable2Step, IEspressoTEEVerifier {
         if (teeType == TeeType.SGX) {
             return espressoSGXTEEVerifier.registeredEnclaveHash(enclaveHash);
         }
+
+        if (teeType == TeeType.NITRO) {
+            return espressoNitroTEEVerifier.registeredEnclaveHash(enclaveHash);
+        }
         revert UnsupportedTeeType();
     }
 
@@ -85,5 +119,16 @@ contract EspressoTEEVerifier is Ownable2Step, IEspressoTEEVerifier {
         onlyOwner
     {
         espressoSGXTEEVerifier = _espressoSGXTEEVerifier;
+    }
+
+    /*
+        @notice Set the EspressoNitroTEEVerifier
+        @param _espressoNitroTEEVerifier The address of the EspressoNitroTEEVerifier
+     */
+    function setEspressoNitroTEEVerifier(IEspressoNitroTEEVerifier _espressoNitroTEEVerifier)
+        public
+        onlyOwner
+    {
+        espressoNitroTEEVerifier = _espressoNitroTEEVerifier;
     }
 }

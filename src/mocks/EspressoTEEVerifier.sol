@@ -9,15 +9,16 @@ pragma solidity ^0.8.0;
  */
 contract EspressoTEEVerifierMock {
     enum TeeType {
-        SGX
+        SGX,
+        NITRO
     }
 
     mapping(address => bool) public registeredSigner;
 
     constructor() {}
 
-    function verify(bytes calldata signature, bytes32 userDataHash) external {
-        return;
+    function verify(bytes calldata signature, bytes32 userDataHash) external view returns (bool) {
+        return true;
     }
 
     function registerSigner(bytes calldata attestation, bytes calldata data, TeeType teeType)
