@@ -38,6 +38,9 @@ interface IEspressoTEEVerifier {
         view
         returns (bool);
 
+    function verifyCert(bytes calldata certificate, bytes32 parentCertHash, bool isCA) external;
+    function certVerified(bytes32 parentCertHash) external view returns (bytes memory);
+
     // Function to set the EspressoSGXTEEVerifier
     function setEspressoSGXTEEVerifier(IEspressoSGXTEEVerifier _espressoSGXTEEVerifier) external;
 

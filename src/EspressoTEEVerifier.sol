@@ -110,6 +110,14 @@ contract EspressoTEEVerifier is Ownable2Step, IEspressoTEEVerifier {
         revert UnsupportedTeeType();
     }
 
+    function verifyCert(bytes calldata certificate, bytes32 parentCertHash, bool isCA) external {
+        espressoNitroTEEVerifier.verifyCert(certificate, parentCertHash, isCA);
+    }
+
+    function certVerified(bytes32 parentCertHash) external view returns (bytes memory) {
+        return espressoNitroTEEVerifier.certVerified(parentCertHash);
+    }
+
     /*
         @notice Set the EspressoSGXTEEVerifier
         @param _espressoSGXTEEVerifier The address of the EspressoSGXTEEVerifier

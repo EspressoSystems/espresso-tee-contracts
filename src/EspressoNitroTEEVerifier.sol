@@ -25,11 +25,13 @@ contract EspressoNitroTEEVerifier is NitroValidator, IEspressoNitroTEEVerifier, 
     mapping(bytes32 => bool) public registeredEnclaveHash;
     // Registered signers
     mapping(address => bool) public registeredSigners;
+    CertManager _certManager;
 
     constructor(bytes32 enclaveHash, CertManager certManager)
         NitroValidator(certManager)
         Ownable()
     {
+        _certManager = certManager;
         registeredEnclaveHash[enclaveHash] = true;
         _transferOwnership(msg.sender);
     }
@@ -59,6 +61,18 @@ contract EspressoNitroTEEVerifier is NitroValidator, IEspressoNitroTEEVerifier, 
             registeredSigners[enclaveAddress] = true;
             emit AWSSignerRegistered(enclaveAddress, pcr0Hash);
         }
+    }
+
+    function verifyCert(bytes calldata certificate, bytes32 parentCertHash, bool isCA) external {
+        if (isCA) {
+            _certManager.verifyCACert(certificate, parentCertHash);
+        } else {
+            _certManager.verifyClientCert(certificate, parentCertHash);
+        }
+    }
+
+    function certVerified(bytes32 parentCertHash) external view returns (bytes memory) {
+        return _certManager.verified(parentCertHash);
     }
 
     function setEnclaveHash(bytes32 enclaveHash, bool valid) external onlyOwner {
