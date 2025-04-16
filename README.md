@@ -51,6 +51,21 @@ $ anvil
 $ forge script script/Counter.s.sol:CounterScript --rpc-url <your_rpc_url> --private-key <your_private_key>
 ```
 
+#### SGX
+```shell
+$ FOUNDRY_PROFILE=sgx forge script scripts/DeploySGXTEEVerifier.s.sol:DeploySGXTEEVerifier --contracts src/EspressoSGXTEEVerifier.sol --skip src/EspressoNitroTEEVerifier.sol --rpc-url <your_rpc_url> --private-key <your_private_key> --chain-id <your_chain_id> --etherscan-api-key <your_api_key> --broadcast --verify
+```
+
+#### NITRO
+```shell
+$ FOUNDRY_PROFILE=nitro forge script scripts/DeployNitroTEEVerifier.s.sol:DeployNitroTEEVerifier --contracts src/EspressoNitroTEEVerifier.sol --rpc-url <your_rpc_url> --private-key <your_private_key> --chain-id <your_chain_id> --etherscan-api-key <your_api_key> --broadcast --verify
+```
+
+#### ESPRESSO
+```shell
+$ forge script scripts/DeployTEEVerifier.s.sol:DeployTEEVerifier --contracts src/EspressoTEEVerifier.sol --skip src/EspressoNitroTEEVerifier.sol --rpc-url <your_rpc_url> --private-key <your_private_key> --chain-id <your_chain_id> --etherscan-api-key <your_api_key> --broadcast --verify 
+```
+
 ### Cast
 
 ```shell

@@ -1,5 +1,30 @@
 
 
+[profile.nitro]
+src = 'src/'
+out = 'out'
+libs = [ 'lib']
+optimizer = true
+optimizer_runs = 1
+solc_version = '0.8.25'
+fs_permissions = [
+    { access = "read", path = "./"},
+    { access='read-write', path='./deployments/' }
+]
+
+[profile.sgx]
+src = 'src/'
+out = 'out'
+libs = [ 'lib']
+optimizer = true
+optimizer_runs = 1
+via_ir = true
+solc_version = '0.8.25'
+fs_permissions = [
+    { access = "read", path = "./"},
+    { access='read-write', path='./deployments/' }
+]
+
 [profile.default]
 src = 'src/'
 out = 'out'
@@ -8,7 +33,10 @@ optimizer = true
 optimizer_runs = 1
 via_ir = true
 solc_version = '0.8.25'
-fs_permissions = [{ access = "read", path = "./"}]
+fs_permissions = [
+    { access = "read", path = "./"},
+    { access='read-write', path='./deployments/' }
+]
 
 [profile.default.optimizer_details]
 yul = false
@@ -17,3 +45,4 @@ yul = false
 number_underscore = 'thousands'
 line_length = 100
 # See more config options https://github.com/foundry-rs/foundry/tree/master/config
+
