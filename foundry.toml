@@ -5,6 +5,8 @@ libs = [ 'lib']
 optimizer = true
 optimizer_runs = 10
 solc_version = '0.8.25'
+via_ir = false
+optimizer_details = { yul = true }
 fs_permissions = [
     { access = "read", path = "./"},
     { access='read-write', path='./deployments/' }
@@ -17,6 +19,7 @@ libs = [ 'lib']
 optimizer = true
 optimizer_runs = 1
 via_ir = true
+optimizer_details = { yul = true }
 solc_version = '0.8.25'
 fs_permissions = [
     { access = "read", path = "./"},
@@ -30,8 +33,8 @@ libs = ['lib']
 optimizer = true
 optimizer_runs = 1
 via_ir = true
-solc_version = '0.8.25'
 optimizer_details = { yul = false }
+solc_version = '0.8.25'
 fs_permissions = [
     { access = "read", path = "./"},
     { access = "read-write", path = "./deployments/"}
