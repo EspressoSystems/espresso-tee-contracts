@@ -1,3 +1,4 @@
+pragma solidity ^0.8.25;
 import {Script} from "forge-std/Script.sol";
 import {console2} from "forge-std/console2.sol";
 import {CertManager} from "@nitro-validator/CertManager.sol";
@@ -5,11 +6,12 @@ import {EspressoNitroTEEVerifier} from "src/EspressoNitroTEEVerifier.sol";
 import {IEspressoNitroTEEVerifier} from "src/interface/IEspressoNitroTEEVerifier.sol";
 
 contract DeployNitroTEEVerifier is Script {
-    bytes32 constant CERT_MANAGER_SALT = keccak256("espresso.certmanager.v0");
 
     function run() external {
         vm.startBroadcast();
 
+        string memory salt = vm.envString("CERT_MANAGER_SALT");
+        bytes32 CERT_MANAGER_SALT = keccak256(abi.encodePacked(salt));
         bytes32 pcr0Hash = vm.envBytes32("NITRO_ENCLAVE_HASH");
 
         // 1. Deploy CertManager

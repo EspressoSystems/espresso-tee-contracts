@@ -8,11 +8,6 @@ import {IEspressoSGXTEEVerifier} from "../src/interface/IEspressoSGXTEEVerifier.
 import {IEspressoNitroTEEVerifier} from "../src/interface/IEspressoNitroTEEVerifier.sol";
 
 contract DeployTEEVerifier is Script {
-    // Salts for deterministic deployment
-    bytes32 constant ESPRESSO_TEE_SALT = keccak256("espresso.teeverifier.v1");
-    
-    // Replace with your actual Nitro enclave PCR0 hash
-    bytes32 constant ENCLAVE_HASH = bytes32(0xc980e59163ce244bb4bb6211f48c7b46f88a4f40943e84eb99bdc41e129bd293); 
 
     function run() external {
         vm.startBroadcast();

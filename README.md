@@ -45,27 +45,6 @@ $ forge snapshot
 $ anvil
 ```
 
-### Deploy
-
-```shell
-$ forge script script/Counter.s.sol:CounterScript --rpc-url <your_rpc_url> --private-key <your_private_key>
-```
-
-#### SGX
-```shell
-$ FOUNDRY_PROFILE=sgx forge script scripts/DeploySGXTEEVerifier.s.sol:DeploySGXTEEVerifier --contracts src/EspressoSGXTEEVerifier.sol --skip src/EspressoNitroTEEVerifier.sol --rpc-url <your_rpc_url> --private-key <your_private_key> --chain-id <your_chain_id> --etherscan-api-key <your_api_key> --broadcast --verify
-```
-
-#### NITRO
-```shell
-$ FOUNDRY_PROFILE=nitro forge script scripts/DeployNitroTEEVerifier.s.sol:DeployNitroTEEVerifier --contracts src/EspressoNitroTEEVerifier.sol --rpc-url <your_rpc_url> --private-key <your_private_key> --chain-id <your_chain_id> --etherscan-api-key <your_api_key> --broadcast --verify
-```
-
-#### ESPRESSO
-```shell
-$ forge script scripts/DeployTEEVerifier.s.sol:DeployTEEVerifier --contracts src/EspressoTEEVerifier.sol --skip src/EspressoNitroTEEVerifier.sol --rpc-url <your_rpc_url> --private-key <your_private_key> --chain-id <your_chain_id> --etherscan-api-key <your_api_key> --broadcast --verify 
-```
-
 ### Cast
 
 ```shell
@@ -79,3 +58,73 @@ $ forge --help
 $ anvil --help
 $ cast --help
 ```
+
+## TEE Verifier Deployment
+
+### 1. Clean Build Environment
+ Start with a fresh build to ensure as we need to build contracts with proper profiles for gas optimizations:
+   ```bash
+   forge clean
+   ```
+  
+### 2. **Environment Setup**
+Create a `.env` file in the project root with the following variables:
+
+```text
+CERT_MANAGER_SALT=<your_salt_here>
+NITRO_ENCLAVE_HASH=<aws_nitro_pcr0_hash>
+SGX_ENCLAVE_HASH=<sgx_enclave_measurement>
+SGX_QUOTE_VERIFIER_ADDRESS=<quote_verifier_address_from_automata>  # From: https://github.com/automata-network/automata-dcap-attestation
+
+// To be updated after deployment
+NITRO_VERIFIER_ADDRESS=""
+SGX_VERIFIER_ADDRESS=""
+```
+
+### 3. **Deployment Process**
+1. **Deploy Nitro Verifier**
+    ```bash
+    FOUNDRY_PROFILE=nitro forge script scripts/DeployNitroTEEVerifier.s.sol:DeployNitroTEEVerifier \
+        --contracts src/EspressoNitroTEEVerifier.sol \
+        --rpc-url <your_rpc_url> \
+        --private-key <your_private_key> \
+        --chain-id <your_chain_id> \
+        --etherscan-api-key <your_api_key> \
+        --broadcast \
+        --verify
+    ```
+2. **Deploy SGX Verifier**
+    ```bash
+    FOUNDRY_PROFILE=sgx forge script scripts/DeploySGXTEEVerifier.s.sol:DeploySGXTEEVerifier \
+        --contracts src/EspressoSGXTEEVerifier.sol \
+        --skip src/EspressoNitroTEEVerifier.sol \
+        --rpc-url <your_rpc_url> \
+        --private-key <your_private_key> \
+        --chain-id <your_chain_id> \
+        --etherscan-api-key <your_api_key> \
+        --broadcast \
+        --verify
+    ```
+
+3. **Update Environment Variables**
+
+    After successful AWS Nitro and SGX deployments update the `.env` file with:
+
+    ```text
+    NITRO_VERIFIER_ADDRESS=<deployed_nitro_address>
+    SGX_VERIFIER_ADDRESS=<deployed_sgx_address>
+    ```
+
+4. **Deploy Espresso TEE Verifier**
+    ```bash
+    forge script scripts/DeployTEEVerifier.s.sol:DeployTEEVerifier \
+        --contracts src/EspressoTEEVerifier.sol \
+        --rpc-url <your_rpc_url> \
+        --private-key <your_private_key> \
+        --chain-id <your_chain_id> \
+        --etherscan-api-key <your_api_key> \
+        --broadcast \
+        --verify
+    ```
+### 4. Post-Deployment
+Verify all contracts on Block Explorer and ensure deployment artifacts are in deployments/<chain_id>/
