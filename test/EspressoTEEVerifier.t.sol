@@ -259,11 +259,17 @@ contract EspressoTEEVerifierTest is Test {
         bytes32 certHash = keccak256(certificate);
         bytes32 parentCertHash =
             hex"75a73bbe6ada19667613f9044edd49169ad8a0f1a409939a304b3fe5e28c9611";
-        assertEq(espressoTEEVerifier.certVerified(certHash, IEspressoTEEVerifier.TeeType.NITRO), false);
+        assertEq(
+            espressoTEEVerifier.certVerified(certHash, IEspressoTEEVerifier.TeeType.NITRO), false
+        );
 
         vm.expectRevert("parent cert unverified");
-        espressoTEEVerifier.verifyCert(certificate, parentCertHash, true, IEspressoTEEVerifier.TeeType.NITRO);
-        assertEq(espressoTEEVerifier.certVerified(certHash, IEspressoTEEVerifier.TeeType.NITRO), false);
+        espressoTEEVerifier.verifyCert(
+            certificate, parentCertHash, true, IEspressoTEEVerifier.TeeType.NITRO
+        );
+        assertEq(
+            espressoTEEVerifier.certVerified(certHash, IEspressoTEEVerifier.TeeType.NITRO), false
+        );
         vm.stopPrank();
     }
 
@@ -276,10 +282,16 @@ contract EspressoTEEVerifierTest is Test {
         bytes32 certHash = keccak256(certificate);
         bytes32 parentCertHash =
             hex"311d96fcd5c5e0ccf72ef548e2ea7d4c0cd53ad7c4cc49e67471aed41d61f185";
-        assertEq(espressoTEEVerifier.certVerified(certHash, IEspressoTEEVerifier.TeeType.NITRO), false);
+        assertEq(
+            espressoTEEVerifier.certVerified(certHash, IEspressoTEEVerifier.TeeType.NITRO), false
+        );
 
-        espressoTEEVerifier.verifyCert(certificate, parentCertHash, true, IEspressoTEEVerifier.TeeType.NITRO);
-        assertEq(espressoTEEVerifier.certVerified(certHash, IEspressoTEEVerifier.TeeType.NITRO), true);
+        espressoTEEVerifier.verifyCert(
+            certificate, parentCertHash, true, IEspressoTEEVerifier.TeeType.NITRO
+        );
+        assertEq(
+            espressoTEEVerifier.certVerified(certHash, IEspressoTEEVerifier.TeeType.NITRO), true
+        );
         vm.stopPrank();
     }
 
@@ -294,7 +306,9 @@ contract EspressoTEEVerifierTest is Test {
             hex"311d96fcd5c5e0ccf72ef548e2ea7d4c0cd53ad7c4cc49e67471aed41d61f185";
 
         vm.expectRevert(IEspressoTEEVerifier.UnsupportedTeeType.selector);
-        espressoTEEVerifier.verifyCert(certificate, parentCertHash, true, IEspressoTEEVerifier.TeeType.SGX);
+        espressoTEEVerifier.verifyCert(
+            certificate, parentCertHash, true, IEspressoTEEVerifier.TeeType.SGX
+        );
         vm.stopPrank();
     }
 }
