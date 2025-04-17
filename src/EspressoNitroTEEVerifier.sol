@@ -25,6 +25,7 @@ contract EspressoNitroTEEVerifier is NitroValidator, IEspressoNitroTEEVerifier, 
     mapping(bytes32 => bool) public registeredEnclaveHash;
     // Registered signers
     mapping(address => bool) public registeredSigners;
+    // Certificate Manager
     CertManager _certManager;
 
     constructor(bytes32 enclaveHash, CertManager certManager)
@@ -63,6 +64,12 @@ contract EspressoNitroTEEVerifier is NitroValidator, IEspressoNitroTEEVerifier, 
         }
     }
 
+    /**
+     * @notice This function verifies a AWS Nitro Attestations Certificate on chain
+     * @param certificate The certificate from the attestation
+     * @param parentCertHash The keccak256 hash over the parent certificate
+     * @param isCA Is it a CA certificate if true, if false client certificate
+     */
     function verifyCert(bytes calldata certificate, bytes32 parentCertHash, bool isCA) external {
         if (isCA) {
             _certManager.verifyCACert(certificate, parentCertHash);
@@ -71,8 +78,13 @@ contract EspressoNitroTEEVerifier is NitroValidator, IEspressoNitroTEEVerifier, 
         }
     }
 
-    function certVerified(bytes32 parentCertHash) external view returns (bytes memory) {
-        return _certManager.verified(parentCertHash);
+    /**
+     * @notice This function is a readonly function to check if a certificate is already verified on chain
+     * @param certHash The certificate keccak256 hash
+     */
+    function certVerified(bytes32 certHash) external view returns (bool) {
+        bytes memory verifiedBytes = _certManager.verified(certHash);
+        return verifiedBytes.length > 0;
     }
 
     function setEnclaveHash(bytes32 enclaveHash, bool valid) external onlyOwner {

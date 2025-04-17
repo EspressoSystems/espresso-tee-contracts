@@ -38,8 +38,23 @@ interface IEspressoTEEVerifier {
         view
         returns (bool);
 
-    function verifyCert(bytes calldata certificate, bytes32 parentCertHash, bool isCA) external;
-    function certVerified(bytes32 parentCertHash) external view returns (bytes memory);
+    // Function to verify a certificate on chain
+    function verifyCert(
+        bytes calldata certificate,
+        bytes32 parentCertHash,
+        bool isCA,
+        TeeType teeType
+    ) external;
+
+    // Function to check if certificate is already verified on chain
+    function certVerified(bytes32 certHash, TeeType teeType) external view returns (bool);
+
+    // Function to verify an attestation quote
+    function verifyAttestationQuote(
+        bytes calldata rawQuote,
+        bytes32 reportDataHash,
+        TeeType teeType
+    ) external view returns (EnclaveReport memory);
 
     // Function to set the EspressoSGXTEEVerifier
     function setEspressoSGXTEEVerifier(IEspressoSGXTEEVerifier _espressoSGXTEEVerifier) external;
