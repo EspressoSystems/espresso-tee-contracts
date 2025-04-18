@@ -112,50 +112,16 @@ contract EspressoTEEVerifier is Ownable2Step, IEspressoTEEVerifier {
     }
 
     /**
-     * @notice This function verifies a given certificate on chain
-     * @param certificate The certificate from the attestation
-     * @param parentCertHash The keccak256 hash over the parent certificate
-     * @param isCA Is it a CA certificate if true, if false client certificate
-     * @param teeType The type of TEE
-     */
-    function verifyCert(
-        bytes calldata certificate,
-        bytes32 parentCertHash,
-        bool isCA,
-        TeeType teeType
-    ) external {
-        if (teeType == TeeType.NITRO) {
-            return espressoNitroTEEVerifier.verifyCert(certificate, parentCertHash, isCA);
-        }
-        revert UnsupportedTeeType();
-    }
-
-    /**
-     * @notice This function is a readonly function to check if a certificate is already verified on chain
-     * @param certHash The certificate keccak256 hash
-     * @param teeType The type of TEE
-     */
-    function certVerified(bytes32 certHash, TeeType teeType) external view returns (bool) {
-        if (teeType == TeeType.NITRO) {
-            return espressoNitroTEEVerifier.certVerified(certHash);
-        }
-        revert UnsupportedTeeType();
-    }
-
-    /**
-     * @notice Verify a quote from the TEE and attest on-chain
-     *     The verification is considered successful if the function does not revert.
-     *     @param rawQuote The quote from the TEE
-     *     @param reportDataHash The hash of the report data
+     * @notice This function retrieves the address for the underlying TEE contracts
      *     @param teeType The type of TEE
      */
-    function verifyAttestationQuote(
-        bytes calldata rawQuote,
-        bytes32 reportDataHash,
-        TeeType teeType
-    ) external view returns (EnclaveReport memory) {
+    function retrieveTEEContractAddress(TeeType teeType) external view returns (address) {
         if (teeType == TeeType.SGX) {
-            return espressoSGXTEEVerifier.verify(rawQuote, reportDataHash);
+            return address(espressoSGXTEEVerifier);
+        }
+
+        if (teeType == TeeType.NITRO) {
+            return address(espressoNitroTEEVerifier);
         }
         revert UnsupportedTeeType();
     }

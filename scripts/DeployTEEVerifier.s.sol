@@ -15,6 +15,9 @@ contract DeployTEEVerifier is Script {
         address sgxVerifierAddr = vm.envAddress("SGX_VERIFIER_ADDRESS");
         address nitroVerifierAddr = vm.envAddress("NITRO_VERIFIER_ADDRESS");
 
+        require(sgxVerifierAddr != address(0), "SGX_VERIFIER_ADDRESS environment variable not set or invalid");
+        require(nitroVerifierAddr != address(0), "nitroVerifierAddr environment variable not set or invalid");
+
         IEspressoSGXTEEVerifier sgxVerifier = IEspressoSGXTEEVerifier(sgxVerifierAddr);
         IEspressoNitroTEEVerifier nitroVerifier = IEspressoNitroTEEVerifier(nitroVerifierAddr);
         EspressoTEEVerifier verifier = new EspressoTEEVerifier(
