@@ -6,6 +6,7 @@ import "@openzeppelin/contracts/access/Ownable2Step.sol";
 import {IEspressoSGXTEEVerifier} from "./interface/IEspressoSGXTEEVerifier.sol";
 import {IEspressoNitroTEEVerifier} from "./interface/IEspressoNitroTEEVerifier.sol";
 import {IEspressoTEEVerifier} from "./interface/IEspressoTEEVerifier.sol";
+import {EnclaveReport} from "@automata-network/dcap-attestation/contracts/types/V3Structs.sol";
 
 /**
  * @title EspressoTEEVerifier
@@ -106,6 +107,21 @@ contract EspressoTEEVerifier is Ownable2Step, IEspressoTEEVerifier {
 
         if (teeType == TeeType.NITRO) {
             return espressoNitroTEEVerifier.registeredEnclaveHash(enclaveHash);
+        }
+        revert UnsupportedTeeType();
+    }
+
+    /**
+     * @notice This function retrieves the address for the underlying TEE contracts
+     *     @param teeType The type of TEE
+     */
+    function retrieveTEEContractAddress(TeeType teeType) external view returns (address) {
+        if (teeType == TeeType.SGX) {
+            return address(espressoSGXTEEVerifier);
+        }
+
+        if (teeType == TeeType.NITRO) {
+            return address(espressoNitroTEEVerifier);
         }
         revert UnsupportedTeeType();
     }

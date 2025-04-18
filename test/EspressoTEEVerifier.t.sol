@@ -249,4 +249,22 @@ contract EspressoTEEVerifierTest is Test {
         assertEq(address(espressoTEEVerifier.owner()), fakeAddress);
         vm.stopPrank();
     }
+
+    // Test Address retrieval nitro
+    function testAddressRetrievalNitro() public {
+        vm.startPrank(adminTEE);
+        address nitroAddr =
+            espressoTEEVerifier.retrieveTEEContractAddress(IEspressoTEEVerifier.TeeType.NITRO);
+        assertEq(address(espressoNitroTEEVerifier), nitroAddr);
+        vm.stopPrank();
+    }
+
+    // Test Address retrieval sgx
+    function testAddressRetrievalSGX() public {
+        vm.startPrank(adminTEE);
+        address sgxAddr =
+            espressoTEEVerifier.retrieveTEEContractAddress(IEspressoTEEVerifier.TeeType.SGX);
+        assertEq(address(espressoSGXTEEVerifier), sgxAddr);
+        vm.stopPrank();
+    }
 }
