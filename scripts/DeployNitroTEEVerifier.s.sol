@@ -11,8 +11,11 @@ contract DeployNitroTEEVerifier is Script {
         vm.startBroadcast();
 
         string memory salt = vm.envString("CERT_MANAGER_SALT");
+        require(bytes(salt).length > 0, "CERT_MANAGER_SALT environment variable not set");
         bytes32 CERT_MANAGER_SALT = keccak256(abi.encodePacked(salt));
         bytes32 pcr0Hash = vm.envBytes32("NITRO_ENCLAVE_HASH");
+        require(pcr0Hash != bytes32(0), "NITRO_ENCLAVE_HASH environment variable not set or invalid");
+
 
         // 1. Deploy CertManager
         CertManager certManager = new CertManager{salt: CERT_MANAGER_SALT}();

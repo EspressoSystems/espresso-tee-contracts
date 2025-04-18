@@ -71,14 +71,28 @@ $ cast --help
 Create a `.env` file in the project root with the following variables:
 
 ```text
+# Variables for script command
+RPC_URL=<your-rpc-url>
+PRIVATE_KEY=<your-private-key>
+CHAIN_ID=<your-chain-id>
+ETHERSCAN_API_KEY=<your-api-key>
+
+# Variables for deployment
 CERT_MANAGER_SALT=<your_salt_here>
 NITRO_ENCLAVE_HASH=<aws_nitro_pcr0_hash>
 SGX_ENCLAVE_HASH=<sgx_enclave_measurement>
 SGX_QUOTE_VERIFIER_ADDRESS=<quote_verifier_address_from_automata>  # From: https://github.com/automata-network/automata-dcap-attestation
 
-// To be updated after deployment
+# To be updated after deployment
 NITRO_VERIFIER_ADDRESS=""
 SGX_VERIFIER_ADDRESS=""
+```
+
+
+Save the file then source it:
+
+```bash
+source .env
 ```
 
 ### 3. **Deployment Process**
@@ -86,10 +100,10 @@ SGX_VERIFIER_ADDRESS=""
     ```bash
     FOUNDRY_PROFILE=nitro forge script scripts/DeployNitroTEEVerifier.s.sol:DeployNitroTEEVerifier \
         --contracts src/EspressoNitroTEEVerifier.sol \
-        --rpc-url <your_rpc_url> \
-        --private-key <your_private_key> \
-        --chain-id <your_chain_id> \
-        --etherscan-api-key <your_api_key> \
+        --rpc-url "$RPC_URL" \
+        --private-key "$PRIVATE_KEY" \
+        --chain-id "$CHAIN_ID" \
+        --etherscan-api-key "$ETHERSCAN_API_KEY"  \
         --broadcast \
         --verify
     ```
@@ -98,10 +112,10 @@ SGX_VERIFIER_ADDRESS=""
     FOUNDRY_PROFILE=sgx forge script scripts/DeploySGXTEEVerifier.s.sol:DeploySGXTEEVerifier \
         --contracts src/EspressoSGXTEEVerifier.sol \
         --skip src/EspressoNitroTEEVerifier.sol \
-        --rpc-url <your_rpc_url> \
-        --private-key <your_private_key> \
-        --chain-id <your_chain_id> \
-        --etherscan-api-key <your_api_key> \
+        --rpc-url "$RPC_URL" \
+        --private-key "$PRIVATE_KEY" \
+        --chain-id "$CHAIN_ID" \
+        --etherscan-api-key "$ETHERSCAN_API_KEY"  \
         --broadcast \
         --verify
     ```
@@ -119,10 +133,10 @@ SGX_VERIFIER_ADDRESS=""
     ```bash
     forge script scripts/DeployTEEVerifier.s.sol:DeployTEEVerifier \
         --contracts src/EspressoTEEVerifier.sol \
-        --rpc-url <your_rpc_url> \
-        --private-key <your_private_key> \
-        --chain-id <your_chain_id> \
-        --etherscan-api-key <your_api_key> \
+        --rpc-url "$RPC_URL" \
+        --private-key "$PRIVATE_KEY" \
+        --chain-id "$CHAIN_ID" \
+        --etherscan-api-key "$ETHERSCAN_API_KEY"  \
         --broadcast \
         --verify
     ```

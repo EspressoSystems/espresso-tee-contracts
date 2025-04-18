@@ -10,7 +10,10 @@ contract DeploySGXTEEVerifier is Script {
         vm.startBroadcast();
         bytes32 enclaveHash = vm.envBytes32("SGX_ENCLAVE_HASH");
         address quoteVerifierAddr = vm.envAddress("SGX_QUOTE_VERIFIER_ADDRESS");
-        // 2. Deploy SGX Verifier
+        require(enclaveHash != bytes32(0), "SGX_ENCLAVE_HASH environment variable not set or invalid");
+        require(quoteVerifierAddr != address(0), "SGX_QUOTE_VERIFIER_ADDRESS environment variable not set or invalid");
+
+        // Deploy SGX Verifier
         IEspressoSGXTEEVerifier sgxVerifier = new EspressoSGXTEEVerifier{salt: SGX_VERIFIER_SALT}(
             enclaveHash,
             quoteVerifierAddr
