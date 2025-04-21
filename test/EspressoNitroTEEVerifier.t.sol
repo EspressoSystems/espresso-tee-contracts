@@ -204,4 +204,41 @@ contract EspressoSGXTEEVerifierTest is Test {
         espressoNitroTEEVerifier.deleteRegisteredSigners(signersToDelete);
         assertEq(espressoNitroTEEVerifier.registeredSigners(signer), false);
     }
+
+    function testVerifyCertParentCertNotVerified() public {
+        vm.startPrank(adminTEE);
+        vm.warp(1_744_913_000);
+        string memory certPath = "/test/configs/unverified-cert.bin";
+        string memory certFile = string.concat(vm.projectRoot(), certPath);
+        bytes memory certificate = vm.readFileBinary(certFile);
+
+        string memory parentCertHashPath = "/test/configs/unverified-parent-cert-hash.bin";
+        string memory parentCertHashFile = string.concat(vm.projectRoot(), parentCertHashPath);
+        bytes32 parentCertHash = bytes32(vm.readFileBinary(parentCertHashFile));
+        bytes32 certHash = keccak256(certificate);
+        assertEq(espressoNitroTEEVerifier.certVerified(certHash), false);
+
+        vm.expectRevert("parent cert unverified");
+        espressoNitroTEEVerifier.verifyCert(certificate, parentCertHash, true);
+        assertEq(espressoNitroTEEVerifier.certVerified(certHash), false);
+        vm.stopPrank();
+    }
+
+    function testVerifyCert() public {
+        vm.startPrank(adminTEE);
+        vm.warp(1_744_913_000);
+        string memory certPath = "/test/configs/verified-cert.bin";
+        string memory certFile = string.concat(vm.projectRoot(), certPath);
+        bytes memory certificate = vm.readFileBinary(certFile);
+
+        string memory parentCertHashPath = "/test/configs/verified-parent-cert-hash.bin";
+        string memory parentCertHashFile = string.concat(vm.projectRoot(), parentCertHashPath);
+        bytes32 parentCertHash = bytes32(vm.readFileBinary(parentCertHashFile));
+        bytes32 certHash = keccak256(certificate);
+        assertEq(espressoNitroTEEVerifier.certVerified(certHash), false);
+
+        espressoNitroTEEVerifier.verifyCert(certificate, parentCertHash, true);
+        assertEq(espressoNitroTEEVerifier.certVerified(certHash), true);
+        vm.stopPrank();
+    }
 }
