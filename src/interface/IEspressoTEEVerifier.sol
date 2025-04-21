@@ -38,9 +38,6 @@ interface IEspressoTEEVerifier {
         view
         returns (bool);
 
-    // retrive the underlying tee contract address
-    function retrieveTEEContractAddress(TeeType teeType) external view returns (address);
-
     // Function to set the EspressoSGXTEEVerifier
     function setEspressoSGXTEEVerifier(IEspressoSGXTEEVerifier _espressoSGXTEEVerifier) external;
 

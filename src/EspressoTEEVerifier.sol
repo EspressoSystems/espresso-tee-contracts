@@ -111,21 +111,6 @@ contract EspressoTEEVerifier is Ownable2Step, IEspressoTEEVerifier {
         revert UnsupportedTeeType();
     }
 
-    /**
-     * @notice This function retrieves the address for the underlying TEE contracts
-     *     @param teeType The type of TEE
-     */
-    function retrieveTEEContractAddress(TeeType teeType) external view returns (address) {
-        if (teeType == TeeType.SGX) {
-            return address(espressoSGXTEEVerifier);
-        }
-
-        if (teeType == TeeType.NITRO) {
-            return address(espressoNitroTEEVerifier);
-        }
-        revert UnsupportedTeeType();
-    }
-
     /*
         @notice Set the EspressoSGXTEEVerifier
         @param _espressoSGXTEEVerifier The address of the EspressoSGXTEEVerifier
