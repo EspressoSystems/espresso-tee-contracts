@@ -259,7 +259,8 @@ contract EspressoTEEVerifierTest is Test {
         assertEq(address(espressoNitroTEEVerifier), nitroAddr);
 
         // Test with using EspressoTEEVerifier Interface
-        IEspressoTEEVerifier iespressoTEEVerifier = new EspressoTEEVerifier(espressoSGXTEEVerifier, espressoNitroTEEVerifier);
+        IEspressoTEEVerifier iespressoTEEVerifier =
+            new EspressoTEEVerifier(espressoSGXTEEVerifier, espressoNitroTEEVerifier);
         // Without espressoNitroTEEVerifier() added to interface, the test would fail to compile
         nitroAddr = address(iespressoTEEVerifier.espressoNitroTEEVerifier());
         assertEq(address(espressoNitroTEEVerifier), nitroAddr);
@@ -276,7 +277,8 @@ contract EspressoTEEVerifierTest is Test {
         assertEq(address(espressoSGXTEEVerifier), sgxAddr);
 
         // Test with using EspressoTEEVerifier Interface
-        IEspressoTEEVerifier iespressoTEEVerifier = new EspressoTEEVerifier(espressoSGXTEEVerifier, espressoNitroTEEVerifier);
+        IEspressoTEEVerifier iespressoTEEVerifier =
+            new EspressoTEEVerifier(espressoSGXTEEVerifier, espressoNitroTEEVerifier);
         // Without espressoSGXTEEVerifier() added to interface, the test would fail to compile
         sgxAddr = address(iespressoTEEVerifier.espressoSGXTEEVerifier());
         assertEq(address(espressoSGXTEEVerifier), sgxAddr);
