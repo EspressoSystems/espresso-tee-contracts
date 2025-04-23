@@ -250,19 +250,39 @@ contract EspressoTEEVerifierTest is Test {
         vm.stopPrank();
     }
 
-    // Test Address retrieval nitro
+    // Test Address retrieval Nitro
     function testAddressRetrievalNitro() public {
         vm.startPrank(adminTEE);
+
+        // Test without using interface
         address nitroAddr = address(espressoTEEVerifier.espressoNitroTEEVerifier());
         assertEq(address(espressoNitroTEEVerifier), nitroAddr);
+
+        // Test with using EspressoTEEVerifier Interface
+        IEspressoTEEVerifier iespressoTEEVerifier =
+            new EspressoTEEVerifier(espressoSGXTEEVerifier, espressoNitroTEEVerifier);
+        // Without espressoNitroTEEVerifier() added to interface, the test would fail to compile
+        nitroAddr = address(iespressoTEEVerifier.espressoNitroTEEVerifier());
+        assertEq(address(espressoNitroTEEVerifier), nitroAddr);
+
         vm.stopPrank();
     }
 
-    // Test Address retrieval sgx
+    // Test Address retrieval SGX
     function testAddressRetrievalSGX() public {
         vm.startPrank(adminTEE);
+
+        // Test without using interface
         address sgxAddr = address(espressoTEEVerifier.espressoSGXTEEVerifier());
         assertEq(address(espressoSGXTEEVerifier), sgxAddr);
+
+        // Test with using EspressoTEEVerifier Interface
+        IEspressoTEEVerifier iespressoTEEVerifier =
+            new EspressoTEEVerifier(espressoSGXTEEVerifier, espressoNitroTEEVerifier);
+        // Without espressoSGXTEEVerifier() added to interface, the test would fail to compile
+        sgxAddr = address(iespressoTEEVerifier.espressoSGXTEEVerifier());
+        assertEq(address(espressoSGXTEEVerifier), sgxAddr);
+
         vm.stopPrank();
     }
 }
