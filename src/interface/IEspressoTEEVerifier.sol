@@ -20,6 +20,12 @@ interface IEspressoTEEVerifier {
     // This error is thrown when the TEE type is not supported
     error UnsupportedTeeType();
 
+    // Get address of Nitro TEE Verifier
+    function espressoNitroTEEVerifier() external view returns (IEspressoNitroTEEVerifier);
+
+    // Get addressof SGX TEE Verifier
+    function espressoSGXTEEVerifier() external view returns (IEspressoSGXTEEVerifier);
+
     // Function to verify the signature of the user data is from a registered signer
     function verify(bytes memory signature, bytes32 userDataHash, TeeType teeType)
         external
