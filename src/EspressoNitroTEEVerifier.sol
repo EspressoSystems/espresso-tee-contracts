@@ -65,17 +65,21 @@ contract EspressoNitroTEEVerifier is NitroValidator, IEspressoNitroTEEVerifier, 
     }
 
     /**
-     * @notice This function verifies a AWS Nitro Attestations Certificate on chain
+     * @notice This function verifies a AWS Nitro Attestations CA Certificate on chain
      * @param certificate The certificate from the attestation
      * @param parentCertHash The keccak256 hash over the parent certificate
-     * @param isCA Is it a CA certificate if true, if false client certificate
      */
-    function verifyCert(bytes calldata certificate, bytes32 parentCertHash, bool isCA) external {
-        if (isCA) {
-            _certManager.verifyCACert(certificate, parentCertHash);
-        } else {
-            _certManager.verifyClientCert(certificate, parentCertHash);
-        }
+    function verifyCACert(bytes calldata certificate, bytes32 parentCertHash) external {
+        _certManager.verifyCACert(certificate, parentCertHash);
+    }
+
+    /**
+     * @notice This function verifies a AWS Nitro Attestations Client Certificate on chain
+     * @param certificate The certificate from the attestation
+     * @param parentCertHash The keccak256 hash over the parent certificate
+     */
+    function verifyClientCert(bytes calldata certificate, bytes32 parentCertHash) external {
+        _certManager.verifyClientCert(certificate, parentCertHash);
     }
 
     /**
