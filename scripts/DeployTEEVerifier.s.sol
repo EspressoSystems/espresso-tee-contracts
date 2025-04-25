@@ -33,7 +33,7 @@ contract DeployTEEVerifier is Script {
         // Write Espresso address
         vm.writeJson(
             vm.serializeAddress("", "EspressoTEEVerifier", address(verifier)),
-            string.concat(dir, "/", chainId, "tee-verifier.json")
+            string.concat(dir, "/", chainId, "-espresso-tee-verifier.json")
         );
 
         vm.stopBroadcast();
