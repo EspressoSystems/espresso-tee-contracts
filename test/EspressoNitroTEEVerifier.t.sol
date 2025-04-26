@@ -7,7 +7,7 @@ import {IEspressoNitroTEEVerifier} from "../src/interface/IEspressoNitroTEEVerif
 import "@openzeppelin/contracts/access/Ownable.sol";
 import {CertManager} from "@nitro-validator/CertManager.sol";
 
-contract EspressoSGXTEEVerifierTest is Test {
+contract EspressoNitroTEEVerifierTest is Test {
     address proxyAdmin = address(140);
     address adminTEE = address(141);
     address fakeAddress = address(145);
@@ -219,7 +219,7 @@ contract EspressoSGXTEEVerifierTest is Test {
         assertEq(espressoNitroTEEVerifier.certVerified(certHash), false);
 
         vm.expectRevert("parent cert unverified");
-        espressoNitroTEEVerifier.verifyCert(certificate, parentCertHash, true);
+        espressoNitroTEEVerifier.verifyCACert(certificate, parentCertHash);
         assertEq(espressoNitroTEEVerifier.certVerified(certHash), false);
         vm.stopPrank();
     }
@@ -237,7 +237,57 @@ contract EspressoSGXTEEVerifierTest is Test {
         bytes32 certHash = keccak256(certificate);
         assertEq(espressoNitroTEEVerifier.certVerified(certHash), false);
 
-        espressoNitroTEEVerifier.verifyCert(certificate, parentCertHash, true);
+        espressoNitroTEEVerifier.verifyCACert(certificate, parentCertHash);
+        assertEq(espressoNitroTEEVerifier.certVerified(certHash), true);
+        vm.stopPrank();
+    }
+
+    // Test verification of full certificate chain
+    function testVerifyCertChain() public {
+        vm.startPrank(adminTEE);
+        vm.warp(1_745_596_800);
+
+        string memory certPath = "/test/configs/certs/ca0cert.bin";
+        string memory certFile = string.concat(vm.projectRoot(), certPath);
+        bytes memory certificate = vm.readFileBinary(certFile);
+        bytes32 parentCertHash = keccak256(certificate);
+
+        espressoNitroTEEVerifier.verifyCACert(certificate, parentCertHash);
+        assertEq(espressoNitroTEEVerifier.certVerified(parentCertHash), true);
+
+        certPath = "/test/configs/certs/ca1cert.bin";
+        certFile = string.concat(vm.projectRoot(), certPath);
+        certificate = vm.readFileBinary(certFile);
+        bytes32 certHash = keccak256(certificate);
+        assertEq(espressoNitroTEEVerifier.certVerified(certHash), false);
+        espressoNitroTEEVerifier.verifyCACert(certificate, parentCertHash);
+        assertEq(espressoNitroTEEVerifier.certVerified(certHash), true);
+        parentCertHash = certHash;
+
+        certPath = "/test/configs/certs/ca2cert.bin";
+        certFile = string.concat(vm.projectRoot(), certPath);
+        certificate = vm.readFileBinary(certFile);
+        certHash = keccak256(certificate);
+        assertEq(espressoNitroTEEVerifier.certVerified(certHash), false);
+        espressoNitroTEEVerifier.verifyCACert(certificate, parentCertHash);
+        assertEq(espressoNitroTEEVerifier.certVerified(certHash), true);
+        parentCertHash = certHash;
+
+        certPath = "/test/configs/certs/ca3cert.bin";
+        certFile = string.concat(vm.projectRoot(), certPath);
+        certificate = vm.readFileBinary(certFile);
+        certHash = keccak256(certificate);
+        assertEq(espressoNitroTEEVerifier.certVerified(certHash), false);
+        espressoNitroTEEVerifier.verifyCACert(certificate, parentCertHash);
+        assertEq(espressoNitroTEEVerifier.certVerified(certHash), true);
+        parentCertHash = certHash;
+
+        certPath = "/test/configs/certs/client-cert.bin";
+        certFile = string.concat(vm.projectRoot(), certPath);
+        certificate = vm.readFileBinary(certFile);
+        certHash = keccak256(certificate);
+        assertEq(espressoNitroTEEVerifier.certVerified(certHash), false);
+        espressoNitroTEEVerifier.verifyClientCert(certificate, parentCertHash);
         assertEq(espressoNitroTEEVerifier.certVerified(certHash), true);
         vm.stopPrank();
     }
