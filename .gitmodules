@@ -13,4 +13,4 @@
 	url = https://github.com/OpenZeppelin/openzeppelin-contracts-upgradeable
 [submodule "lib/nitro-validator"]
 	path = lib/nitro-validator
-	url = https://github.com/base/nitro-validator
+	url = https://github.com/EspressoSystems/espresso-nitro-validator
