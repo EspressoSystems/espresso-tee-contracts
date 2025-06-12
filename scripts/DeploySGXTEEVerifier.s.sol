@@ -1,11 +1,10 @@
+pragma solidity ^0.8.25;
 import {Script} from "forge-std/Script.sol";
 import {console2} from "forge-std/console2.sol";
 import {EspressoSGXTEEVerifier} from "src/EspressoSGXTEEVerifier.sol";
 import {IEspressoSGXTEEVerifier} from "src/interface/IEspressoSGXTEEVerifier.sol";
 
 contract DeploySGXTEEVerifier is Script {
-    bytes32 constant SGX_VERIFIER_SALT = keccak256("espresso.sgxverifier.v1");
-
     function run() external {
         vm.startBroadcast();
         bytes32 enclaveHash = vm.envBytes32("SGX_ENCLAVE_HASH");
@@ -14,7 +13,7 @@ contract DeploySGXTEEVerifier is Script {
         require(quoteVerifierAddr != address(0), "SGX_QUOTE_VERIFIER_ADDRESS environment variable not set or invalid");
 
         // Deploy SGX Verifier
-        IEspressoSGXTEEVerifier sgxVerifier = new EspressoSGXTEEVerifier{salt: SGX_VERIFIER_SALT}(
+        IEspressoSGXTEEVerifier sgxVerifier = new EspressoSGXTEEVerifier(
             enclaveHash,
             quoteVerifierAddr
         );
