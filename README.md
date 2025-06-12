@@ -101,7 +101,7 @@ source .env
 
 1. If CertManager is not deployed on the given chain, deploy it first:
    ```bash
-   FOUNDRY_PROFILE=nitro forge script scripts/DeployCertManager.sol:DeployCertManager \
+    forge script scripts/DeployCertManager.sol:DeployCertManager \
        --rpc-url "$RPC_URL" \
        --private-key "$PRIVATE_KEY" \
        --chain-id "$CHAIN_ID" \
@@ -109,7 +109,7 @@ source .env
        --broadcast \
        --verify
    ```
-1. **Deploy Nitro Verifier**
+2. **Deploy Nitro Verifier**
    After CertManager deployment update the `.env` file with:
    ```text
    CERT_MANAGER_ADDRESS=<deployed_cert_manager_address>
@@ -125,7 +125,7 @@ source .env
        --broadcast \
        --verify
    ```
-1. **Deploy SGX Verifier**
+3. **Deploy SGX Verifier**
 
    ```bash
    FOUNDRY_PROFILE=sgx forge script scripts/DeploySGXTEEVerifier.s.sol:DeploySGXTEEVerifier \
@@ -139,7 +139,7 @@ source .env
        --verify
    ```
 
-1. **Update Environment Variables**
+4. **Update Environment Variables**
 
    After successful AWS Nitro and SGX deployments update the `.env` file with:
 
@@ -148,7 +148,7 @@ source .env
    SGX_VERIFIER_ADDRESS=<deployed_sgx_address>
    ```
 
-1. **Deploy Espresso TEE Verifier**
+5. **Deploy Espresso TEE Verifier**
    ```bash
    forge script scripts/DeployTEEVerifier.s.sol:DeployTEEVerifier \
        --contracts src/EspressoTEEVerifier.sol \
