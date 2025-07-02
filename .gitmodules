@@ -14,3 +14,4 @@
 [submodule "lib/nitro-validator"]
 	path = lib/nitro-validator
 	url = https://github.com/EspressoSystems/espresso-nitro-validator
+	branch = main

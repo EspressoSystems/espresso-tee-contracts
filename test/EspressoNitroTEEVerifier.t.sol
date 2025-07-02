@@ -43,6 +43,24 @@ contract EspressoNitroTEEVerifierTest is Test {
     }
 
     /**
+     * Test register signer succeeds upon valid attestation and signature
+     */
+    function testRegisterSignerWithIndefiniteItemLengthAttestation() public {
+        vm.startPrank(adminTEE);
+        vm.warp(1_751_035_200);
+        string memory attestationPath = "/test/configs/indefinite-item-attestation.bin";
+        string memory inputFile = string.concat(vm.projectRoot(), attestationPath);
+        bytes memory attestation = vm.readFileBinary(inputFile);
+
+        string memory signaturePath = "/test/configs/indefinite-item-sig.bin";
+        string memory sigFile = string.concat(vm.projectRoot(), signaturePath);
+        bytes memory signature = vm.readFileBinary(sigFile);
+
+        espressoNitroTEEVerifier.registerSigner(attestation, signature);
+        vm.stopPrank();
+    }
+
+    /**
      * Test register signer fails upon invalid attestation pcr0
      */
     function testRegisterSignerInvalidPCR0Hash() public {
