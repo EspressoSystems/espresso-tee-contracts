@@ -4,7 +4,7 @@
 [submodule "lib/automata-dcap-attestation"]
 	path = lib/automata-dcap-attestation
 	url = https://github.com/EspressoSystems/automata-dcap-attestation
-	branch = espresso-nitro
+	branch = fix-via-ir-automata
 [submodule "lib/openzeppelin-contracts"]
 	path = lib/openzeppelin-contracts
 	url = https://github.com/OpenZeppelin/openzeppelin-contracts
