@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {Header} from "@automata-network/dcap-attestation/contracts/types/CommonStruct.sol";
-import {EnclaveReport} from "@automata-network/dcap-attestation/contracts/types/V3Structs.sol";
 import {IEspressoSGXTEEVerifier} from "./IEspressoSGXTEEVerifier.sol";
 import {IEspressoNitroTEEVerifier} from "./IEspressoNitroTEEVerifier.sol";
 
