@@ -45,4 +45,4 @@ line_length = 100
 # See more config options https://github.com/foundry-rs/foundry/tree/master/config
 
 [etherscan]
-etherscan = { key = "${ETHERSCAN_API_KEY}", chain = "${CHAIN_ID}", url = "https://api.etherscan.io/api" }
+etherscan = { key = "${ETHERSCAN_API_KEY}", url = "https://api.etherscan.io/api" }

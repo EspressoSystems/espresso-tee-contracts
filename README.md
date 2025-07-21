@@ -111,7 +111,7 @@ source .env
        --rpc-url "$RPC_URL" \
        --private-key "$PRIVATE_KEY" \
        --broadcast \
-       --verify --verifier etherscan
+       --verify --verifier etherscan --chain "$CHAIN_ID"
    ```
 
 2. **Deploy Nitro Verifier**
@@ -128,7 +128,7 @@ source .env
        --rpc-url "$RPC_URL" \
        --private-key "$PRIVATE_KEY" \
        --broadcast \
-       --verify --verifier etherscan
+       --verify --verifier etherscan --chain "$CHAIN_ID"
    ```
 
 3. **Deploy SGX Verifier**
@@ -138,7 +138,7 @@ source .env
        --rpc-url "$RPC_URL" \
        --private-key "$PRIVATE_KEY" \
        --broadcast \
-       --verify --verifier etherscan
+       --verify --verifier etherscan --chain "$CHAIN_ID"
    ```
 
 4. **Update Environment Variables**
@@ -157,7 +157,7 @@ source .env
        --rpc-url "$RPC_URL" \
        --private-key "$PRIVATE_KEY" \
        --broadcast \
-       --verify --verifier etherscan
+       --verify --verifier etherscan --chain "$CHAIN_ID"
    ```
 
 ### 4. Post-Deployment
