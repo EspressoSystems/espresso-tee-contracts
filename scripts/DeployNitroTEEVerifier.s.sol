@@ -31,12 +31,6 @@ contract DeployNitroTEEVerifier is Script {
         string memory chainId = vm.toString(block.chainid);
         string memory dir = string.concat(vm.projectRoot(), "/deployments");
 
-        // Write CertManager address
-        vm.writeJson(
-            vm.serializeAddress("", "CertManager", address(certManager)),
-            string.concat(dir, "/", chainId, "-certmanager.json")
-        );
-
         // Write NitroVerifier address
         vm.writeJson(
             vm.serializeAddress(
