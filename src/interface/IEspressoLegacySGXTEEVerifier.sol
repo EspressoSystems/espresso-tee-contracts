@@ -16,18 +16,17 @@ interface IEspressoLegacySGXTEEVerifier {
     // This error is thrown when the reportDataHash doesn't match the hash signed by the TEE
     error InvalidReportDataHash();
 
-    function verify(
-        bytes calldata rawQuote,
-        bytes32 reportDataHash
-    ) external view;
+    function verify(bytes calldata rawQuote, bytes32 reportDataHash) external view;
 
-    function parseQuoteHeader(
-        bytes calldata rawQuote
-    ) external pure returns (Header memory header);
+    function parseQuoteHeader(bytes calldata rawQuote)
+        external
+        pure
+        returns (Header memory header);
 
-    function parseEnclaveReport(
-        bytes memory rawEnclaveReport
-    ) external pure returns (bool success, EnclaveReport memory enclaveReport);
+    function parseEnclaveReport(bytes memory rawEnclaveReport)
+        external
+        pure
+        returns (bool success, EnclaveReport memory enclaveReport);
 
     function setMrEnclave(bytes32 _mrEnclave) external;
 
