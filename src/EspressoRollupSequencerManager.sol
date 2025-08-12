@@ -5,12 +5,10 @@ import {RedBlackTreeLib} from "solady/utils/RedBlackTreeLib.sol";
 import "@openzeppelin/contracts/access/Ownable2Step.sol";
 import {IEspressoRollupSequencerManager} from "./interface/IEspressoRollupSequencerManager.sol";
 
-contract EspressoRollupSequencerManager is
-    Ownable2Step,
-    IEspressoRollupSequencerManager
-{
+contract EspressoRollupSequencerManager is Ownable2Step, IEspressoRollupSequencerManager {
     // Initialize the sequencer list as a binary red-black tree
     using RedBlackTreeLib for RedBlackTreeLib.Tree;
+
     RedBlackTreeLib.Tree sequencersList;
 
     // Create a hashMap to manage the nonce and the sequencer address
@@ -37,12 +35,10 @@ contract EspressoRollupSequencerManager is
     }
 
     /**
-        @notice Insert a new sequencer into the list
-        @param sequencer The address of the sequencer
+     * @notice Insert a new sequencer into the list
+     *     @param sequencer The address of the sequencer
      */
-    function insertSequencer(
-        address sequencer
-    ) public onlyOwnerOrSequencer(sequencer) {
+    function insertSequencer(address sequencer) public onlyOwnerOrSequencer(sequencer) {
         // Check address is not a contract,
         // currently we only support EOAs
         if (sequencer.code.length > 0) {
@@ -66,12 +62,10 @@ contract EspressoRollupSequencerManager is
     }
 
     /**
-        @notice Remove a sequencer from the list
-        @param sequencer The address of the sequencer
+     * @notice Remove a sequencer from the list
+     *     @param sequencer The address of the sequencer
      */
-    function removeSequencer(
-        address sequencer
-    ) external onlyOwnerOrSequencer(sequencer) {
+    function removeSequencer(address sequencer) external onlyOwnerOrSequencer(sequencer) {
         // Check that msg.sender should be the owner or the address of sequencer
         if (msg.sender != owner() && msg.sender != sequencer) {
             revert Unauthorized();
@@ -93,14 +87,12 @@ contract EspressoRollupSequencerManager is
     }
 
     /**
-        @notice Get the current sequencer for a given view number
-        This function is supposed to be called off-chain because
-        it is computationally expensive
-        @param viewNumber The view number
+     * @notice Get the current sequencer for a given view number
+     *     This function is supposed to be called off-chain because
+     *     it is computationally expensive
+     *     @param viewNumber The view number
      */
-    function getCurrentSequencer(
-        uint256 viewNumber
-    ) external view returns (address) {
+    function getCurrentSequencer(uint256 viewNumber) external view returns (address) {
         // Take the mod of the viewNumber and the currentSequencerCount
         uint256 index = viewNumber % currentSequencerCount;
         // First get the first sequencer

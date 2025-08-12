@@ -10,10 +10,9 @@ contract EspressoRollupSequencerManagerTest is Test {
     address[] public initialSequencers;
 
     function setUp() public {
-        rollupSequencerManager = new EspressoRollupSequencerManager(
-            initialSequencers
-        );
+        rollupSequencerManager = new EspressoRollupSequencerManager(initialSequencers);
     }
+
     function testInsertSequencer() public {
         address sequencer = address(0x123);
         vm.expectEmit(true, true, true, true);
@@ -28,9 +27,7 @@ contract EspressoRollupSequencerManagerTest is Test {
     function testInsertSequencerFailsIfSequencerAlreadyExists() public {
         address sequencer = address(0x123);
         rollupSequencerManager.insertSequencer(sequencer);
-        vm.expectRevert(
-            IEspressoRollupSequencerManager.SequencerAlreadyExists.selector
-        );
+        vm.expectRevert(IEspressoRollupSequencerManager.SequencerAlreadyExists.selector);
         rollupSequencerManager.insertSequencer(sequencer);
     }
 
@@ -56,9 +53,7 @@ contract EspressoRollupSequencerManagerTest is Test {
 
     function testRemoveSequencerFailsIfSequencerDoesNotExist() public {
         address sequencer = address(0x123);
-        vm.expectRevert(
-            IEspressoRollupSequencerManager.SequencerDoesNotExist.selector
-        );
+        vm.expectRevert(IEspressoRollupSequencerManager.SequencerDoesNotExist.selector);
         rollupSequencerManager.removeSequencer(sequencer);
     }
 
@@ -79,9 +74,7 @@ contract EspressoRollupSequencerManagerTest is Test {
         assertEq(rollupSequencerManager.getCurrentSequencer(2), sequencer1);
     }
 
-    function testGetCurrentSequencerFailsIViewNumberGreaterThanSequencerLength()
-        public
-    {
+    function testGetCurrentSequencerFailsIViewNumberGreaterThanSequencerLength() public {
         address sequencer1 = address(0x123);
         address sequencer2 = address(0x456);
         rollupSequencerManager.insertSequencer(sequencer1);
