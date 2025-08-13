@@ -2,11 +2,12 @@
 pragma solidity ^0.8.0;
 
 interface IEspressoRollupSequencerManager {
-    event SequencerAdded(address indexed sequencer);
-    event SequencerRemoved(address indexed sequencer);
+    event SequencerAdded(address indexed sequencer, uint256 indexed nonce);
+    event SequencerRemoved(address indexed sequencer, uint256 indexed nonce);
 
     error InvalidSequencer();
     error SequencerAlreadyExists();
+    error SequencerListIsEmpty();
     error SequencerDoesNotExist();
     error Unauthorized();
 

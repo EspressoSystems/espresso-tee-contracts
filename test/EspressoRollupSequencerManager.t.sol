@@ -16,7 +16,7 @@ contract EspressoRollupSequencerManagerTest is Test {
     function testInsertSequencer() public {
         address sequencer = address(0x123);
         vm.expectEmit(true, true, true, true);
-        emit IEspressoRollupSequencerManager.SequencerAdded(sequencer);
+        emit IEspressoRollupSequencerManager.SequencerAdded(sequencer, 1);
         rollupSequencerManager.insertSequencer(sequencer);
         assertEq(rollupSequencerManager.currentSequencerCount(), 1);
         assertEq(rollupSequencerManager.sequencerToNonce(sequencer), 1);
@@ -42,7 +42,7 @@ contract EspressoRollupSequencerManagerTest is Test {
         address sequencer = address(0x123);
         rollupSequencerManager.insertSequencer(sequencer);
         vm.expectEmit(true, true, true, true);
-        emit IEspressoRollupSequencerManager.SequencerRemoved(sequencer);
+        emit IEspressoRollupSequencerManager.SequencerRemoved(sequencer, 1);
         rollupSequencerManager.removeSequencer(sequencer);
         assertEq(rollupSequencerManager.currentSequencerCount(), 0);
         assertEq(rollupSequencerManager.sequencerToNonce(sequencer), 0);

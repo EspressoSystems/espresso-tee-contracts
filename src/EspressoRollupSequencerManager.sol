@@ -1,4 +1,4 @@
-// // SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
 import {RedBlackTreeLib} from "solady/utils/RedBlackTreeLib.sol";
@@ -28,7 +28,6 @@ contract EspressoRollupSequencerManager is Ownable2Step, IEspressoRollupSequence
     }
 
     constructor(address[] memory initialSequencers) Ownable() {
-        _transferOwnership(msg.sender);
         for (uint256 i = 0; i < initialSequencers.length; i++) {
             insertSequencer(initialSequencers[i]);
         }
@@ -39,26 +38,22 @@ contract EspressoRollupSequencerManager is Ownable2Step, IEspressoRollupSequence
      *     @param sequencer The address of the sequencer
      */
     function insertSequencer(address sequencer) public onlyOwnerOrSequencer(sequencer) {
-        // Check address is not a contract,
-        // currently we only support EOAs
-        if (sequencer.code.length > 0) {
+        if (sequencer == address(0)) {
             revert InvalidSequencer();
         }
-
         // Check if the sequencer already exist
         if (sequencerToNonce[sequencer] > 0) {
             revert SequencerAlreadyExists();
         }
 
         // Insert the sequencer into the list,
-        // If the address already exist, it will throw an error
         sequencersList.insert(globalNonce);
         // Store the mappings
         nonceToSequencer[globalNonce] = sequencer;
         sequencerToNonce[sequencer] = globalNonce;
-        globalNonce++;
+        emit SequencerAdded(sequencer, globalNonce);
         currentSequencerCount++;
-        emit SequencerAdded(sequencer);
+        globalNonce++;
     }
 
     /**
@@ -66,24 +61,19 @@ contract EspressoRollupSequencerManager is Ownable2Step, IEspressoRollupSequence
      *     @param sequencer The address of the sequencer
      */
     function removeSequencer(address sequencer) external onlyOwnerOrSequencer(sequencer) {
-        // Check that msg.sender should be the owner or the address of sequencer
-        if (msg.sender != owner() && msg.sender != sequencer) {
-            revert Unauthorized();
-        }
-
+        uint256 nonce = sequencerToNonce[sequencer];
         // Check if the sequencer exists
-        if (sequencerToNonce[sequencer] == 0) {
+        if (nonce == 0) {
             revert SequencerDoesNotExist();
         }
 
         // Remove the sequencer from the list
-        uint256 nonce = sequencerToNonce[sequencer];
         sequencersList.remove(nonce);
         // Delete the mappings
         delete nonceToSequencer[nonce];
         delete sequencerToNonce[sequencer];
         currentSequencerCount--;
-        emit SequencerRemoved(sequencer);
+        emit SequencerRemoved(sequencer, nonce);
     }
 
     /**
@@ -93,6 +83,10 @@ contract EspressoRollupSequencerManager is Ownable2Step, IEspressoRollupSequence
      *     @param viewNumber The view number
      */
     function getCurrentSequencer(uint256 viewNumber) external view returns (address) {
+        if (currentSequencerCount == 0) {
+            revert SequencerListIsEmpty();
+        }
+
         // Take the mod of the viewNumber and the currentSequencerCount
         uint256 index = viewNumber % currentSequencerCount;
         // First get the first sequencer
