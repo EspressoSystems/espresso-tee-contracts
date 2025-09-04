@@ -44,19 +44,6 @@ func (m *moduleInfo) addArtifact(artifact HardHatArtifact) {
 	m.bytecodes = append(m.bytecodes, artifact.Bytecode)
 }
 
-func (m *moduleInfo) exportABIs(dest string) {
-	for i, name := range m.contractNames {
-		path := filepath.Join(dest, name+".abi")
-		abi := m.abis[i] + "\n"
-
-		// #nosec G306
-		err := os.WriteFile(path, []byte(abi), 0o644)
-		if err != nil {
-			log.Fatal(err)
-		}
-	}
-}
-
 func main() {
 	//Get the file that called this so we can fetch the directory of the project.
 	_, filename, _, ok := runtime.Caller(0)
