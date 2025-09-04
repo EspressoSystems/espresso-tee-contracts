@@ -61,6 +61,16 @@ anvil --help
 cast --help
 ```
 
+
+# Development
+
+For ease of development in go projects, we have included a small utility in this repo to generate go bindings for the TEEVerifier contracts present here.
+
+This utility uses the bind v2 implementation from github.com/ethereum/go-ethereum/abi/abigen/bind.go
+
+To generate these bindings for use in a go project, simply run `go run bindings/gen.go` from the root of this repo.
+Afterwards the bindings should appear in bindings/go/espressogen/espressogen.go and can be linked into your project easily if you are using this repo as a git submodule.
+
 ## TEE Verifier Deployment
 
 ### 1. Clean Build Environment
