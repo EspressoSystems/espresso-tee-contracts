@@ -107,6 +107,7 @@ func GenerateEspressoTEEContracts(modules map[string]*moduleInfo, parent string)
 
 	for _, path := range filePathsEspressoTeeContracts {
 		_, file := filepath.Split(path)
+		//Get the name of the file, sans file format (Currently ".json" for hardhat artifacts)
 		name := file[:len(file)-5]
 
 		data, err := os.ReadFile(path)
