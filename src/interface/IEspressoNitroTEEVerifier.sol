@@ -1,15 +1,15 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {Service} from "./IEspressoTEEVerifier.sol";
+import {ServiceType} from "./IEspressoTEEVerifier.sol";
 
 interface IEspressoNitroTEEVerifier {
     // This error is thrown when the PCR0 values don't match
     error InvalidAWSEnclaveHash();
 
-    event AWSEnclaveHashSet(bytes32 enclaveHash, bool valid, Service service);
-    event AWSServiceRegistered(address signer, bytes32 enclaveHash, Service service);
-    event DeletedAWSRegisteredService(address signer, Service service);
+    event AWSEnclaveHashSet(bytes32 enclaveHash, bool valid, ServiceType service);
+    event AWSServiceRegistered(address signer, bytes32 enclaveHash, ServiceType service);
+    event DeletedAWSRegisteredService(address signer, ServiceType service);
 
     /*
     * @notice This function is for checking the registration status of AWS Nitro TEE Caff Nodes and is a helper function for the EspressoTEEVerifier
@@ -36,7 +36,7 @@ interface IEspressoNitroTEEVerifier {
     function verifyClientCert(bytes calldata certificate, bytes32 parentCertHash) external;
     function certVerified(bytes32 certHash) external view returns (bool);
 
-    function setEnclaveHash(bytes32 enclaveHash, bool valid) external;
+    function setEnclaveHash(bytes32 enclaveHash, bool valid, ServiceType service) external;
     /*
     * @notice This function is responsible for removing registered addresses from the list of valid Caff Nodes
     */

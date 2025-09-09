@@ -3,7 +3,7 @@ pragma solidity ^0.8.0;
 
 import {Header} from "@automata-network/dcap-attestation/contracts/types/CommonStruct.sol";
 import {EnclaveReport} from "@automata-network/dcap-attestation/contracts/types/V3Structs.sol";
-import {Service} from "./IEspressoTEEVerifier.sol";
+import {ServiceType} from "./IEspressoTEEVerifier.sol";
 
 interface IEspressoSGXTEEVerifier {
     // We only support version 3 for now
@@ -13,7 +13,7 @@ interface IEspressoSGXTEEVerifier {
     // This error is thrown when the enclave report fails to parse
     error FailedToParseEnclaveReport();
     // This error is thrown when the mrEnclave don't match
-    error InvalidEnclaveHash(Service);
+    error InvalidEnclaveHash(ServiceType);
     // This error is thrown when the reportDataHash doesn't match the hash signed by the TEE
     error InvalidReportDataHash();
     // This error is thrown when the reportData is too short
@@ -25,9 +25,9 @@ interface IEspressoSGXTEEVerifier {
     // This error is thrown when the quote verifier address is invalid
     error InvalidQuoteVerifierAddress();
 
-    event EnclaveHashSet(bytes32 enclaveHash, bool valid, Service service);
-    event ServiceRegistered(address signer, bytes32 enclaveHash, Service service);
-    event DeletedRegisteredService(address signer, Service service);
+    event EnclaveHashSet(bytes32 enclaveHash, bool valid, ServiceType service);
+    event ServiceRegistered(address signer, bytes32 enclaveHash, ServiceType service);
+    event DeletedRegisteredService(address signer, ServiceType service);
 
     /*
     * @notice This function is for checking the registration status of Intel SGX TEE Batch Posters and is a helper function for the EspressoTEEVerifier
@@ -67,7 +67,7 @@ interface IEspressoSGXTEEVerifier {
     /*
     * @notice: This function is responsible for setting the validity of enclave hashes in this inner TEEVerifier contract, It will be 
     */
-    function setEnclaveHash(bytes32 enclaveHash, bool valid, Service serviceType) external;
+    function setEnclaveHash(bytes32 enclaveHash, bool valid, ServiceType serviceType) external;
     /*
     * @notice This function is responsible for removing registered addresses from the list of valid Caff Nodes
     */
