@@ -12,11 +12,20 @@ interface IEspressoTEEVerifier {
         SGX,
         NITRO
     }
+    /**
+    * @notice Enum for representing services that can be registered via the EspressoTEEVerifier contract
+    */
+    enum ServiceType{
+        BatchPoster,
+        CaffNode
+    }
     // This error is thrown when the signature is invalid
 
     error InvalidSignature();
     // This error is thrown when the TEE type is not supported
     error UnsupportedTeeType();
+    // This error is thrown when the ServiceType enum provided to a method is unsupported for that method. 
+    error UnsupportedServiceType();
 
     // Get address of Nitro TEE Verifier
     function espressoNitroTEEVerifier() external view returns (IEspressoNitroTEEVerifier);
@@ -30,14 +39,15 @@ interface IEspressoTEEVerifier {
         view
         returns (bool);
 
-    // Function to register a signer which has been attested by the TEE
-    function registerSigner(bytes calldata attestation, bytes calldata data, TeeType teeType)
+    // Function to register a service which has been attested by a TEE or Attestation Verifier
+    // This function can has succeeded if it does not revert.
+    function registerService(bytes calldata verificationData, bytes calldata data, TeeType teeType, ServiceType serviceType)
         external;
 
-    // Function to retrieve whether a signer is registered or not
-    function registeredSigners(address signer, TeeType teeType) external view returns (bool);
+    // Function to retrieve whether a service is registered or not
+    function registeredService(address signer, TeeType teeType, ServiceType serviceType) external view returns (bool);
 
-    function registeredEnclaveHashes(bytes32 enclaveHash, TeeType teeType)
+    function registeredEnclaveHashes(bytes32 enclaveHash, TeeType teeType, ServiceType serviceType)
         external
         view
         returns (bool);
