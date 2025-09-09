@@ -9,9 +9,14 @@ interface IEspressoNitroTEEVerifier {
     event AWSServiceRegistered(address signer, bytes32 enclaveHash, Service service);
     event DeletedAWSRegisteredService(address signer, Service service);
 
-    //This will serve to check if a Caff node is regsitered in the NitroTEEVerifier contract.
+    /*
+    * @notice This function is for checking the registration status of AWS Nitro TEE Caff Nodes and is a helper function for the EspressoTEEVerifier
+    */
     function registeredCaffNode(address signer) external view returns (bool);
 
+    /*
+    * @notice This function is for checking the registration status of AWS Nitro TEE Batch Posters and is a helper function for the EspressoTEEVerifier
+    */
     function registeredBatchPoster(address signer) external view returns (bool);
     function registeredEnclaveHash(bytes32 enclaveHash) external view returns (bool);
 

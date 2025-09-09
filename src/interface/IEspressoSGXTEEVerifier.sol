@@ -30,7 +30,7 @@ interface IEspressoSGXTEEVerifier {
     event DeletedRegisteredService(address signer, Service service);
 
     /*
-    * @notice This function is for checking the registration status of  Intel SGX TEE BatchPosters and is a helper function for the EspressoTEEVerifier
+    * @notice This function is for checking the registration status of Intel SGX TEE Batch Posters and is a helper function for the EspressoTEEVerifier
     */
     function registeredBatchPoster(address signer) external view returns (bool);
 
@@ -46,7 +46,7 @@ interface IEspressoSGXTEEVerifier {
     */
     function registerBatchPoster(bytes calldata attestation, bytes calldata data) external;
     /*
-    * @notice This function is for checking the registration status of Intel SGX TEE BatchPosters and is a helper function for the EspressoTEEVerifier
+    * @notice This function is for registering Intel SGX TEE Batch Posters and is a helper function for the EspressoTEEVerifier
     */
     function registerCaffNode(bytes calldata attestation, bytes calldata data) external;
 
