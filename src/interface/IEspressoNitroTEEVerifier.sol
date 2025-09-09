@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
-import {Service} from "./IEspressoTEEVerifier.sol"
+
+import {Service} from "./IEspressoTEEVerifier.sol";
+
 interface IEspressoNitroTEEVerifier {
     // This error is thrown when the PCR0 values don't match
     error InvalidAWSEnclaveHash();
@@ -34,7 +36,7 @@ interface IEspressoNitroTEEVerifier {
     function verifyClientCert(bytes calldata certificate, bytes32 parentCertHash) external;
     function certVerified(bytes32 certHash) external view returns (bool);
 
-    function setEnclaveHash(bytes32 enclaveHash, bool valid, ) external;
+    function setEnclaveHash(bytes32 enclaveHash, bool valid) external;
     /*
     * @notice This function is responsible for removing registered addresses from the list of valid Caff Nodes
     */
