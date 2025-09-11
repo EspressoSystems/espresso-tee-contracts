@@ -9,7 +9,7 @@ import {EspressoNitroTEEVerifier} from "../src/EspressoNitroTEEVerifier.sol";
 import {IEspressoSGXTEEVerifier} from "../src/interface/IEspressoSGXTEEVerifier.sol";
 import {IEspressoNitroTEEVerifier} from "../src/interface/IEspressoNitroTEEVerifier.sol";
 import {CertManager} from "@nitro-validator/CertManager.sol";
-
+import {ServiceType} from "../src/types/Types.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
 contract EspressoTEEVerifierTest is Test {
@@ -41,16 +41,16 @@ contract EspressoTEEVerifierTest is Test {
         vm.stopPrank();
     }
 
-    function testSGXRegisterSigner() public {
+    function testSGXRegisterService() public {
         string memory quotePath = "/test/configs/attestation.bin";
         string memory inputFile = string.concat(vm.projectRoot(), quotePath);
         bytes memory sampleQuote = vm.readFileBinary(inputFile);
         address batchPosterAddress = address(0xe2148eE53c0755215Df69b2616E552154EdC584f);
         bytes memory data = abi.encodePacked(batchPosterAddress);
-        espressoTEEVerifier.registerSigner(sampleQuote, data, IEspressoTEEVerifier.TeeType.SGX);
+        espressoTEEVerifier.registerService(sampleQuote, data, IEspressoTEEVerifier.TeeType.SGX, ServiceType.BatchPoster);
     }
 
-    function testNitroRegisterSigner() public {
+    function testNitroRegisterService() public {
         vm.warp(1_743_110_000);
         string memory attestationPath = "/test/configs/nitro-attestation.bin";
         string memory inputFile = string.concat(vm.projectRoot(), attestationPath);
@@ -59,38 +59,38 @@ contract EspressoTEEVerifierTest is Test {
         string memory signaturePath = "/test/configs/nitro-valid-signature.bin";
         string memory sigFile = string.concat(vm.projectRoot(), signaturePath);
         bytes memory signature = vm.readFileBinary(sigFile);
-        espressoTEEVerifier.registerSigner(
-            attestation, signature, IEspressoTEEVerifier.TeeType.NITRO
+        espressoTEEVerifier.registerService(
+            attestation, signature, IEspressoTEEVerifier.TeeType.NITRO, ServiceType.BatchPoster
         );
     }
 
-    function testSGXRegisterSignerWithInvalidQuote() public {
+    function testSGXRegisterServiceWithInvalidQuote() public {
         string memory quotePath = "/test/configs/invalid_quote.bin";
         string memory inputFile = string.concat(vm.projectRoot(), quotePath);
         bytes memory sampleQuote = vm.readFileBinary(inputFile);
         address batchPosterAddress = address(0xe2148eE53c0755215Df69b2616E552154EdC584f);
         bytes memory data = abi.encodePacked(batchPosterAddress);
         vm.expectRevert(IEspressoSGXTEEVerifier.InvalidQuote.selector);
-        espressoTEEVerifier.registerSigner(sampleQuote, data, IEspressoTEEVerifier.TeeType.SGX);
+        espressoTEEVerifier.registerService(sampleQuote, data, IEspressoTEEVerifier.TeeType.SGX, ServiceType.BatchPoster);
     }
 
-    function testSGXRegisteredSigners() public {
+    function testSGXRegisteredServices() public {
         string memory quotePath = "/test/configs/attestation.bin";
         string memory inputFile = string.concat(vm.projectRoot(), quotePath);
         bytes memory sampleQuote = vm.readFileBinary(inputFile);
         address batchPosterAddress = address(0xe2148eE53c0755215Df69b2616E552154EdC584f);
         bytes memory data = abi.encodePacked(batchPosterAddress);
-        espressoTEEVerifier.registerSigner(sampleQuote, data, IEspressoTEEVerifier.TeeType.SGX);
+        espressoTEEVerifier.registerService(sampleQuote, data, IEspressoTEEVerifier.TeeType.SGX, ServiceType.BatchPoster);
 
         assertEq(
-            espressoTEEVerifier.registeredSigners(
-                batchPosterAddress, IEspressoTEEVerifier.TeeType.SGX
+            espressoTEEVerifier.registeredServices(
+                batchPosterAddress, IEspressoTEEVerifier.TeeType.SGX, ServiceType.BatchPoster
             ),
             true
         );
     }
 
-    function testNitroRegisteredSigners() public {
+    function testNitroRegisteredServices() public {
         vm.warp(1_743_110_000);
         string memory attestationPath = "/test/configs/nitro-attestation.bin";
         string memory inputFile = string.concat(vm.projectRoot(), attestationPath);
@@ -101,12 +101,12 @@ contract EspressoTEEVerifierTest is Test {
         bytes memory signature = vm.readFileBinary(sigFile);
         bytes32 publicKeyHash = keccak256(nitroPubKey);
         address signerAddr = address(uint160(uint256(publicKeyHash)));
-        espressoTEEVerifier.registerSigner(
-            attestation, signature, IEspressoTEEVerifier.TeeType.NITRO
+        espressoTEEVerifier.registerService(
+            attestation, signature, IEspressoTEEVerifier.TeeType.NITRO, ServiceType.BatchPoster
         );
 
         assertEq(
-            espressoTEEVerifier.registeredSigners(signerAddr, IEspressoTEEVerifier.TeeType.NITRO),
+            espressoTEEVerifier.registeredServices(signerAddr, IEspressoTEEVerifier.TeeType.NITRO, ServiceType.BatchPoster),
             true
         );
     }
@@ -115,7 +115,8 @@ contract EspressoTEEVerifierTest is Test {
         assertEq(
             espressoTEEVerifier.registeredEnclaveHashes(
                 bytes32(0x01f7290cb6bbaa427eca3daeb25eecccb87c4b61259b1ae2125182c4d77169c0),
-                IEspressoTEEVerifier.TeeType.SGX
+                IEspressoTEEVerifier.TeeType.SGX,
+                ServiceType.BatchPoster
             ),
             true
         );
@@ -125,7 +126,8 @@ contract EspressoTEEVerifierTest is Test {
         assertEq(
             espressoTEEVerifier.registeredEnclaveHashes(
                 bytes32(0xc980e59163ce244bb4bb6211f48c7b46f88a4f40943e84eb99bdc41e129bd293),
-                IEspressoTEEVerifier.TeeType.NITRO
+                IEspressoTEEVerifier.TeeType.NITRO,
+                ServiceType.BatchPoster
             ),
             true
         );
@@ -178,12 +180,12 @@ contract EspressoTEEVerifierTest is Test {
             hex"88195346c675ad5c352ee257ec027c092c995dabd8aa54d2c68f3fac378faf9f402e8eee3418bb434f6feeec541658cd99eec502ace6b145aa2e03ce231ec4e6";
         bytes32 publicKeyHash = keccak256(pubKey);
         address signerAddr = address(uint160(uint256(publicKeyHash)));
-        espressoTEEVerifier.registerSigner(
-            attestation, signature, IEspressoTEEVerifier.TeeType.NITRO
+        espressoTEEVerifier.registerService(
+            attestation, signature, IEspressoTEEVerifier.TeeType.NITRO, ServiceType.BatchPoster
         );
 
         assertEq(
-            espressoTEEVerifier.registeredSigners(signerAddr, IEspressoTEEVerifier.TeeType.NITRO),
+            espressoTEEVerifier.registeredServices(signerAddr, IEspressoTEEVerifier.TeeType.NITRO, ServiceType.BatchPoster),
             true
         );
 
@@ -215,7 +217,7 @@ contract EspressoTEEVerifierTest is Test {
     /**
      * Test nitro register signer fails upon invalid attestation pcr0
      */
-    function testNitroRegisterSignerInvalidPCR0Hash() public {
+    function testNitroRegisterServiceInvalidPCR0Hash() public {
         vm.startPrank(adminTEE);
         vm.warp(1_743_110_000);
         string memory attestationPath = "/test/configs/nitro-attestation.bin";
@@ -227,13 +229,13 @@ contract EspressoTEEVerifierTest is Test {
         bytes memory signature = vm.readFileBinary(sigFile);
 
         // Disable pcr0 hash
-        espressoNitroTEEVerifier.setEnclaveHash(pcr0Hash, false);
-        assertEq(espressoNitroTEEVerifier.registeredEnclaveHash(pcr0Hash), false);
+        espressoNitroTEEVerifier.setEnclaveHash(pcr0Hash, false, ServiceType.BatchPoster);
+        assertEq(espressoNitroTEEVerifier.registeredBatchPosterEnclaveHashes(pcr0Hash), false);
 
         // Expect revert
         vm.expectRevert(IEspressoNitroTEEVerifier.InvalidAWSEnclaveHash.selector);
-        espressoTEEVerifier.registerSigner(
-            attestation, signature, IEspressoTEEVerifier.TeeType.NITRO
+        espressoTEEVerifier.registerService(
+            attestation, signature, IEspressoTEEVerifier.TeeType.NITRO, ServiceType.BatchPoster
         );
         vm.stopPrank();
     }

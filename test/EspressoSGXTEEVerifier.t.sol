@@ -5,6 +5,7 @@ import "forge-std/Test.sol";
 import {EspressoSGXTEEVerifier} from "../src/EspressoSGXTEEVerifier.sol";
 import {IEspressoSGXTEEVerifier} from "../src/interface/IEspressoSGXTEEVerifier.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
+import {ServiceType} from "../src/types/Types.sol";
 
 contract EspressoSGXTEEVerifierTest is Test {
     address proxyAdmin = address(140);
@@ -30,7 +31,7 @@ contract EspressoSGXTEEVerifierTest is Test {
         vm.stopPrank();
     }
 
-    function testRegisterSigner() public {
+    function testRegisterBatchPoster() public {
         vm.startPrank(adminTEE);
         // bytes memory attestation = vm.readFileBinary("/test/configs/attestation.bin");
         string memory quotePath = "/test/configs/attestation.bin";
@@ -44,11 +45,11 @@ contract EspressoSGXTEEVerifierTest is Test {
         bytes memory data = abi.encodePacked(batchPosterAddress);
 
         // Convert the data to bytes32 and pass it to the verify function
-        espressoSGXTEEVerifier.registerSigner(sampleQuote, data);
+        espressoSGXTEEVerifier.registerBatchPoster(sampleQuote, data);
         vm.stopPrank();
     }
 
-    function testRegisterSignerInvalidQuote() public {
+    function testRegisterBatchPosterInvalidQuote() public {
         vm.startPrank(adminTEE);
         string memory quotePath = "/test/configs/invalid_quote.bin";
         string memory inputFile = string.concat(vm.projectRoot(), quotePath);
@@ -59,10 +60,10 @@ contract EspressoSGXTEEVerifierTest is Test {
         bytes memory data = abi.encodePacked(batchPosterAddress);
 
         vm.expectRevert(IEspressoSGXTEEVerifier.InvalidQuote.selector);
-        espressoSGXTEEVerifier.registerSigner(sampleQuote, data);
+        espressoSGXTEEVerifier.registerBatchPoster(sampleQuote, data);
     }
 
-    function testRegisterSignerInvalidAddress() public {
+    function testRegisterBatchPosterInvalidAddress() public {
         vm.startPrank(adminTEE);
         string memory quotePath = "/test/configs/attestation.bin";
         string memory inputFile = string.concat(vm.projectRoot(), quotePath);
@@ -73,10 +74,10 @@ contract EspressoSGXTEEVerifierTest is Test {
         bytes memory data = abi.encodePacked(batchPosterAddress);
 
         vm.expectRevert(IEspressoSGXTEEVerifier.InvalidReportDataHash.selector);
-        espressoSGXTEEVerifier.registerSigner(sampleQuote, data);
+        espressoSGXTEEVerifier.registerBatchPoster(sampleQuote, data);
     }
 
-    function testRegisterSignerInvalidDataLength() public {
+    function testRegisterBatchPosterInvalidDataLength() public {
         vm.startPrank(adminTEE);
         string memory quotePath = "/test/configs/attestation.bin";
         string memory inputFile = string.concat(vm.projectRoot(), quotePath);
@@ -88,7 +89,7 @@ contract EspressoSGXTEEVerifierTest is Test {
         bytes memory data = abi.encode(batchPosterAddress);
 
         vm.expectRevert(IEspressoSGXTEEVerifier.InvalidDataLength.selector);
-        espressoSGXTEEVerifier.registerSigner(sampleQuote, data);
+        espressoSGXTEEVerifier.registerBatchPoster(sampleQuote, data);
     }
 
     function testDeleteRegisteredSigner() public {
@@ -102,21 +103,21 @@ contract EspressoSGXTEEVerifierTest is Test {
         // Convert to bytes (dynamically sized)
         bytes memory data = abi.encodePacked(batchPosterAddress);
 
-        espressoSGXTEEVerifier.registerSigner(sampleQuote, data);
+        espressoSGXTEEVerifier.registerBatchPoster(sampleQuote, data);
         vm.stopPrank();
 
         vm.startPrank(adminTEE);
         address[] memory batchPosters = new address[](1);
         batchPosters[0] = batchPosterAddress;
-        espressoSGXTEEVerifier.deleteRegisteredSigners(batchPosters);
-        assertEq(espressoSGXTEEVerifier.registeredSigners(batchPosterAddress), false);
+        espressoSGXTEEVerifier.deleteRegisteredBatchPosters(batchPosters);
+        assertEq(espressoSGXTEEVerifier.registeredBatchPosters(batchPosterAddress), false);
         vm.stopPrank();
 
         // Check that only owner can delete the signer
         vm.startPrank(fakeAddress);
         vm.expectRevert("Ownable: caller is not the owner");
 
-        espressoSGXTEEVerifier.deleteRegisteredSigners(batchPosters);
+        espressoSGXTEEVerifier.deleteRegisteredBatchPosters(batchPosters);
         vm.stopPrank();
     }
 
@@ -199,15 +200,15 @@ contract EspressoSGXTEEVerifierTest is Test {
     function testSetEnclaveHash() public {
         vm.startPrank(adminTEE);
         bytes32 newMrEnclave = bytes32(hex"01");
-        espressoSGXTEEVerifier.setEnclaveHash(newMrEnclave, true);
-        assertEq(espressoSGXTEEVerifier.registeredEnclaveHash(newMrEnclave), true);
-        espressoSGXTEEVerifier.setEnclaveHash(newMrEnclave, false);
-        assertEq(espressoSGXTEEVerifier.registeredEnclaveHash(newMrEnclave), false);
+        espressoSGXTEEVerifier.setEnclaveHash(newMrEnclave, true, ServiceType.BatchPoster);
+        assertEq(espressoSGXTEEVerifier.registeredBatchPosterEnclaveHashes(newMrEnclave), true);
+        espressoSGXTEEVerifier.setEnclaveHash(newMrEnclave, false, ServiceType.BatchPoster);
+        assertEq(espressoSGXTEEVerifier.registeredBatchPosterEnclaveHashes(newMrEnclave), false);
         vm.stopPrank();
         // Check that only owner can set the hash
         vm.startPrank(fakeAddress);
         vm.expectRevert("Ownable: caller is not the owner");
-        espressoSGXTEEVerifier.setEnclaveHash(newMrEnclave, true);
+        espressoSGXTEEVerifier.setEnclaveHash(newMrEnclave, true, ServiceType.BatchPoster);
         vm.stopPrank();
     }
 

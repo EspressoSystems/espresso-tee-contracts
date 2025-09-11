@@ -6,7 +6,7 @@ import {EspressoNitroTEEVerifier} from "../src/EspressoNitroTEEVerifier.sol";
 import {IEspressoNitroTEEVerifier} from "../src/interface/IEspressoNitroTEEVerifier.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import {CertManager} from "@nitro-validator/CertManager.sol";
-
+import {ServiceType} from "../src/types/Types.sol";
 contract EspressoNitroTEEVerifierTest is Test {
     address proxyAdmin = address(140);
     address adminTEE = address(141);
@@ -27,7 +27,7 @@ contract EspressoNitroTEEVerifierTest is Test {
     /**
      * Test register signer succeeds upon valid attestation and signature
      */
-    function testRegisterSigner() public {
+    function testRegisterBatchPoster() public {
         vm.startPrank(adminTEE);
         vm.warp(1_743_110_000);
         string memory attestationPath = "/test/configs/nitro-attestation.bin";
@@ -38,14 +38,14 @@ contract EspressoNitroTEEVerifierTest is Test {
         string memory sigFile = string.concat(vm.projectRoot(), signaturePath);
         bytes memory signature = vm.readFileBinary(sigFile);
 
-        espressoNitroTEEVerifier.registerSigner(attestation, signature);
+        espressoNitroTEEVerifier.registerBatchPoster(attestation, signature);
         vm.stopPrank();
     }
 
     /**
      * Test register signer succeeds upon valid attestation and signature
      */
-    function testRegisterSignerWithIndefiniteItemLengthAttestation() public {
+    function testRegisterBatchPosterWithIndefiniteItemLengthAttestation() public {
         vm.startPrank(adminTEE);
         vm.warp(1_751_035_200);
         string memory attestationPath = "/test/configs/indefinite-item-attestation.bin";
@@ -56,14 +56,14 @@ contract EspressoNitroTEEVerifierTest is Test {
         string memory sigFile = string.concat(vm.projectRoot(), signaturePath);
         bytes memory signature = vm.readFileBinary(sigFile);
 
-        espressoNitroTEEVerifier.registerSigner(attestation, signature);
+        espressoNitroTEEVerifier.registerBatchPoster(attestation, signature);
         vm.stopPrank();
     }
 
     /**
      * Test register signer fails upon invalid attestation pcr0
      */
-    function testRegisterSignerInvalidPCR0Hash() public {
+    function testRegisterBatchPosterInvalidPCR0Hash() public {
         vm.startPrank(adminTEE);
         vm.warp(1_743_110_000);
         string memory attestationPath = "/test/configs/nitro-attestation.bin";
@@ -75,11 +75,11 @@ contract EspressoNitroTEEVerifierTest is Test {
         bytes memory signature = vm.readFileBinary(sigFile);
 
         // Disable pcr0 hash
-        espressoNitroTEEVerifier.setEnclaveHash(pcr0Hash, false);
-        assertEq(espressoNitroTEEVerifier.registeredEnclaveHash(pcr0Hash), false);
+        espressoNitroTEEVerifier.setEnclaveHash(pcr0Hash, false, ServiceType.BatchPoster);
+        assertEq(espressoNitroTEEVerifier.registeredBatchPosterEnclaveHashes(pcr0Hash), false);
 
         vm.expectRevert(IEspressoNitroTEEVerifier.InvalidAWSEnclaveHash.selector);
-        espressoNitroTEEVerifier.registerSigner(attestation, signature);
+        espressoNitroTEEVerifier.registerBatchPoster(attestation, signature);
         vm.stopPrank();
     }
 
@@ -100,7 +100,7 @@ contract EspressoNitroTEEVerifierTest is Test {
 
         // Incorrect signature
         vm.expectRevert(bytes("invalid sig"));
-        espressoNitroTEEVerifier.registerSigner(attestation, signature);
+        espressoNitroTEEVerifier.registerBatchPoster(attestation, signature);
         vm.stopPrank();
     }
 
@@ -120,7 +120,7 @@ contract EspressoNitroTEEVerifierTest is Test {
 
         // Old Attestation, old certificate
         vm.expectRevert(bytes("certificate not valid anymore"));
-        espressoNitroTEEVerifier.registerSigner(attestation, signature);
+        espressoNitroTEEVerifier.registerBatchPoster(attestation, signature);
         vm.stopPrank();
     }
 
@@ -143,7 +143,7 @@ contract EspressoNitroTEEVerifierTest is Test {
 
         // Invalid prefix
         vm.expectRevert(bytes("invalid attestation prefix"));
-        espressoNitroTEEVerifier.registerSigner(attestation, signature);
+        espressoNitroTEEVerifier.registerBatchPoster(attestation, signature);
         vm.stopPrank();
     }
 
@@ -170,22 +170,22 @@ contract EspressoNitroTEEVerifierTest is Test {
     // Test setting Enclave hash for owner and non-owner
     function testSetNitroEnclaveHash() public {
         vm.startPrank(adminTEE);
-        espressoNitroTEEVerifier.setEnclaveHash(pcr0Hash, true);
-        assertEq(espressoNitroTEEVerifier.registeredEnclaveHash(pcr0Hash), true);
-        espressoNitroTEEVerifier.setEnclaveHash(pcr0Hash, false);
-        assertEq(espressoNitroTEEVerifier.registeredEnclaveHash(pcr0Hash), false);
+        espressoNitroTEEVerifier.setEnclaveHash(pcr0Hash, true, ServiceType.BatchPoster);
+        assertEq(espressoNitroTEEVerifier.registeredBatchPosterEnclaveHashes(pcr0Hash), true);
+        espressoNitroTEEVerifier.setEnclaveHash(pcr0Hash, false, ServiceType.BatchPoster);
+        assertEq(espressoNitroTEEVerifier.registeredBatchPosterEnclaveHashes(pcr0Hash), false);
         vm.stopPrank();
         // Check that only owner can set the hash
         vm.startPrank(fakeAddress);
         vm.expectRevert("Ownable: caller is not the owner");
-        espressoNitroTEEVerifier.setEnclaveHash(pcr0Hash, true);
+        espressoNitroTEEVerifier.setEnclaveHash(pcr0Hash, true, ServiceType.BatchPoster);
         vm.stopPrank();
     }
 
     /**
      * Test we can delete a registered signer with only the correct admin address
      */
-    function testDeleteRegisterSignerOwnership() public {
+    function testDeleteRegisterBatchPosterOwnership() public {
         // register signer
         vm.startPrank(adminTEE);
         vm.warp(1_743_110_000);
@@ -198,11 +198,11 @@ contract EspressoNitroTEEVerifierTest is Test {
         bytes memory signature = vm.readFileBinary(sigFile);
 
         // register and verify signer exists
-        espressoNitroTEEVerifier.registerSigner(attestation, signature);
+        espressoNitroTEEVerifier.registerBatchPoster(attestation, signature);
         bytes memory pubKey =
             hex"090e39a638094d9805b89a831b7e710db345e701bb0e9865a60b6b50089b3f4b89c168fbf2219ba79b6e86eb63decac3be0dd3e8fb4c0f1b39d4ecd4589704ff";
         address signer = address(uint160(uint256(keccak256(pubKey))));
-        assertEq(espressoNitroTEEVerifier.registeredSigners(signer), true);
+        assertEq(espressoNitroTEEVerifier.registeredBatchPosters(signer), true);
 
         // start with incorrect admin address
         vm.stopPrank();
@@ -212,15 +212,15 @@ contract EspressoNitroTEEVerifierTest is Test {
 
         // verify we cant delete
         vm.expectRevert("Ownable: caller is not the owner");
-        espressoNitroTEEVerifier.deleteRegisteredSigners(signersToDelete);
+        espressoNitroTEEVerifier.deleteRegisteredBatchPosters(signersToDelete);
 
         // start with correct admin address
         vm.stopPrank();
         vm.startPrank(adminTEE);
 
         // delete and verify signer address is gone
-        espressoNitroTEEVerifier.deleteRegisteredSigners(signersToDelete);
-        assertEq(espressoNitroTEEVerifier.registeredSigners(signer), false);
+        espressoNitroTEEVerifier.deleteRegisteredBatchPosters(signersToDelete);
+        assertEq(espressoNitroTEEVerifier.registeredBatchPosters(signer), false);
     }
 
     function testVerifyCertParentCertNotVerified() public {
