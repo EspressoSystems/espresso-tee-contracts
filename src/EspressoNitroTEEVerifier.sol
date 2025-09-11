@@ -42,7 +42,7 @@ contract EspressoNitroTEEVerifier is NitroValidator, IEspressoNitroTEEVerifier, 
     }
 
     /**
-     * @notice This function registers a new Batch Poster by verifying an attestation from the AWS Nitro Enclave (TEE)
+     * @notice This function registers a new Caff Node by verifying an attestation from the AWS Nitro Enclave (TEE)
      * @param attestation The attestation from the AWS Nitro Enclave (TEE)
      * @param signature The cryptographic signature over the COSESign1 payload (extracted from the attestation)
      */
