@@ -6,6 +6,7 @@ import "@openzeppelin/contracts/access/Ownable2Step.sol";
 import {IEspressoSGXTEEVerifier} from "./interface/IEspressoSGXTEEVerifier.sol";
 import {IEspressoNitroTEEVerifier} from "./interface/IEspressoNitroTEEVerifier.sol";
 import {IEspressoTEEVerifier} from "./interface/IEspressoTEEVerifier.sol";
+import {Unimplemented, ServiceType} from "./types/Types.sol";
 
 /**
  * @title EspressoTEEVerifier
@@ -38,14 +39,14 @@ contract EspressoTEEVerifier is Ownable2Step, IEspressoTEEVerifier {
         address signer = ECDSA.recover(userDataHash, signature);
 
         if (teeType == TeeType.SGX) {
-            if (!espressoSGXTEEVerifier.registeredSigners(signer)) {
+            if (!espressoSGXTEEVerifier.registeredBatchPosters(signer)) {
                 revert InvalidSignature();
             }
             return true;
         }
 
         if (teeType == TeeType.NITRO) {
-            if (!espressoNitroTEEVerifier.registeredSigners(signer)) {
+            if (!espressoNitroTEEVerifier.registeredBatchPosters(signer)) {
                 revert InvalidSignature();
             }
             return true;
@@ -59,16 +60,20 @@ contract EspressoTEEVerifier is Ownable2Step, IEspressoTEEVerifier {
         which can be any additiona data that is required for registering a signer
         @param teeType The type of TEE
      */
-    function registerSigner(bytes calldata attestation, bytes calldata data, TeeType teeType)
+    function registerService(bytes calldata attestation, bytes calldata data, TeeType teeType, ServiceType service)
         external
     {
+        if (service == ServiceType.CaffNode){
+            revert Unimplemented();
+        }
+
         if (teeType == TeeType.SGX) {
-            espressoSGXTEEVerifier.registerSigner(attestation, data);
+            espressoSGXTEEVerifier.registerBatchPoster(attestation, data);
             return;
         }
 
         if (teeType == TeeType.NITRO) {
-            espressoNitroTEEVerifier.registerSigner(attestation, data);
+            espressoNitroTEEVerifier.registerBatchPoster(attestation, data);
             return;
         }
         revert UnsupportedTeeType();
@@ -79,13 +84,17 @@ contract EspressoTEEVerifier is Ownable2Step, IEspressoTEEVerifier {
      *     @param signer The address of the signer
      *     @param teeType The type of TEE
      */
-    function registeredSigners(address signer, TeeType teeType) external view returns (bool) {
+    function registeredServices(address signer, TeeType teeType, ServiceType service) external view returns (bool) {
+        if (service == ServiceType.CaffNode){
+            revert Unimplemented();
+        }
+
         if (teeType == TeeType.SGX) {
-            return espressoSGXTEEVerifier.registeredSigners(signer);
+            return espressoSGXTEEVerifier.registeredBatchPosters(signer);
         }
 
         if (teeType == TeeType.NITRO) {
-            return espressoNitroTEEVerifier.registeredSigners(signer);
+            return espressoNitroTEEVerifier.registeredBatchPosters(signer);
         }
         revert UnsupportedTeeType();
     }
@@ -95,17 +104,21 @@ contract EspressoTEEVerifier is Ownable2Step, IEspressoTEEVerifier {
      *     @param enclaveHash The hash of the enclave
      *     @param teeType The type of TEE
      */
-    function registeredEnclaveHashes(bytes32 enclaveHash, TeeType teeType)
+    function registeredEnclaveHashes(bytes32 enclaveHash, TeeType teeType, ServiceType service)
         external
         view
         returns (bool)
     {
+        if (service == ServiceType.CaffNode){
+            revert Unimplemented();
+        }
+
         if (teeType == TeeType.SGX) {
-            return espressoSGXTEEVerifier.registeredEnclaveHash(enclaveHash);
+            return espressoSGXTEEVerifier.registeredBatchPosterEnclaveHashes(enclaveHash);
         }
 
         if (teeType == TeeType.NITRO) {
-            return espressoNitroTEEVerifier.registeredEnclaveHash(enclaveHash);
+            return espressoNitroTEEVerifier.registeredBatchPosterEnclaveHashes(enclaveHash);
         }
         revert UnsupportedTeeType();
     }
