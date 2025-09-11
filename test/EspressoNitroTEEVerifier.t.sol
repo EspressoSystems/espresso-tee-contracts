@@ -7,6 +7,7 @@ import {IEspressoNitroTEEVerifier} from "../src/interface/IEspressoNitroTEEVerif
 import "@openzeppelin/contracts/access/Ownable.sol";
 import {CertManager} from "@nitro-validator/CertManager.sol";
 import {ServiceType} from "../src/types/Types.sol";
+
 contract EspressoNitroTEEVerifierTest is Test {
     address proxyAdmin = address(140);
     address adminTEE = address(141);

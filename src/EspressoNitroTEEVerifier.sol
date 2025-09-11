@@ -37,7 +37,7 @@ contract EspressoNitroTEEVerifier is NitroValidator, IEspressoNitroTEEVerifier, 
         Ownable()
     {
         _certManager = certManager;
-        registeredBatchPosterEnclaveHashes[enclaveHash] = true; // TODO: modify this constructor after some review on this. 
+        registeredBatchPosterEnclaveHashes[enclaveHash] = true; // TODO: modify this constructor after some review on this.
         _transferOwnership(msg.sender);
     }
 
@@ -54,6 +54,7 @@ contract EspressoNitroTEEVerifier is NitroValidator, IEspressoNitroTEEVerifier, 
      * @param attestation The attestation from the AWS Nitro Enclave (TEE)
      * @param signature The cryptographic signature over the COSESign1 payload (extracted from the attestation)
      */
+
     function registerBatchPoster(bytes calldata attestation, bytes calldata signature) external {
         Ptrs memory ptrs = validateAttestation(attestation, signature);
         bytes32 pcr0Hash = attestation.keccak(ptrs.pcrs[0]);
@@ -103,8 +104,11 @@ contract EspressoNitroTEEVerifier is NitroValidator, IEspressoNitroTEEVerifier, 
         return verifiedBytes.length > 0;
     }
 
-    function setEnclaveHash(bytes32 enclaveHash, bool valid, ServiceType service) external onlyOwner {
-        if (service == ServiceType.CaffNode){
+    function setEnclaveHash(bytes32 enclaveHash, bool valid, ServiceType service)
+        external
+        onlyOwner
+    {
+        if (service == ServiceType.CaffNode) {
             revert Unimplemented();
         }
         registeredBatchPosterEnclaveHashes[enclaveHash] = valid;

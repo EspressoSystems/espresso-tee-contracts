@@ -6,7 +6,7 @@ pragma solidity ^0.8.4;
 /**
  * @notice Enum for representing services that can be registered via the EspressoTEEVerifier contract
  */
-enum ServiceType{
+enum ServiceType {
     BatchPoster,
     CaffNode
 }

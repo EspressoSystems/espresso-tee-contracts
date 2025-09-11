@@ -20,6 +20,7 @@ import {ServiceType, Unimplemented} from "./types/Types.sol";
  * @notice Contains the logic to verify a quote from the TEE and attest on-chain. It uses the V3QuoteVerifier contract
  *         from automata to verify the quote. Along with some additional verification logic.
  */
+
 contract EspressoSGXTEEVerifier is IEspressoSGXTEEVerifier, Ownable2Step {
     using BytesUtils for bytes;
 
@@ -101,6 +102,7 @@ contract EspressoSGXTEEVerifier is IEspressoSGXTEEVerifier, Ownable2Step {
         @param attestation The attestation from the TEE
         @param data which the TEE has attested to
     */
+
     function registerBatchPoster(bytes calldata attestation, bytes calldata data) external {
         // Check that the data length is 20 bytes because an address is 20 bytes
         if (data.length != 20) {
@@ -174,8 +176,11 @@ contract EspressoSGXTEEVerifier is IEspressoSGXTEEVerifier, Ownable2Step {
         success = true;
     }
 
-    function setEnclaveHash(bytes32 enclaveHash, bool valid, ServiceType service) external onlyOwner {
-        if (service == ServiceType.CaffNode){
+    function setEnclaveHash(bytes32 enclaveHash, bool valid, ServiceType service)
+        external
+        onlyOwner
+    {
+        if (service == ServiceType.CaffNode) {
             revert Unimplemented();
         }
         registeredBatchPosterEnclaveHashes[enclaveHash] = valid;
@@ -188,6 +193,7 @@ contract EspressoSGXTEEVerifier is IEspressoSGXTEEVerifier, Ownable2Step {
             emit DeletedRegisteredService(signers[i], ServiceType.BatchPoster);
         }
     }
+
     function deleteRegisteredCaffNodes(address[] memory signers) external onlyOwner {
         for (uint256 i = 0; i < signers.length; i++) {
             delete registeredCaffNodes[signers[i]];

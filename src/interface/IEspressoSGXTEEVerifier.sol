@@ -26,9 +26,7 @@ interface IEspressoSGXTEEVerifier {
     error InvalidQuoteVerifierAddress();
 
     event EnclaveHashSet(bytes32 enclaveHash, bool valid, ServiceType service);
-    event ServiceRegistered(
-        address signer, bytes32 enclaveHash, ServiceType service
-    );
+    event ServiceRegistered(address signer, bytes32 enclaveHash, ServiceType service);
     event DeletedRegisteredService(address signer, ServiceType service);
 
     /*
@@ -71,11 +69,7 @@ interface IEspressoSGXTEEVerifier {
     /*
     * @notice: This function is responsible for setting the validity of enclave hashes in this inner TEEVerifier contract, It will be 
     */
-    function setEnclaveHash(
-        bytes32 enclaveHash,
-        bool valid,
-        ServiceType serviceType
-    ) external;
+    function setEnclaveHash(bytes32 enclaveHash, bool valid, ServiceType serviceType) external;
     /*
     * @notice This function is responsible for removing registered addresses from the list of valid Caff Nodes
     */

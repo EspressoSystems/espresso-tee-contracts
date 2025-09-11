@@ -47,7 +47,9 @@ contract EspressoTEEVerifierTest is Test {
         bytes memory sampleQuote = vm.readFileBinary(inputFile);
         address batchPosterAddress = address(0xe2148eE53c0755215Df69b2616E552154EdC584f);
         bytes memory data = abi.encodePacked(batchPosterAddress);
-        espressoTEEVerifier.registerService(sampleQuote, data, IEspressoTEEVerifier.TeeType.SGX, ServiceType.BatchPoster);
+        espressoTEEVerifier.registerService(
+            sampleQuote, data, IEspressoTEEVerifier.TeeType.SGX, ServiceType.BatchPoster
+        );
     }
 
     function testNitroRegisterService() public {
@@ -71,7 +73,9 @@ contract EspressoTEEVerifierTest is Test {
         address batchPosterAddress = address(0xe2148eE53c0755215Df69b2616E552154EdC584f);
         bytes memory data = abi.encodePacked(batchPosterAddress);
         vm.expectRevert(IEspressoSGXTEEVerifier.InvalidQuote.selector);
-        espressoTEEVerifier.registerService(sampleQuote, data, IEspressoTEEVerifier.TeeType.SGX, ServiceType.BatchPoster);
+        espressoTEEVerifier.registerService(
+            sampleQuote, data, IEspressoTEEVerifier.TeeType.SGX, ServiceType.BatchPoster
+        );
     }
 
     function testSGXRegisteredServices() public {
@@ -80,7 +84,9 @@ contract EspressoTEEVerifierTest is Test {
         bytes memory sampleQuote = vm.readFileBinary(inputFile);
         address batchPosterAddress = address(0xe2148eE53c0755215Df69b2616E552154EdC584f);
         bytes memory data = abi.encodePacked(batchPosterAddress);
-        espressoTEEVerifier.registerService(sampleQuote, data, IEspressoTEEVerifier.TeeType.SGX, ServiceType.BatchPoster);
+        espressoTEEVerifier.registerService(
+            sampleQuote, data, IEspressoTEEVerifier.TeeType.SGX, ServiceType.BatchPoster
+        );
 
         assertEq(
             espressoTEEVerifier.registeredServices(
@@ -106,7 +112,9 @@ contract EspressoTEEVerifierTest is Test {
         );
 
         assertEq(
-            espressoTEEVerifier.registeredServices(signerAddr, IEspressoTEEVerifier.TeeType.NITRO, ServiceType.BatchPoster),
+            espressoTEEVerifier.registeredServices(
+                signerAddr, IEspressoTEEVerifier.TeeType.NITRO, ServiceType.BatchPoster
+            ),
             true
         );
     }
@@ -185,7 +193,9 @@ contract EspressoTEEVerifierTest is Test {
         );
 
         assertEq(
-            espressoTEEVerifier.registeredServices(signerAddr, IEspressoTEEVerifier.TeeType.NITRO, ServiceType.BatchPoster),
+            espressoTEEVerifier.registeredServices(
+                signerAddr, IEspressoTEEVerifier.TeeType.NITRO, ServiceType.BatchPoster
+            ),
             true
         );
 

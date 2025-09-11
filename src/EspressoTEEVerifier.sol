@@ -60,10 +60,13 @@ contract EspressoTEEVerifier is Ownable2Step, IEspressoTEEVerifier {
         which can be any additiona data that is required for registering a signer
         @param teeType The type of TEE
      */
-    function registerService(bytes calldata attestation, bytes calldata data, TeeType teeType, ServiceType service)
-        external
-    {
-        if (service == ServiceType.CaffNode){
+    function registerService(
+        bytes calldata attestation,
+        bytes calldata data,
+        TeeType teeType,
+        ServiceType service
+    ) external {
+        if (service == ServiceType.CaffNode) {
             revert Unimplemented();
         }
 
@@ -84,8 +87,12 @@ contract EspressoTEEVerifier is Ownable2Step, IEspressoTEEVerifier {
      *     @param signer The address of the signer
      *     @param teeType The type of TEE
      */
-    function registeredServices(address signer, TeeType teeType, ServiceType service) external view returns (bool) {
-        if (service == ServiceType.CaffNode){
+    function registeredServices(address signer, TeeType teeType, ServiceType service)
+        external
+        view
+        returns (bool)
+    {
+        if (service == ServiceType.CaffNode) {
             revert Unimplemented();
         }
 
@@ -109,7 +116,7 @@ contract EspressoTEEVerifier is Ownable2Step, IEspressoTEEVerifier {
         view
         returns (bool)
     {
-        if (service == ServiceType.CaffNode){
+        if (service == ServiceType.CaffNode) {
             revert Unimplemented();
         }
 
