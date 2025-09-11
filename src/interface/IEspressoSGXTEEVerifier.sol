@@ -3,7 +3,7 @@ pragma solidity ^0.8.0;
 
 import {Header} from "@automata-network/dcap-attestation/contracts/types/CommonStruct.sol";
 import {EnclaveReport} from "@automata-network/dcap-attestation/contracts/types/V3Structs.sol";
-import "./IEspressoTEEVerifier.sol";
+import "../types/Types.sol";
 
 interface IEspressoSGXTEEVerifier {
     // We only support version 3 for now
@@ -25,23 +25,25 @@ interface IEspressoSGXTEEVerifier {
     // This error is thrown when the quote verifier address is invalid
     error InvalidQuoteVerifierAddress();
 
-    event EnclaveHashSet(bytes32 enclaveHash, bool valid, IEspressoTEEVerifier.ServiceType service);
+    event EnclaveHashSet(bytes32 enclaveHash, bool valid, ServiceType service);
     event ServiceRegistered(
-        address signer, bytes32 enclaveHash, IEspressoTEEVerifier.ServiceType service
+        address signer, bytes32 enclaveHash, ServiceType service
     );
-    event DeletedRegisteredService(address signer, IEspressoTEEVerifier.ServiceType service);
+    event DeletedRegisteredService(address signer, ServiceType service);
 
     /*
     * @notice This function is for checking the registration status of Intel SGX TEE Batch Posters and is a helper function for the EspressoTEEVerifier
     */
-    function registeredBatchPoster(address signer) external view returns (bool);
+    function registeredBatchPosters(address signer) external view returns (bool);
 
     /*
     * @notice This function is for checking the registration status of Intel SGX TEE Caff Nodes and is a helper function for the EspressoTEEVerifier
     */
-    function registeredCaffNode(address signer) external view returns (bool);
+    function registeredCaffNodes(address signer) external view returns (bool);
 
-    function registeredEnclaveHash(bytes32 enclaveHash) external view returns (bool);
+    function registeredBatchPosterEnclaveHashes(bytes32 enclaveHash) external view returns (bool);
+
+    function registeredCaffNodeEnclaveHashes(bytes32 enclaveHash) external view returns (bool);
 
     /*
     * @notice This function is for registering Intel SGX TEE Batch Posters and is a helper function for the EspressoTEEVerifier
@@ -72,7 +74,7 @@ interface IEspressoSGXTEEVerifier {
     function setEnclaveHash(
         bytes32 enclaveHash,
         bool valid,
-        IEspressoTEEVerifier.ServiceType serviceType
+        ServiceType serviceType
     ) external;
     /*
     * @notice This function is responsible for removing registered addresses from the list of valid Caff Nodes

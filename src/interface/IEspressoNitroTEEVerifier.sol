@@ -1,30 +1,33 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "./IEspressoTEEVerifier.sol";
+import "../types/Types.sol";
 
 interface IEspressoNitroTEEVerifier {
     // This error is thrown when the PCR0 values don't match
     error InvalidAWSEnclaveHash();
 
-    event AWSEnclaveHashSet(
-        bytes32 enclaveHash, bool valid, IEspressoTEEVerifier.ServiceType service
+    event AWSServiceEnclaveHashSet(
+        bytes32 enclaveHash, bool valid, ServiceType service
     );
     event AWSServiceRegistered(
-        address signer, bytes32 enclaveHash, IEspressoTEEVerifier.ServiceType service
+        address signer, bytes32 enclaveHash, ServiceType service
     );
-    event DeletedAWSRegisteredService(address signer, IEspressoTEEVerifier.ServiceType service);
+    event DeletedAWSRegisteredService(address signer, ServiceType service);
 
     /*
     * @notice This function is for checking the registration status of AWS Nitro TEE Caff Nodes and is a helper function for the EspressoTEEVerifier
     */
-    function registeredCaffNode(address signer) external view returns (bool);
+    function registeredCaffNodes(address signer) external view returns (bool);
 
     /*
     * @notice This function is for checking the registration status of AWS Nitro TEE Batch Posters and is a helper function for the EspressoTEEVerifier
     */
-    function registeredBatchPoster(address signer) external view returns (bool);
-    function registeredEnclaveHash(bytes32 enclaveHash) external view returns (bool);
+    function registeredBatchPosters(address signer) external view returns (bool);
+
+    function registeredBatchPosterEnclaveHashes(bytes32 enclaveHash) external view returns (bool);
+
+    function registeredCaffNodeEnclaveHashes(bytes32 enclaveHash) external view returns (bool);
 
     /*
     * @notice This function is for registering AWS Nitro TEE Caff Nodes and is a helper function for the EspressoTEEVerifier
@@ -43,7 +46,7 @@ interface IEspressoNitroTEEVerifier {
     function setEnclaveHash(
         bytes32 enclaveHash,
         bool valid,
-        IEspressoTEEVerifier.ServiceType service
+        ServiceType service
     ) external;
     /*
     * @notice This function is responsible for removing registered addresses from the list of valid Caff Nodes

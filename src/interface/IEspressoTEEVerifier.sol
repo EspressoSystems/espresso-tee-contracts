@@ -3,6 +3,7 @@ pragma solidity ^0.8.0;
 
 import {IEspressoSGXTEEVerifier} from "./IEspressoSGXTEEVerifier.sol";
 import {IEspressoNitroTEEVerifier} from "./IEspressoNitroTEEVerifier.sol";
+import {ServiceType} from "../types/Types.sol";
 
 interface IEspressoTEEVerifier {
     /**
@@ -12,13 +13,6 @@ interface IEspressoTEEVerifier {
         SGX,
         NITRO
     }
-    /**
-     * @notice Enum for representing services that can be registered via the EspressoTEEVerifier contract
-     */
-    enum ServiceType {
-        BatchPoster,
-        CaffNode
-    }
     // This error is thrown when the signature is invalid
 
     error InvalidSignature();
@@ -26,6 +20,8 @@ interface IEspressoTEEVerifier {
     error UnsupportedTeeType();
     // This error is thrown when the ServiceType enum provided to a method is unsupported for that method.
     error UnsupportedServiceType();
+    // This Error is for implementing function stubs during development. TODO: remove before release
+    error Unimplemented();
 
     // Get address of Nitro TEE Verifier
     function espressoNitroTEEVerifier() external view returns (IEspressoNitroTEEVerifier);
@@ -49,7 +45,7 @@ interface IEspressoTEEVerifier {
     ) external;
 
     // Function to retrieve whether a service is registered or not
-    function registeredService(address signer, TeeType teeType, ServiceType serviceType)
+    function registeredServices(address signer, TeeType teeType, ServiceType serviceType)
         external
         view
         returns (bool);
