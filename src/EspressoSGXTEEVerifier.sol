@@ -95,7 +95,30 @@ contract EspressoSGXTEEVerifier is IEspressoSGXTEEVerifier, Ownable2Step {
         @param data which the TEE has attested to
     */
     function registerCaffNode(bytes calldata attestation, bytes calldata data) external {
-        revert Unimplemented();
+        // Check that the data length is 20 bytes because an address is 20 bytes
+        if (data.length != 20) {
+            revert InvalidDataLength();
+        }
+
+        bytes32 signerAddressHash = keccak256(data);
+
+        EnclaveReport memory localReport = verify(attestation, signerAddressHash);
+
+        if (localReport.reportData.length < 20) {
+            revert ReportDataTooShort();
+        }
+
+        address signer = address(uint160(bytes20(data[:20])));
+
+        // Check if the extracted address is valid
+        if (signer == address(0)) {
+            revert InvalidSignerAddress(); // Custom revert if the address is invalid
+        }
+        // Mark the signer as registered
+        if (!registeredCaffNodes[signer]) {
+            registeredCaffNodes[signer] = true;
+            emit ServiceRegistered(signer, localReport.mrEnclave, ServiceType.CaffNode);
+        }
     }
     /*
         @notice Register a new Batch Poster by verifying a quote from the TEE
@@ -180,10 +203,11 @@ contract EspressoSGXTEEVerifier is IEspressoSGXTEEVerifier, Ownable2Step {
         external
         onlyOwner
     {
-        if (service == ServiceType.CaffNode) {
-            revert Unimplemented();
+        if (service == ServiceType.BatchPoster) {
+            registeredBatchPosterEnclaveHashes[enclaveHash] = valid;
+        } else if (service == ServiceType.CaffNode){
+            registeredBatchPosterEnclaveHashes[enclaveHash] = valid;
         }
-        registeredBatchPosterEnclaveHashes[enclaveHash] = valid;
         emit EnclaveHashSet(enclaveHash, valid, ServiceType.BatchPoster);
     }
 

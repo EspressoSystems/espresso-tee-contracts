@@ -7,7 +7,7 @@ import {LibCborElement, CborElement, CborDecode} from "@nitro-validator/CborDeco
 import {CertManager} from "@nitro-validator/CertManager.sol";
 import "@openzeppelin/contracts/access/Ownable2Step.sol";
 import {IEspressoNitroTEEVerifier} from "./interface/IEspressoNitroTEEVerifier.sol";
-import {ServiceType, Unimplemented} from "./types/Types.sol";
+import {ServiceType, UnsupportedServiceType} from "./types/Types.sol";
 
 /**
  * @title  Verifies quotes from the AWS Nitro Enclave (TEE) and attests on-chain
@@ -47,7 +47,25 @@ contract EspressoNitroTEEVerifier is NitroValidator, IEspressoNitroTEEVerifier, 
      * @param signature The cryptographic signature over the COSESign1 payload (extracted from the attestation)
      */
     function registerCaffNode(bytes calldata attestation, bytes calldata signature) external {
-        revert Unimplemented();
+        Ptrs memory ptrs = validateAttestation(attestation, signature);
+        bytes32 pcr0Hash = attestation.keccak(ptrs.pcrs[0]);
+        if (!registeredCaffNodeEnclaveHashes[pcr0Hash]) {
+            revert InvalidAWSEnclaveHash();
+        }
+        // The publicKey's first byte 0x04 byte followed which only determine if the public key is compressed or not.
+        // so we ignore the first byte.
+        bytes32 publicKeyHash =
+            attestation.keccak(ptrs.publicKey.start() + 1, ptrs.publicKey.length() - 1);
+
+        // Note: We take the keccak hash first to derive the address.
+        // This is the same which the go ethereum crypto library is doing for PubkeyToAddress()
+        address enclaveAddress = address(uint160(uint256(publicKeyHash)));
+
+        // Mark the signer as registered
+        if (!registeredCaffNodes[enclaveAddress]) {
+            registeredCaffNodes[enclaveAddress] = true;
+            emit AWSServiceRegistered(enclaveAddress, pcr0Hash, ServiceType.CaffNode);
+        }
     }
     /**
      * @notice This function registers a new Batch Poster by verifying an attestation from the AWS Nitro Enclave (TEE)
@@ -108,10 +126,13 @@ contract EspressoNitroTEEVerifier is NitroValidator, IEspressoNitroTEEVerifier, 
         external
         onlyOwner
     {
-        if (service == ServiceType.CaffNode) {
-            revert Unimplemented();
+        if (service == ServiceType.BatchPoster){
+            registeredBatchPosterEnclaveHashes[enclaveHash] = valid;
+        } else if (service == ServiceType.CaffNode) {
+            registeredCaffNodeEnclaveHashes[enclaveHash] = valid;
+        } else {
+            revert UnsupportedServiceType();
         }
-        registeredBatchPosterEnclaveHashes[enclaveHash] = valid;
         emit AWSServiceEnclaveHashSet(enclaveHash, valid, ServiceType.BatchPoster);
     }
 
