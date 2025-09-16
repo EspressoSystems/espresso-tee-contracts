@@ -140,7 +140,7 @@ contract EspressoTEEVerifier is Ownable2Step, IEspressoTEEVerifier {
     *          registered services; Namely, this handles the batch posters.
     *
     */
-    function checkRegisteredBatchPosters(address signer, TeeType teeType) public returns(bool){
+    function checkRegisteredBatchPosters(address signer, TeeType teeType) public view returns(bool){
 
         if (teeType == TeeType.SGX) {
             if (!espressoSGXTEEVerifier.registeredBatchPosters(signer)) {
@@ -163,7 +163,7 @@ contract EspressoTEEVerifier is Ownable2Step, IEspressoTEEVerifier {
     *          registered services; Namely, this handles the caff nodes.
     *
     */
-    function checkRegisteredCaffNodes(address signer, TeeType teeType) public returns(bool){
+    function checkRegisteredCaffNodes(address signer, TeeType teeType) public view returns(bool){
 
         if (teeType == TeeType.SGX) {
             if (!espressoSGXTEEVerifier.registeredCaffNodes(signer)) {
