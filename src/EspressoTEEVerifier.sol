@@ -39,9 +39,9 @@ contract EspressoTEEVerifier is Ownable2Step, IEspressoTEEVerifier {
         address signer = ECDSA.recover(userDataHash, signature);
 
         if (service == ServiceType.BatchPoster){
-            checkRegisteredBatchPosters(signer, teeType);
+            return checkRegisteredBatchPosters(signer, teeType);
         } else if (service == ServiceType.CaffNode){
-            checkRegisteredCaffNodes(signer, teeType);
+            return checkRegisteredCaffNodes(signer, teeType);
         } else {
             revert UnsupportedServiceType();
         }
@@ -84,9 +84,9 @@ contract EspressoTEEVerifier is Ownable2Step, IEspressoTEEVerifier {
         returns (bool)
     {
         if (service == ServiceType.BatchPoster){
-            checkRegisteredBatchPosters(signer, teeType);
+            return checkRegisteredBatchPosters(signer, teeType);
         } else if (service == ServiceType.CaffNode){
-            checkRegisteredCaffNodes(signer, teeType);
+            return checkRegisteredCaffNodes(signer, teeType);
         } else {
             revert UnsupportedServiceType();
         }
@@ -104,9 +104,9 @@ contract EspressoTEEVerifier is Ownable2Step, IEspressoTEEVerifier {
         returns (bool)
     {
         if (service == ServiceType.BatchPoster){
-            registeredBatchPosterEnclaveHashes(enclaveHash, teeType);
+            return registeredBatchPosterEnclaveHashes(enclaveHash, teeType);
         } else if (service == ServiceType.CaffNode){
-            registeredCaffNodeEnclaveHashes(enclaveHash, teeType);
+            return registeredCaffNodeEnclaveHashes(enclaveHash, teeType);
         } else {
             revert UnsupportedServiceType();
         }
