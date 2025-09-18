@@ -52,7 +52,7 @@ interface IEspressoSGXTEEVerifier {
     */
     function registerCaffNode(bytes calldata attestation, bytes calldata data) external;
 
-    function verify(bytes calldata rawQuote, bytes32 reportDataHash)
+    function verify(bytes calldata rawQuote, bytes32 reportDataHash, ServiceType service)
         external
         view
         returns (EnclaveReport memory);

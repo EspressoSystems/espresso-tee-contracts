@@ -13,7 +13,7 @@ import {EnclaveReport} from "@automata-network/dcap-attestation/contracts/types/
 import {BytesUtils} from "@automata-network/dcap-attestation/contracts/utils/BytesUtils.sol";
 import "@openzeppelin/contracts/access/Ownable2Step.sol";
 import {IEspressoSGXTEEVerifier} from "./interface/IEspressoSGXTEEVerifier.sol";
-import {ServiceType, Unimplemented} from "./types/Types.sol";
+import {ServiceType, UnsupportedServiceType} from "./types/Types.sol";
 /**
  *
  * @title  Verifies quotes from the TEE and attests on-chain
@@ -46,8 +46,9 @@ contract EspressoSGXTEEVerifier is IEspressoSGXTEEVerifier, Ownable2Step {
         The verification is considered successful if the function does not revert.
         @param rawQuote The quote from the TEE
         @param reportDataHash The hash of the report data
+        @param service an enum representing the service type to verify with a specific enclave hash mapping.
     */
-    function verify(bytes calldata rawQuote, bytes32 reportDataHash)
+    function verify(bytes calldata rawQuote, bytes32 reportDataHash, ServiceType service)
         public
         view
         returns (EnclaveReport memory)
@@ -76,8 +77,16 @@ contract EspressoSGXTEEVerifier is IEspressoSGXTEEVerifier, Ownable2Step {
 
         // Check that mrEnclave match
         // For now just check for batch posters as this is all we would be using verify with. TODO: Figure out how to properly handle this function going forward.
-        if (!registeredBatchPosterEnclaveHashes[localReport.mrEnclave]) {
-            revert InvalidEnclaveHash();
+        if (service == ServiceType.BatchPoster){ 
+            if (!registeredBatchPosterEnclaveHashes[localReport.mrEnclave]) {
+                revert InvalidEnclaveHash();
+            }
+        } else if (service == ServiceType.CaffNode){        
+            if (!registeredCaffNodeEnclaveHashes[localReport.mrEnclave]) {
+                revert InvalidEnclaveHash();
+            }
+        } else{
+            revert UnsupportedServiceType();
         }
 
         //  Verify that the reportDataHash if the hash signed by the TEE
@@ -102,7 +111,7 @@ contract EspressoSGXTEEVerifier is IEspressoSGXTEEVerifier, Ownable2Step {
 
         bytes32 signerAddressHash = keccak256(data);
 
-        EnclaveReport memory localReport = verify(attestation, signerAddressHash);
+        EnclaveReport memory localReport = verify(attestation, signerAddressHash, ServiceType.CaffNode);
 
         if (localReport.reportData.length < 20) {
             revert ReportDataTooShort();
@@ -134,7 +143,7 @@ contract EspressoSGXTEEVerifier is IEspressoSGXTEEVerifier, Ownable2Step {
 
         bytes32 signerAddressHash = keccak256(data);
 
-        EnclaveReport memory localReport = verify(attestation, signerAddressHash);
+        EnclaveReport memory localReport = verify(attestation, signerAddressHash, ServiceType.BatchPoster);
 
         if (localReport.reportData.length < 20) {
             revert ReportDataTooShort();
@@ -205,10 +214,11 @@ contract EspressoSGXTEEVerifier is IEspressoSGXTEEVerifier, Ownable2Step {
     {
         if (service == ServiceType.BatchPoster) {
             registeredBatchPosterEnclaveHashes[enclaveHash] = valid;
+            emit EnclaveHashSet(enclaveHash, valid, ServiceType.BatchPoster);
         } else if (service == ServiceType.CaffNode){
-            registeredBatchPosterEnclaveHashes[enclaveHash] = valid;
+            registeredCaffNodeEnclaveHashes[enclaveHash] = valid;
+            emit EnclaveHashSet(enclaveHash, valid, ServiceType.CaffNode);
         }
-        emit EnclaveHashSet(enclaveHash, valid, ServiceType.BatchPoster);
     }
 
     function deleteRegisteredBatchPosters(address[] memory signers) external onlyOwner {

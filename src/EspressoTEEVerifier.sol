@@ -68,7 +68,7 @@ contract EspressoTEEVerifier is Ownable2Step, IEspressoTEEVerifier {
         } else if (service == ServiceType.CaffNode) {
             registerCaffNodeHelper(verificationData, data, teeType);
             return;
-        } else{
+        } else {
             revert UnsupportedServiceType();
         }
     }
@@ -144,14 +144,14 @@ contract EspressoTEEVerifier is Ownable2Step, IEspressoTEEVerifier {
 
         if (teeType == TeeType.SGX) {
             if (!espressoSGXTEEVerifier.registeredBatchPosters(signer)) {
-                revert InvalidSignature();
+                return false;
             }
             return true;
         }
 
         if (teeType == TeeType.NITRO) {
             if (!espressoNitroTEEVerifier.registeredBatchPosters(signer)) {
-                revert InvalidSignature();
+                return false;
             }
             return true;
         }
@@ -167,14 +167,14 @@ contract EspressoTEEVerifier is Ownable2Step, IEspressoTEEVerifier {
 
         if (teeType == TeeType.SGX) {
             if (!espressoSGXTEEVerifier.registeredCaffNodes(signer)) {
-                revert InvalidSignature();
+                return false;
             }
             return true;
         }
 
         if (teeType == TeeType.NITRO) {
             if (!espressoNitroTEEVerifier.registeredCaffNodes(signer)) {
-                revert InvalidSignature();
+                return false;
             }
             return true;
         }
@@ -206,6 +206,7 @@ contract EspressoTEEVerifier is Ownable2Step, IEspressoTEEVerifier {
 
         if (teeType == TeeType.NITRO) {
             espressoNitroTEEVerifier.registerCaffNode(verificationData, data);
+            return;
         }
         revert UnsupportedTeeType();
     }
