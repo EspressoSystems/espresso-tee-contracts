@@ -130,7 +130,7 @@ contract EspressoSGXTEEVerifierTest is Test {
         string memory quotePath = "/test/configs/attestation.bin";
         string memory inputFile = string.concat(vm.projectRoot(), quotePath);
         bytes memory sampleQuote = vm.readFileBinary(inputFile);
-        espressoSGXTEEVerifier.verify(sampleQuote, reportDataHash);
+        espressoSGXTEEVerifier.verify(sampleQuote, reportDataHash, ServiceType.BatchPoster);
         vm.stopPrank();
     }
 
@@ -142,7 +142,7 @@ contract EspressoSGXTEEVerifierTest is Test {
         string memory inputFile = string.concat(vm.projectRoot(), quotePath);
         bytes memory invalidQuote = vm.readFileBinary(inputFile);
         vm.expectRevert(IEspressoSGXTEEVerifier.InvalidHeaderVersion.selector);
-        espressoSGXTEEVerifier.verify(invalidQuote, reportDataHash);
+        espressoSGXTEEVerifier.verify(invalidQuote, reportDataHash, ServiceType.BatchPoster);
     }
 
     /**
@@ -153,7 +153,7 @@ contract EspressoSGXTEEVerifierTest is Test {
         string memory inputFile = string.concat(vm.projectRoot(), quotePath);
         bytes memory invalidQuote = vm.readFileBinary(inputFile);
         vm.expectRevert(IEspressoSGXTEEVerifier.InvalidQuote.selector);
-        espressoSGXTEEVerifier.verify(invalidQuote, reportDataHash);
+        espressoSGXTEEVerifier.verify(invalidQuote, reportDataHash, ServiceType.BatchPoster);
     }
 
     /**
@@ -165,13 +165,13 @@ contract EspressoSGXTEEVerifierTest is Test {
         string memory inputFile = string.concat(vm.projectRoot(), quotePath);
         bytes memory sampleQuote = vm.readFileBinary(inputFile);
         vm.expectRevert(IEspressoSGXTEEVerifier.InvalidReportDataHash.selector);
-        espressoSGXTEEVerifier.verify(sampleQuote, bytes32(0));
+        espressoSGXTEEVerifier.verify(sampleQuote, bytes32(0), ServiceType.BatchPoster);
     }
 
     function testVerifyQuoteEmptyRawQuote() public {
         bytes memory sampleQuote = hex"";
         vm.expectRevert();
-        espressoSGXTEEVerifier.verify(sampleQuote, reportDataHash);
+        espressoSGXTEEVerifier.verify(sampleQuote, reportDataHash, ServiceType.BatchPoster);
     }
 
     function testVerifyQuoteEmptyReportDataHash() public {
@@ -179,7 +179,7 @@ contract EspressoSGXTEEVerifierTest is Test {
         string memory inputFile = string.concat(vm.projectRoot(), quotePath);
         bytes memory sampleQuote = vm.readFileBinary(inputFile);
         vm.expectRevert();
-        espressoSGXTEEVerifier.verify(sampleQuote, bytes32(0));
+        espressoSGXTEEVerifier.verify(sampleQuote, bytes32(0), ServiceType.BatchPoster);
     }
     /**
      * Test verify quote reverts if incorrect enclaveHash is passed
@@ -194,7 +194,7 @@ contract EspressoSGXTEEVerifierTest is Test {
             bytes32(0x51dfe95acffa8a4075b716257c836895af9202a5fd56c8c2208dacb79c659ff1);
         espressoSGXTEEVerifier = new EspressoSGXTEEVerifier(incorrectMrEnclave, v3QuoteVerifier);
         vm.expectRevert(IEspressoSGXTEEVerifier.InvalidEnclaveHash.selector);
-        espressoSGXTEEVerifier.verify(sampleQuote, reportDataHash);
+        espressoSGXTEEVerifier.verify(sampleQuote, reportDataHash, ServiceType.BatchPoster);
     }
 
     function testSetEnclaveHash() public {
