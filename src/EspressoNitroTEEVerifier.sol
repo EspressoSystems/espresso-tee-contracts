@@ -22,6 +22,7 @@ contract EspressoNitroTEEVerifier is NitroValidator, IEspressoNitroTEEVerifier, 
     using LibBytes for bytes;
     using LibCborElement for CborElement;
     // PCR0 keccak hash for batch posters
+
     mapping(bytes32 => bool) public registeredBatchPosterEnclaveHashes;
     mapping(bytes32 => bool) public registeredCaffNodeEnclaveHashes;
     // Registered Caff Nodes
@@ -125,7 +126,7 @@ contract EspressoNitroTEEVerifier is NitroValidator, IEspressoNitroTEEVerifier, 
         external
         onlyOwner
     {
-        if (service == ServiceType.BatchPoster){
+        if (service == ServiceType.BatchPoster) {
             registeredBatchPosterEnclaveHashes[enclaveHash] = valid;
             emit AWSServiceEnclaveHashSet(enclaveHash, valid, ServiceType.BatchPoster);
         } else if (service == ServiceType.CaffNode) {

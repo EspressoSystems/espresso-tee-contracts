@@ -30,10 +30,12 @@ interface IEspressoTEEVerifier {
     function espressoSGXTEEVerifier() external view returns (IEspressoSGXTEEVerifier);
 
     // Function to verify the signature of the user data is from a registered signer
-    function verify(bytes memory signature, bytes32 userDataHash, TeeType teeType, ServiceType service)
-        external
-        view
-        returns (bool);
+    function verify(
+        bytes memory signature,
+        bytes32 userDataHash,
+        TeeType teeType,
+        ServiceType service
+    ) external view returns (bool);
 
     // Function to register a service which has been attested by a TEE or Attestation Verifier
     // This function can has succeeded if it does not revert.

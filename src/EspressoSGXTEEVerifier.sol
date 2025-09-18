@@ -77,15 +77,15 @@ contract EspressoSGXTEEVerifier is IEspressoSGXTEEVerifier, Ownable2Step {
 
         // Check that mrEnclave match
         // For now just check for batch posters as this is all we would be using verify with. TODO: Figure out how to properly handle this function going forward.
-        if (service == ServiceType.BatchPoster){ 
+        if (service == ServiceType.BatchPoster) {
             if (!registeredBatchPosterEnclaveHashes[localReport.mrEnclave]) {
                 revert InvalidEnclaveHash();
             }
-        } else if (service == ServiceType.CaffNode){        
+        } else if (service == ServiceType.CaffNode) {
             if (!registeredCaffNodeEnclaveHashes[localReport.mrEnclave]) {
                 revert InvalidEnclaveHash();
             }
-        } else{
+        } else {
             revert UnsupportedServiceType();
         }
 
@@ -111,7 +111,8 @@ contract EspressoSGXTEEVerifier is IEspressoSGXTEEVerifier, Ownable2Step {
 
         bytes32 signerAddressHash = keccak256(data);
 
-        EnclaveReport memory localReport = verify(attestation, signerAddressHash, ServiceType.CaffNode);
+        EnclaveReport memory localReport =
+            verify(attestation, signerAddressHash, ServiceType.CaffNode);
 
         if (localReport.reportData.length < 20) {
             revert ReportDataTooShort();
@@ -143,7 +144,8 @@ contract EspressoSGXTEEVerifier is IEspressoSGXTEEVerifier, Ownable2Step {
 
         bytes32 signerAddressHash = keccak256(data);
 
-        EnclaveReport memory localReport = verify(attestation, signerAddressHash, ServiceType.BatchPoster);
+        EnclaveReport memory localReport =
+            verify(attestation, signerAddressHash, ServiceType.BatchPoster);
 
         if (localReport.reportData.length < 20) {
             revert ReportDataTooShort();
@@ -215,7 +217,7 @@ contract EspressoSGXTEEVerifier is IEspressoSGXTEEVerifier, Ownable2Step {
         if (service == ServiceType.BatchPoster) {
             registeredBatchPosterEnclaveHashes[enclaveHash] = valid;
             emit EnclaveHashSet(enclaveHash, valid, ServiceType.BatchPoster);
-        } else if (service == ServiceType.CaffNode){
+        } else if (service == ServiceType.CaffNode) {
             registeredCaffNodeEnclaveHashes[enclaveHash] = valid;
             emit EnclaveHashSet(enclaveHash, valid, ServiceType.CaffNode);
         }
