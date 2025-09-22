@@ -144,17 +144,11 @@ contract EspressoTEEVerifier is Ownable2Step, IEspressoTEEVerifier {
         returns (bool)
     {
         if (teeType == TeeType.SGX) {
-            if (!espressoSGXTEEVerifier.registeredBatchPosters(signer)) {
-                return false;
-            }
-            return true;
-        }
-
-        if (teeType == TeeType.NITRO) {
-            if (!espressoNitroTEEVerifier.registeredBatchPosters(signer)) {
-                return false;
-            }
-            return true;
+            return espressoSGXTEEVerifier.registeredBatchPosters(signer);
+        } else if (teeType == TeeType.NITRO) {
+            return espressoNitroTEEVerifier.registeredBatchPosters(signer);
+        }else {
+            revert UnsupportedTeeType();
         }
     }
 
@@ -165,17 +159,11 @@ contract EspressoTEEVerifier is Ownable2Step, IEspressoTEEVerifier {
     */
     function checkRegisteredCaffNodes(address signer, TeeType teeType) public view returns (bool) {
         if (teeType == TeeType.SGX) {
-            if (!espressoSGXTEEVerifier.registeredCaffNodes(signer)) {
-                return false;
-            }
-            return true;
-        }
-
-        if (teeType == TeeType.NITRO) {
-            if (!espressoNitroTEEVerifier.registeredCaffNodes(signer)) {
-                return false;
-            }
-            return true;
+            return espressoSGXTEEVerifier.registeredCaffNodes(signer);
+        } else if (teeType == TeeType.NITRO) {
+            return espressoNitroTEEVerifier.registeredCaffNodes(signer);
+        } else{
+            revert UnsupportedTeeType();
         }
     }
 
@@ -185,13 +173,11 @@ contract EspressoTEEVerifier is Ownable2Step, IEspressoTEEVerifier {
         TeeType teeType
     ) private {
         if (teeType == TeeType.SGX) {
-            espressoSGXTEEVerifier.registerBatchPoster(verificationData, data);
-            return;
+            return espressoSGXTEEVerifier.registerBatchPoster(verificationData, data);
         }
 
         if (teeType == TeeType.NITRO) {
-            espressoNitroTEEVerifier.registerBatchPoster(verificationData, data);
-            return;
+            return espressoNitroTEEVerifier.registerBatchPoster(verificationData, data);
         }
         revert UnsupportedTeeType();
     }
@@ -202,13 +188,11 @@ contract EspressoTEEVerifier is Ownable2Step, IEspressoTEEVerifier {
         TeeType teeType
     ) private {
         if (teeType == TeeType.SGX) {
-            espressoSGXTEEVerifier.registerCaffNode(verificationData, data);
-            return;
+            return espressoSGXTEEVerifier.registerCaffNode(verificationData, data);
         }
 
         if (teeType == TeeType.NITRO) {
-            espressoNitroTEEVerifier.registerCaffNode(verificationData, data);
-            return;
+            return espressoNitroTEEVerifier.registerCaffNode(verificationData, data);
         }
         revert UnsupportedTeeType();
     }
