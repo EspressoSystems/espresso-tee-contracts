@@ -79,11 +79,11 @@ contract EspressoSGXTEEVerifier is IEspressoSGXTEEVerifier, Ownable2Step {
         // For now just check for batch posters as this is all we would be using verify with. TODO: Figure out how to properly handle this function going forward.
         if (service == ServiceType.BatchPoster) {
             if (!registeredBatchPosterEnclaveHashes[localReport.mrEnclave]) {
-                revert InvalidEnclaveHash();
+                revert InvalidEnclaveHash(localReport.mrEnclave);
             }
         } else if (service == ServiceType.CaffNode) {
             if (!registeredCaffNodeEnclaveHashes[localReport.mrEnclave]) {
-                revert InvalidEnclaveHash();
+                revert InvalidEnclaveHash(localReport.mrEnclave);
             }
         } else {
             revert UnsupportedServiceType();
@@ -127,7 +127,7 @@ contract EspressoSGXTEEVerifier is IEspressoSGXTEEVerifier, Ownable2Step {
         // Mark the signer as registered
         if (!registeredCaffNodes[signer]) {
             registeredCaffNodes[signer] = true;
-            emit ServiceRegistered(signer, localReport.mrEnclave, ServiceType.CaffNode);
+            emit SGXServiceRegistered(signer, localReport.mrEnclave, ServiceType.CaffNode);
         }
     }
     /*
@@ -160,7 +160,7 @@ contract EspressoSGXTEEVerifier is IEspressoSGXTEEVerifier, Ownable2Step {
         // Mark the signer as registered
         if (!registeredBatchPosters[signer]) {
             registeredBatchPosters[signer] = true;
-            emit ServiceRegistered(signer, localReport.mrEnclave, ServiceType.BatchPoster);
+            emit SGXServiceRegistered(signer, localReport.mrEnclave, ServiceType.BatchPoster);
         }
     }
 
@@ -220,6 +220,8 @@ contract EspressoSGXTEEVerifier is IEspressoSGXTEEVerifier, Ownable2Step {
         } else if (service == ServiceType.CaffNode) {
             registeredCaffNodeEnclaveHashes[enclaveHash] = valid;
             emit EnclaveHashSet(enclaveHash, valid, ServiceType.CaffNode);
+        } else{
+            revert UnsupportedServiceType();
         }
     }
 

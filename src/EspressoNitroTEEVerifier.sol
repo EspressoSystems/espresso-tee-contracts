@@ -50,7 +50,7 @@ contract EspressoNitroTEEVerifier is NitroValidator, IEspressoNitroTEEVerifier, 
         Ptrs memory ptrs = validateAttestation(attestation, signature);
         bytes32 pcr0Hash = attestation.keccak(ptrs.pcrs[0]);
         if (!registeredCaffNodeEnclaveHashes[pcr0Hash]) {
-            revert InvalidAWSEnclaveHash();
+            revert InvalidAWSEnclaveHash(pcr0Hash);
         }
         // The publicKey's first byte 0x04 byte followed which only determine if the public key is compressed or not.
         // so we ignore the first byte.
@@ -64,7 +64,7 @@ contract EspressoNitroTEEVerifier is NitroValidator, IEspressoNitroTEEVerifier, 
         // Mark the signer as registered
         if (!registeredCaffNodes[enclaveAddress]) {
             registeredCaffNodes[enclaveAddress] = true;
-            emit AWSServiceRegistered(enclaveAddress, pcr0Hash, ServiceType.CaffNode);
+            emit AWSNitroServiceRegistered(enclaveAddress, pcr0Hash, ServiceType.CaffNode);
         }
     }
     /**
@@ -77,7 +77,7 @@ contract EspressoNitroTEEVerifier is NitroValidator, IEspressoNitroTEEVerifier, 
         Ptrs memory ptrs = validateAttestation(attestation, signature);
         bytes32 pcr0Hash = attestation.keccak(ptrs.pcrs[0]);
         if (!registeredBatchPosterEnclaveHashes[pcr0Hash]) {
-            revert InvalidAWSEnclaveHash();
+            revert InvalidAWSEnclaveHash(pcr0Hash);
         }
         // The publicKey's first byte 0x04 byte followed which only determine if the public key is compressed or not.
         // so we ignore the first byte.
@@ -91,7 +91,7 @@ contract EspressoNitroTEEVerifier is NitroValidator, IEspressoNitroTEEVerifier, 
         // Mark the signer as registered
         if (!registeredBatchPosters[enclaveAddress]) {
             registeredBatchPosters[enclaveAddress] = true;
-            emit AWSServiceRegistered(enclaveAddress, pcr0Hash, ServiceType.BatchPoster);
+            emit AWSNitroServiceRegistered(enclaveAddress, pcr0Hash, ServiceType.BatchPoster);
         }
     }
 
