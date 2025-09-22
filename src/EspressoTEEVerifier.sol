@@ -147,7 +147,7 @@ contract EspressoTEEVerifier is Ownable2Step, IEspressoTEEVerifier {
             return espressoSGXTEEVerifier.registeredBatchPosters(signer);
         } else if (teeType == TeeType.NITRO) {
             return espressoNitroTEEVerifier.registeredBatchPosters(signer);
-        }else {
+        } else {
             revert UnsupportedTeeType();
         }
     }
@@ -162,7 +162,7 @@ contract EspressoTEEVerifier is Ownable2Step, IEspressoTEEVerifier {
             return espressoSGXTEEVerifier.registeredCaffNodes(signer);
         } else if (teeType == TeeType.NITRO) {
             return espressoNitroTEEVerifier.registeredCaffNodes(signer);
-        } else{
+        } else {
             revert UnsupportedTeeType();
         }
     }

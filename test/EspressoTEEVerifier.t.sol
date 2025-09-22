@@ -61,10 +61,18 @@ contract EspressoTEEVerifierTest is Test {
     ) internal {
         // Test registering the caff node
         // At this point the Caff node enclave hash is not registered so this should fail
-        if (tee == IEspressoTEEVerifier.TeeType.NITRO){
-            vm.expectRevert(abi.encodeWithSelector(IEspressoNitroTEEVerifier.InvalidAWSEnclaveHash.selector, pcr0Hash));
-        } else if (tee == IEspressoTEEVerifier.TeeType.SGX){
-            vm.expectRevert(abi.encodeWithSelector(IEspressoSGXTEEVerifier.InvalidEnclaveHash.selector, enclaveHash));
+        if (tee == IEspressoTEEVerifier.TeeType.NITRO) {
+            vm.expectRevert(
+                abi.encodeWithSelector(
+                    IEspressoNitroTEEVerifier.InvalidAWSEnclaveHash.selector, pcr0Hash
+                )
+            );
+        } else if (tee == IEspressoTEEVerifier.TeeType.SGX) {
+            vm.expectRevert(
+                abi.encodeWithSelector(
+                    IEspressoSGXTEEVerifier.InvalidEnclaveHash.selector, enclaveHash
+                )
+            );
         } // Add more cases here if we support more TEE's
         espressoTEEVerifier.registerService(sampleQuote, data, tee, ServiceType.CaffNode);
         registerCaffNodeEnclaveHash();
@@ -383,7 +391,11 @@ contract EspressoTEEVerifierTest is Test {
         assertEq(espressoNitroTEEVerifier.registeredBatchPosterEnclaveHashes(pcr0Hash), false);
 
         // Expect revert
-        vm.expectRevert(abi.encodeWithSelector(IEspressoNitroTEEVerifier.InvalidAWSEnclaveHash.selector, pcr0Hash));
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                IEspressoNitroTEEVerifier.InvalidAWSEnclaveHash.selector, pcr0Hash
+            )
+        );
         espressoTEEVerifier.registerService(
             attestation, signature, IEspressoTEEVerifier.TeeType.NITRO, ServiceType.BatchPoster
         );
@@ -392,7 +404,11 @@ contract EspressoTEEVerifierTest is Test {
         assertEq(espressoNitroTEEVerifier.registeredBatchPosterEnclaveHashes(pcr0Hash), false);
 
         // Expect revert
-        vm.expectRevert(abi.encodeWithSelector(IEspressoNitroTEEVerifier.InvalidAWSEnclaveHash.selector, pcr0Hash));
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                IEspressoNitroTEEVerifier.InvalidAWSEnclaveHash.selector, pcr0Hash
+            )
+        );
         espressoTEEVerifier.registerService(
             attestation, signature, IEspressoTEEVerifier.TeeType.NITRO, ServiceType.CaffNode
         );

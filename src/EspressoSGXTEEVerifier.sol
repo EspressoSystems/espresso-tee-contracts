@@ -220,7 +220,7 @@ contract EspressoSGXTEEVerifier is IEspressoSGXTEEVerifier, Ownable2Step {
         } else if (service == ServiceType.CaffNode) {
             registeredCaffNodeEnclaveHashes[enclaveHash] = valid;
             emit EnclaveHashSet(enclaveHash, valid, ServiceType.CaffNode);
-        } else{
+        } else {
             revert UnsupportedServiceType();
         }
     }
