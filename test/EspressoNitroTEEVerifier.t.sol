@@ -79,7 +79,7 @@ contract EspressoNitroTEEVerifierTest is Test {
         espressoNitroTEEVerifier.setEnclaveHash(pcr0Hash, false, ServiceType.BatchPoster);
         assertEq(espressoNitroTEEVerifier.registeredBatchPosterEnclaveHashes(pcr0Hash), false);
 
-        vm.expectRevert(IEspressoNitroTEEVerifier.InvalidAWSEnclaveHash.selector);
+        vm.expectRevert(abi.encodeWithSelector(IEspressoNitroTEEVerifier.InvalidAWSEnclaveHash.selector, pcr0Hash));
         espressoNitroTEEVerifier.registerBatchPoster(attestation, signature);
         vm.stopPrank();
     }
