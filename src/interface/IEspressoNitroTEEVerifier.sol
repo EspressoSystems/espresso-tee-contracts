@@ -5,10 +5,10 @@ import "../types/Types.sol";
 
 interface IEspressoNitroTEEVerifier {
     // This error is thrown when the PCR0 values don't match
-    error InvalidAWSEnclaveHash();
+    error InvalidAWSEnclaveHash(bytes32 pcr0Hash);
 
     event AWSServiceEnclaveHashSet(bytes32 enclaveHash, bool valid, ServiceType service);
-    event AWSServiceRegistered(address signer, bytes32 enclaveHash, ServiceType service);
+    event AWSNitroServiceRegistered(address signer, bytes32 enclaveHash, ServiceType service);
     event DeletedAWSRegisteredService(address signer, ServiceType service);
 
     /*

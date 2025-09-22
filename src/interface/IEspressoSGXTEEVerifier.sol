@@ -13,7 +13,7 @@ interface IEspressoSGXTEEVerifier {
     // This error is thrown when the enclave report fails to parse
     error FailedToParseEnclaveReport();
     // This error is thrown when the mrEnclave don't match
-    error InvalidEnclaveHash();
+    error InvalidEnclaveHash(bytes32 enclaveHash);
     // This error is thrown when the reportDataHash doesn't match the hash signed by the TEE
     error InvalidReportDataHash();
     // This error is thrown when the reportData is too short
@@ -26,7 +26,7 @@ interface IEspressoSGXTEEVerifier {
     error InvalidQuoteVerifierAddress();
 
     event EnclaveHashSet(bytes32 enclaveHash, bool valid, ServiceType service);
-    event ServiceRegistered(address signer, bytes32 enclaveHash, ServiceType service);
+    event SGXServiceRegistered(address signer, bytes32 enclaveHash, ServiceType service);
     event DeletedRegisteredService(address signer, ServiceType service);
 
     /*
