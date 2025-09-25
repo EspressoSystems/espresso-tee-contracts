@@ -80,11 +80,15 @@ func main() {
 			log.Fatal(err)
 		}
 
+		// write to the parent dir to have the bindings presented in a location in the repo with no go.mod as a parent or sibling file.
+		// This helps prevent go mod tidy, and the compiler getting confused when attempting to find the package if it is
+		// included in another project as a submodule.
+
 		/*
 			#nosec G306
 			This file contains no private information so the permissions can be lenient
 		*/
-		err = os.WriteFile(filepath.Join(folder, module+".go"), []byte(code), 0o644)
+		err = os.WriteFile(filepath.Join(parent, module+".go"), []byte(code), 0o644)
 		if err != nil {
 			log.Fatal(err)
 		}
