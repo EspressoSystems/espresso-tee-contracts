@@ -88,7 +88,7 @@ func main() {
 			#nosec G306
 			This file contains no private information so the permissions can be lenient
 		*/
-		err = os.WriteFile(filepath.Join(parent, module+".go"), []byte(code), 0o644)
+		err = os.WriteFile(filepath.Join(parent, module, module+".go"), []byte(code), 0o644)
 		if err != nil {
 			log.Fatal(err)
 		}
