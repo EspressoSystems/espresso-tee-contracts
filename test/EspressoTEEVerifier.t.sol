@@ -2,7 +2,6 @@
 pragma solidity ^0.8.20;
 
 import "forge-std/Test.sol";
-// import {console} from "forge-std/console.sol";
 import {EspressoTEEVerifier} from "../src/EspressoTEEVerifier.sol";
 import {IEspressoTEEVerifier} from "../src/interface/IEspressoTEEVerifier.sol";
 import {EspressoSGXTEEVerifier} from "../src/EspressoSGXTEEVerifier.sol";
@@ -64,13 +63,13 @@ contract EspressoTEEVerifierTest is Test {
         if (tee == IEspressoTEEVerifier.TeeType.NITRO) {
             vm.expectRevert(
                 abi.encodeWithSelector(
-                    IEspressoNitroTEEVerifier.InvalidAWSEnclaveHash.selector, pcr0Hash
+                    IEspressoNitroTEEVerifier.InvalidAWSEnclaveHash.selector, pcr0Hash, ServiceType.CaffNode
                 )
             );
         } else if (tee == IEspressoTEEVerifier.TeeType.SGX) {
             vm.expectRevert(
                 abi.encodeWithSelector(
-                    IEspressoSGXTEEVerifier.InvalidEnclaveHash.selector, enclaveHash
+                    IEspressoSGXTEEVerifier.InvalidEnclaveHash.selector, enclaveHash, ServiceType.CaffNode
                 )
             );
         } // Add more cases here if we support more TEE's
@@ -393,7 +392,7 @@ contract EspressoTEEVerifierTest is Test {
         // Expect revert
         vm.expectRevert(
             abi.encodeWithSelector(
-                IEspressoNitroTEEVerifier.InvalidAWSEnclaveHash.selector, pcr0Hash
+                IEspressoNitroTEEVerifier.InvalidAWSEnclaveHash.selector, pcr0Hash, ServiceType.BatchPoster
             )
         );
         espressoTEEVerifier.registerService(
@@ -406,7 +405,7 @@ contract EspressoTEEVerifierTest is Test {
         // Expect revert
         vm.expectRevert(
             abi.encodeWithSelector(
-                IEspressoNitroTEEVerifier.InvalidAWSEnclaveHash.selector, pcr0Hash
+                IEspressoNitroTEEVerifier.InvalidAWSEnclaveHash.selector, pcr0Hash, ServiceType.CaffNode
             )
         );
         espressoTEEVerifier.registerService(

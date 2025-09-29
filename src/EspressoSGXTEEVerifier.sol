@@ -76,17 +76,16 @@ contract EspressoSGXTEEVerifier is IEspressoSGXTEEVerifier, Ownable2Step {
         }
 
         // Check that mrEnclave match
-        // For now just check for batch posters as this is all we would be using verify with. TODO: Figure out how to properly handle this function going forward.
-        if (service == ServiceType.BatchPoster) {
-            if (!registeredBatchPosterEnclaveHashes[localReport.mrEnclave]) {
-                revert InvalidEnclaveHash(localReport.mrEnclave);
+        // For now just check for batch posters as this is all we would be using verify with.
+
+        bool isRegistered = checkMembershipInRegisteredHashes(service, localReport.mrEnclave);
+
+        if (!isRegistered){
+            if (service == ServiceType.BatchPoster) {
+                revert InvalidEnclaveHash(localReport.mrEnclave, service);
+            } else if (service == ServiceType.CaffNode) {
+                revert InvalidEnclaveHash(localReport.mrEnclave, service);
             }
-        } else if (service == ServiceType.CaffNode) {
-            if (!registeredCaffNodeEnclaveHashes[localReport.mrEnclave]) {
-                revert InvalidEnclaveHash(localReport.mrEnclave);
-            }
-        } else {
-            revert UnsupportedServiceType();
         }
 
         //  Verify that the reportDataHash if the hash signed by the TEE
@@ -99,7 +98,7 @@ contract EspressoSGXTEEVerifier is IEspressoSGXTEEVerifier, Ownable2Step {
     }
 
     /*
-        @notice Register a new Batch Poster by verifying a quote from the TEE
+        @notice Register a new Caff Node by verifying a quote from the TEE
         @param attestation The attestation from the TEE
         @param data which the TEE has attested to
     */
@@ -237,5 +236,30 @@ contract EspressoSGXTEEVerifier is IEspressoSGXTEEVerifier, Ownable2Step {
             delete registeredCaffNodes[signers[i]];
             emit DeletedRegisteredService(signers[i], ServiceType.CaffNode);
         }
+    }
+
+    /*
+
+    @notice check if an enclave hash is contained in the registered hashes of this contract.
+    This function only checks if the enclave hash is in any of the enclave hash lists, it does not
+    allow the caller to discern which list on it's own
+
+    */
+
+    function checkMembershipInRegisteredHashes(ServiceType service, bytes32 localReportEnclaveHash) internal view returns (bool) {
+        if (service == ServiceType.BatchPoster) {
+            if (!registeredBatchPosterEnclaveHashes[localReportEnclaveHash]) {
+                return false;
+            }
+        } else if (service == ServiceType.CaffNode) {
+            if (!registeredCaffNodeEnclaveHashes[localReportEnclaveHash]) {
+                return false;
+            }
+        } else {
+            revert UnsupportedServiceType();
+        }
+
+        //This is the base case of the function, if we don't fail any of the above checks, then we can say that the encalve hash is registered.
+        return true;
     }
 }

@@ -13,7 +13,7 @@ interface IEspressoSGXTEEVerifier {
     // This error is thrown when the enclave report fails to parse
     error FailedToParseEnclaveReport();
     // This error is thrown when the mrEnclave don't match
-    error InvalidEnclaveHash(bytes32 enclaveHash);
+    error InvalidEnclaveHash(bytes32 enclaveHash, ServiceType service);
     // This error is thrown when the reportDataHash doesn't match the hash signed by the TEE
     error InvalidReportDataHash();
     // This error is thrown when the reportData is too short
@@ -25,9 +25,9 @@ interface IEspressoSGXTEEVerifier {
     // This error is thrown when the quote verifier address is invalid
     error InvalidQuoteVerifierAddress();
 
-    event EnclaveHashSet(bytes32 enclaveHash, bool valid, ServiceType service);
-    event SGXServiceRegistered(address signer, bytes32 enclaveHash, ServiceType service);
-    event DeletedRegisteredService(address signer, ServiceType service);
+    event EnclaveHashSet(bytes32 indexed enclaveHash, bool indexed valid, ServiceType indexed service);
+    event SGXServiceRegistered(address indexed signer, bytes32 indexed enclaveHash, ServiceType indexed service);
+    event DeletedRegisteredService(address indexed signer, ServiceType indexed service);
 
     /*
     * @notice This function is for checking the registration status of Intel SGX TEE Batch Posters and is a helper function for the EspressoTEEVerifier

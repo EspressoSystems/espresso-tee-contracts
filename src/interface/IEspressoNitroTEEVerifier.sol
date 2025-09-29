@@ -5,11 +5,11 @@ import "../types/Types.sol";
 
 interface IEspressoNitroTEEVerifier {
     // This error is thrown when the PCR0 values don't match
-    error InvalidAWSEnclaveHash(bytes32 pcr0Hash);
+    error InvalidAWSEnclaveHash(bytes32 pcr0Hash, ServiceType service);
 
-    event AWSServiceEnclaveHashSet(bytes32 enclaveHash, bool valid, ServiceType service);
-    event AWSNitroServiceRegistered(address signer, bytes32 enclaveHash, ServiceType service);
-    event DeletedAWSRegisteredService(address signer, ServiceType service);
+    event AWSServiceEnclaveHashSet(bytes32 indexed enclaveHash, bool indexed valid, ServiceType indexed service);
+    event AWSNitroServiceRegistered(address indexed signer, bytes32 indexed enclaveHash, ServiceType indexed service);
+    event DeletedAWSRegisteredService(address indexed signer, ServiceType indexed service);
 
     /*
     * @notice This function is for checking the registration status of AWS Nitro TEE Caff Nodes and is a helper function for the EspressoTEEVerifier

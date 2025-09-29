@@ -194,7 +194,7 @@ contract EspressoSGXTEEVerifierTest is Test {
             bytes32(0x51dfe95acffa8a4075b716257c836895af9202a5fd56c8c2208dacb79c659ff1);
         espressoSGXTEEVerifier = new EspressoSGXTEEVerifier(incorrectMrEnclave, v3QuoteVerifier);
         vm.expectRevert(
-            abi.encodeWithSelector(IEspressoSGXTEEVerifier.InvalidEnclaveHash.selector, enclaveHash)
+            abi.encodeWithSelector(IEspressoSGXTEEVerifier.InvalidEnclaveHash.selector, enclaveHash, ServiceType.BatchPoster)
         );
         espressoSGXTEEVerifier.verify(sampleQuote, reportDataHash, ServiceType.BatchPoster);
     }

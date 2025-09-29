@@ -81,7 +81,7 @@ contract EspressoNitroTEEVerifierTest is Test {
 
         vm.expectRevert(
             abi.encodeWithSelector(
-                IEspressoNitroTEEVerifier.InvalidAWSEnclaveHash.selector, pcr0Hash
+                IEspressoNitroTEEVerifier.InvalidAWSEnclaveHash.selector, pcr0Hash, ServiceType.BatchPoster
             )
         );
         espressoNitroTEEVerifier.registerBatchPoster(attestation, signature);

@@ -20,8 +20,6 @@ interface IEspressoTEEVerifier {
     error UnsupportedTeeType();
     // This error is thrown when the ServiceType enum provided to a method is unsupported for that method.
     error UnsupportedServiceType();
-    // This Error is for implementing function stubs during development. TODO: remove before release
-    error Unimplemented();
 
     // Get address of Nitro TEE Verifier
     function espressoNitroTEEVerifier() external view returns (IEspressoNitroTEEVerifier);
