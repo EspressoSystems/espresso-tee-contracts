@@ -63,13 +63,17 @@ contract EspressoTEEVerifierTest is Test {
         if (tee == IEspressoTEEVerifier.TeeType.NITRO) {
             vm.expectRevert(
                 abi.encodeWithSelector(
-                    IEspressoNitroTEEVerifier.InvalidAWSEnclaveHash.selector, pcr0Hash, ServiceType.CaffNode
+                    IEspressoNitroTEEVerifier.InvalidAWSEnclaveHash.selector,
+                    pcr0Hash,
+                    ServiceType.CaffNode
                 )
             );
         } else if (tee == IEspressoTEEVerifier.TeeType.SGX) {
             vm.expectRevert(
                 abi.encodeWithSelector(
-                    IEspressoSGXTEEVerifier.InvalidEnclaveHash.selector, enclaveHash, ServiceType.CaffNode
+                    IEspressoSGXTEEVerifier.InvalidEnclaveHash.selector,
+                    enclaveHash,
+                    ServiceType.CaffNode
                 )
             );
         } // Add more cases here if we support more TEE's
@@ -392,7 +396,9 @@ contract EspressoTEEVerifierTest is Test {
         // Expect revert
         vm.expectRevert(
             abi.encodeWithSelector(
-                IEspressoNitroTEEVerifier.InvalidAWSEnclaveHash.selector, pcr0Hash, ServiceType.BatchPoster
+                IEspressoNitroTEEVerifier.InvalidAWSEnclaveHash.selector,
+                pcr0Hash,
+                ServiceType.BatchPoster
             )
         );
         espressoTEEVerifier.registerService(
@@ -405,7 +411,9 @@ contract EspressoTEEVerifierTest is Test {
         // Expect revert
         vm.expectRevert(
             abi.encodeWithSelector(
-                IEspressoNitroTEEVerifier.InvalidAWSEnclaveHash.selector, pcr0Hash, ServiceType.CaffNode
+                IEspressoNitroTEEVerifier.InvalidAWSEnclaveHash.selector,
+                pcr0Hash,
+                ServiceType.CaffNode
             )
         );
         espressoTEEVerifier.registerService(

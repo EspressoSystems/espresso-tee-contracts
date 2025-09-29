@@ -25,8 +25,12 @@ interface IEspressoSGXTEEVerifier {
     // This error is thrown when the quote verifier address is invalid
     error InvalidQuoteVerifierAddress();
 
-    event EnclaveHashSet(bytes32 indexed enclaveHash, bool indexed valid, ServiceType indexed service);
-    event SGXServiceRegistered(address indexed signer, bytes32 indexed enclaveHash, ServiceType indexed service);
+    event EnclaveHashSet(
+        bytes32 indexed enclaveHash, bool indexed valid, ServiceType indexed service
+    );
+    event SGXServiceRegistered(
+        address indexed signer, bytes32 indexed enclaveHash, ServiceType indexed service
+    );
     event DeletedRegisteredService(address indexed signer, ServiceType indexed service);
 
     /*

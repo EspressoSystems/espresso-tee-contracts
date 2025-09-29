@@ -7,8 +7,12 @@ interface IEspressoNitroTEEVerifier {
     // This error is thrown when the PCR0 values don't match
     error InvalidAWSEnclaveHash(bytes32 pcr0Hash, ServiceType service);
 
-    event AWSServiceEnclaveHashSet(bytes32 indexed enclaveHash, bool indexed valid, ServiceType indexed service);
-    event AWSNitroServiceRegistered(address indexed signer, bytes32 indexed enclaveHash, ServiceType indexed service);
+    event AWSServiceEnclaveHashSet(
+        bytes32 indexed enclaveHash, bool indexed valid, ServiceType indexed service
+    );
+    event AWSNitroServiceRegistered(
+        address indexed signer, bytes32 indexed enclaveHash, ServiceType indexed service
+    );
     event DeletedAWSRegisteredService(address indexed signer, ServiceType indexed service);
 
     /*

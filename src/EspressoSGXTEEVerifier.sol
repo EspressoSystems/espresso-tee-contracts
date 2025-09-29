@@ -80,7 +80,7 @@ contract EspressoSGXTEEVerifier is IEspressoSGXTEEVerifier, Ownable2Step {
 
         bool isRegistered = checkMembershipInRegisteredHashes(service, localReport.mrEnclave);
 
-        if (!isRegistered){
+        if (!isRegistered) {
             if (service == ServiceType.BatchPoster) {
                 revert InvalidEnclaveHash(localReport.mrEnclave, service);
             } else if (service == ServiceType.CaffNode) {
@@ -246,7 +246,11 @@ contract EspressoSGXTEEVerifier is IEspressoSGXTEEVerifier, Ownable2Step {
 
     */
 
-    function checkMembershipInRegisteredHashes(ServiceType service, bytes32 localReportEnclaveHash) internal view returns (bool) {
+    function checkMembershipInRegisteredHashes(ServiceType service, bytes32 localReportEnclaveHash)
+        internal
+        view
+        returns (bool)
+    {
         if (service == ServiceType.BatchPoster) {
             if (!registeredBatchPosterEnclaveHashes[localReportEnclaveHash]) {
                 return false;
