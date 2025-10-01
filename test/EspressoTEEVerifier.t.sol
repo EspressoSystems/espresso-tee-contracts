@@ -9,7 +9,7 @@ import {EspressoNitroTEEVerifier} from "../src/EspressoNitroTEEVerifier.sol";
 import {IEspressoSGXTEEVerifier} from "../src/interface/IEspressoSGXTEEVerifier.sol";
 import {IEspressoNitroTEEVerifier} from "../src/interface/IEspressoNitroTEEVerifier.sol";
 import {CertManager} from "@nitro-validator/CertManager.sol";
-
+import {ServiceType} from "../src/types/Types.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
 contract EspressoTEEVerifierTest is Test {
@@ -41,16 +41,69 @@ contract EspressoTEEVerifierTest is Test {
         vm.stopPrank();
     }
 
-    function testSGXRegisterSigner() public {
+    // This function is intended to be called during test cases to register the caff node.
+    // It must be called after `setUp()`, otherwise calls to the individual contracts may not work.
+    function registerCaffNodeEnclaveHash() internal {
+        vm.startPrank(adminTEE);
+        // Register the caff nodes enclave hash
+        espressoSGXTEEVerifier.setEnclaveHash(enclaveHash, true, ServiceType.CaffNode);
+        espressoNitroTEEVerifier.setEnclaveHash(pcr0Hash, true, ServiceType.CaffNode);
+        vm.stopPrank();
+    }
+
+    function ensureSeparateCaffNodeOperation(
+        bytes memory sampleQuote,
+        bytes memory data,
+        IEspressoTEEVerifier.TeeType tee,
+        bytes4 revertSelector,
+        bytes32 revertHash
+    ) internal {
+        // Test registering the caff node
+        // At this point the Caff node enclave hash is not registered so this should fail
+        if (tee == IEspressoTEEVerifier.TeeType.NITRO) {
+            vm.expectRevert(
+                abi.encodeWithSelector(
+                    IEspressoNitroTEEVerifier.InvalidAWSEnclaveHash.selector,
+                    pcr0Hash,
+                    ServiceType.CaffNode
+                )
+            );
+        } else if (tee == IEspressoTEEVerifier.TeeType.SGX) {
+            vm.expectRevert(
+                abi.encodeWithSelector(
+                    IEspressoSGXTEEVerifier.InvalidEnclaveHash.selector,
+                    enclaveHash,
+                    ServiceType.CaffNode
+                )
+            );
+        } // Add more cases here if we support more TEE's
+        espressoTEEVerifier.registerService(sampleQuote, data, tee, ServiceType.CaffNode);
+        registerCaffNodeEnclaveHash();
+
+        // At this point the Caff node enclave hash is registered so this should succeed
+        espressoTEEVerifier.registerService(sampleQuote, data, tee, ServiceType.CaffNode);
+    }
+
+    function testSGXRegisterService() public {
         string memory quotePath = "/test/configs/attestation.bin";
         string memory inputFile = string.concat(vm.projectRoot(), quotePath);
         bytes memory sampleQuote = vm.readFileBinary(inputFile);
         address batchPosterAddress = address(0xe2148eE53c0755215Df69b2616E552154EdC584f);
         bytes memory data = abi.encodePacked(batchPosterAddress);
-        espressoTEEVerifier.registerSigner(sampleQuote, data, IEspressoTEEVerifier.TeeType.SGX);
+        // Test registering the batch poster
+        espressoTEEVerifier.registerService(
+            sampleQuote, data, IEspressoTEEVerifier.TeeType.SGX, ServiceType.BatchPoster
+        );
+
+        vm.startPrank(adminTEE);
+        espressoSGXTEEVerifier.setEnclaveHash(enclaveHash, true, ServiceType.CaffNode);
+        vm.stopPrank();
+        espressoTEEVerifier.registerService(
+            sampleQuote, data, IEspressoTEEVerifier.TeeType.SGX, ServiceType.CaffNode
+        );
     }
 
-    function testNitroRegisterSigner() public {
+    function testNitroRegisterService() public {
         vm.warp(1_743_110_000);
         string memory attestationPath = "/test/configs/nitro-attestation.bin";
         string memory inputFile = string.concat(vm.projectRoot(), attestationPath);
@@ -59,38 +112,81 @@ contract EspressoTEEVerifierTest is Test {
         string memory signaturePath = "/test/configs/nitro-valid-signature.bin";
         string memory sigFile = string.concat(vm.projectRoot(), signaturePath);
         bytes memory signature = vm.readFileBinary(sigFile);
-        espressoTEEVerifier.registerSigner(
-            attestation, signature, IEspressoTEEVerifier.TeeType.NITRO
+        espressoTEEVerifier.registerService(
+            attestation, signature, IEspressoTEEVerifier.TeeType.NITRO, ServiceType.BatchPoster
+        );
+        ensureSeparateCaffNodeOperation(
+            attestation,
+            signature,
+            IEspressoTEEVerifier.TeeType.NITRO,
+            IEspressoNitroTEEVerifier.InvalidAWSEnclaveHash.selector,
+            pcr0Hash
         );
     }
 
-    function testSGXRegisterSignerWithInvalidQuote() public {
+    function testSGXRegisterServiceWithInvalidQuote() public {
         string memory quotePath = "/test/configs/invalid_quote.bin";
         string memory inputFile = string.concat(vm.projectRoot(), quotePath);
         bytes memory sampleQuote = vm.readFileBinary(inputFile);
         address batchPosterAddress = address(0xe2148eE53c0755215Df69b2616E552154EdC584f);
         bytes memory data = abi.encodePacked(batchPosterAddress);
         vm.expectRevert(IEspressoSGXTEEVerifier.InvalidQuote.selector);
-        espressoTEEVerifier.registerSigner(sampleQuote, data, IEspressoTEEVerifier.TeeType.SGX);
+        espressoTEEVerifier.registerService(
+            sampleQuote, data, IEspressoTEEVerifier.TeeType.SGX, ServiceType.BatchPoster
+        );
+
+        vm.expectRevert(IEspressoSGXTEEVerifier.InvalidQuote.selector);
+        // Test registering the caff node as well, this should fail with an invalid quote.
+        // This would also fail with an invalid enclave hash as well, as this test doesn't register the caff node,
+        // But that isn't needed for this test.
+        espressoTEEVerifier.registerService(
+            sampleQuote, data, IEspressoTEEVerifier.TeeType.SGX, ServiceType.CaffNode
+        );
     }
 
-    function testSGXRegisteredSigners() public {
+    function testSGXRegisteredServices() public {
         string memory quotePath = "/test/configs/attestation.bin";
         string memory inputFile = string.concat(vm.projectRoot(), quotePath);
         bytes memory sampleQuote = vm.readFileBinary(inputFile);
         address batchPosterAddress = address(0xe2148eE53c0755215Df69b2616E552154EdC584f);
         bytes memory data = abi.encodePacked(batchPosterAddress);
-        espressoTEEVerifier.registerSigner(sampleQuote, data, IEspressoTEEVerifier.TeeType.SGX);
+        espressoTEEVerifier.registerService(
+            sampleQuote, data, IEspressoTEEVerifier.TeeType.SGX, ServiceType.BatchPoster
+        );
 
         assertEq(
-            espressoTEEVerifier.registeredSigners(
-                batchPosterAddress, IEspressoTEEVerifier.TeeType.SGX
+            espressoTEEVerifier.registeredServices(
+                batchPosterAddress, IEspressoTEEVerifier.TeeType.SGX, ServiceType.BatchPoster
+            ),
+            true
+        );
+        // Assert that this address is not yet registered as a caff node.
+        // if the registration process differes between the caff node and the batcher in the
+        // future, we will need to update this test.
+        assertEq(
+            espressoTEEVerifier.registeredServices(
+                batchPosterAddress, IEspressoTEEVerifier.TeeType.SGX, ServiceType.CaffNode
+            ),
+            false
+        );
+
+        ensureSeparateCaffNodeOperation(
+            sampleQuote,
+            data,
+            IEspressoTEEVerifier.TeeType.SGX,
+            IEspressoSGXTEEVerifier.InvalidEnclaveHash.selector,
+            enclaveHash
+        );
+
+        assertEq(
+            espressoTEEVerifier.registeredServices(
+                batchPosterAddress, IEspressoTEEVerifier.TeeType.SGX, ServiceType.CaffNode
             ),
             true
         );
     }
 
-    function testNitroRegisteredSigners() public {
+    function testNitroRegisteredServices() public {
         vm.warp(1_743_110_000);
         string memory attestationPath = "/test/configs/nitro-attestation.bin";
         string memory inputFile = string.concat(vm.projectRoot(), attestationPath);
@@ -101,12 +197,38 @@ contract EspressoTEEVerifierTest is Test {
         bytes memory signature = vm.readFileBinary(sigFile);
         bytes32 publicKeyHash = keccak256(nitroPubKey);
         address signerAddr = address(uint160(uint256(publicKeyHash)));
-        espressoTEEVerifier.registerSigner(
-            attestation, signature, IEspressoTEEVerifier.TeeType.NITRO
+        espressoTEEVerifier.registerService(
+            attestation, signature, IEspressoTEEVerifier.TeeType.NITRO, ServiceType.BatchPoster
         );
 
         assertEq(
-            espressoTEEVerifier.registeredSigners(signerAddr, IEspressoTEEVerifier.TeeType.NITRO),
+            espressoTEEVerifier.registeredServices(
+                signerAddr, IEspressoTEEVerifier.TeeType.NITRO, ServiceType.BatchPoster
+            ),
+            true
+        );
+        // Assert that this address is not yet registered as a caff node.
+        // if the registration process differes between the caff node and the batcher in the
+        // future, we will need to update this test.
+        assertEq(
+            espressoTEEVerifier.registeredServices(
+                signerAddr, IEspressoTEEVerifier.TeeType.NITRO, ServiceType.CaffNode
+            ),
+            false
+        );
+
+        ensureSeparateCaffNodeOperation(
+            attestation,
+            signature,
+            IEspressoTEEVerifier.TeeType.NITRO,
+            IEspressoNitroTEEVerifier.InvalidAWSEnclaveHash.selector,
+            pcr0Hash
+        );
+
+        assertEq(
+            espressoTEEVerifier.registeredServices(
+                signerAddr, IEspressoTEEVerifier.TeeType.NITRO, ServiceType.CaffNode
+            ),
             true
         );
     }
@@ -115,7 +237,8 @@ contract EspressoTEEVerifierTest is Test {
         assertEq(
             espressoTEEVerifier.registeredEnclaveHashes(
                 bytes32(0x01f7290cb6bbaa427eca3daeb25eecccb87c4b61259b1ae2125182c4d77169c0),
-                IEspressoTEEVerifier.TeeType.SGX
+                IEspressoTEEVerifier.TeeType.SGX,
+                ServiceType.BatchPoster
             ),
             true
         );
@@ -125,7 +248,8 @@ contract EspressoTEEVerifierTest is Test {
         assertEq(
             espressoTEEVerifier.registeredEnclaveHashes(
                 bytes32(0xc980e59163ce244bb4bb6211f48c7b46f88a4f40943e84eb99bdc41e129bd293),
-                IEspressoTEEVerifier.TeeType.NITRO
+                IEspressoTEEVerifier.TeeType.NITRO,
+                ServiceType.BatchPoster
             ),
             true
         );
@@ -178,12 +302,14 @@ contract EspressoTEEVerifierTest is Test {
             hex"88195346c675ad5c352ee257ec027c092c995dabd8aa54d2c68f3fac378faf9f402e8eee3418bb434f6feeec541658cd99eec502ace6b145aa2e03ce231ec4e6";
         bytes32 publicKeyHash = keccak256(pubKey);
         address signerAddr = address(uint160(uint256(publicKeyHash)));
-        espressoTEEVerifier.registerSigner(
-            attestation, signature, IEspressoTEEVerifier.TeeType.NITRO
+        espressoTEEVerifier.registerService(
+            attestation, signature, IEspressoTEEVerifier.TeeType.NITRO, ServiceType.BatchPoster
         );
 
         assertEq(
-            espressoTEEVerifier.registeredSigners(signerAddr, IEspressoTEEVerifier.TeeType.NITRO),
+            espressoTEEVerifier.registeredServices(
+                signerAddr, IEspressoTEEVerifier.TeeType.NITRO, ServiceType.BatchPoster
+            ),
             true
         );
 
@@ -202,20 +328,57 @@ contract EspressoTEEVerifierTest is Test {
         }
         // Verify we can recover the signer and we are registered
         assertEq(
-            espressoTEEVerifier.verify(dataSignature, dataHash, IEspressoTEEVerifier.TeeType.NITRO),
+            espressoTEEVerifier.verify(
+                dataSignature, dataHash, IEspressoTEEVerifier.TeeType.NITRO, ServiceType.BatchPoster
+            ),
+            true
+        );
+
+        // Assert we can't verify this as a caff node signature yet.
+        assertEq(
+            espressoTEEVerifier.verify(
+                dataSignature, dataHash, IEspressoTEEVerifier.TeeType.NITRO, ServiceType.CaffNode
+            ),
+            false
+        );
+
+        ensureSeparateCaffNodeOperation(
+            attestation,
+            signature,
+            IEspressoTEEVerifier.TeeType.NITRO,
+            IEspressoNitroTEEVerifier.InvalidAWSEnclaveHash.selector,
+            pcr0Hash
+        );
+
+        // Assert we can verify this as a caff node signature.
+        assertEq(
+            espressoTEEVerifier.verify(
+                dataSignature, dataHash, IEspressoTEEVerifier.TeeType.NITRO, ServiceType.CaffNode
+            ),
             true
         );
 
         // invalidate the hash, expect revert
-        dataHash = bytes32(0x00e6afefbcd45eac66b314ee8dd955f00cc55de22b504cbf6a0e3fe47715c822);
-        vm.expectRevert(IEspressoTEEVerifier.InvalidSignature.selector);
-        espressoTEEVerifier.verify(dataSignature, dataHash, IEspressoTEEVerifier.TeeType.NITRO);
+        dataHash = bytes32(0x00b6afefbcd45eac66b314ee8dd955f00cc55de22b504cbf6a0e3fe47715c822);
+        assertEq(
+            espressoTEEVerifier.verify(
+                dataSignature, dataHash, IEspressoTEEVerifier.TeeType.NITRO, ServiceType.BatchPoster
+            ),
+            false
+        );
+
+        assertEq(
+            espressoTEEVerifier.verify(
+                dataSignature, dataHash, IEspressoTEEVerifier.TeeType.NITRO, ServiceType.CaffNode
+            ),
+            false
+        );
     }
 
     /**
      * Test nitro register signer fails upon invalid attestation pcr0
      */
-    function testNitroRegisterSignerInvalidPCR0Hash() public {
+    function testNitroRegisterServiceInvalidPCR0Hash() public {
         vm.startPrank(adminTEE);
         vm.warp(1_743_110_000);
         string memory attestationPath = "/test/configs/nitro-attestation.bin";
@@ -227,13 +390,34 @@ contract EspressoTEEVerifierTest is Test {
         bytes memory signature = vm.readFileBinary(sigFile);
 
         // Disable pcr0 hash
-        espressoNitroTEEVerifier.setEnclaveHash(pcr0Hash, false);
-        assertEq(espressoNitroTEEVerifier.registeredEnclaveHash(pcr0Hash), false);
+        espressoNitroTEEVerifier.setEnclaveHash(pcr0Hash, false, ServiceType.BatchPoster);
+        assertEq(espressoNitroTEEVerifier.registeredBatchPosterEnclaveHashes(pcr0Hash), false);
 
         // Expect revert
-        vm.expectRevert(IEspressoNitroTEEVerifier.InvalidAWSEnclaveHash.selector);
-        espressoTEEVerifier.registerSigner(
-            attestation, signature, IEspressoTEEVerifier.TeeType.NITRO
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                IEspressoNitroTEEVerifier.InvalidAWSEnclaveHash.selector,
+                pcr0Hash,
+                ServiceType.BatchPoster
+            )
+        );
+        espressoTEEVerifier.registerService(
+            attestation, signature, IEspressoTEEVerifier.TeeType.NITRO, ServiceType.BatchPoster
+        );
+
+        espressoNitroTEEVerifier.setEnclaveHash(pcr0Hash, false, ServiceType.CaffNode);
+        assertEq(espressoNitroTEEVerifier.registeredBatchPosterEnclaveHashes(pcr0Hash), false);
+
+        // Expect revert
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                IEspressoNitroTEEVerifier.InvalidAWSEnclaveHash.selector,
+                pcr0Hash,
+                ServiceType.CaffNode
+            )
+        );
+        espressoTEEVerifier.registerService(
+            attestation, signature, IEspressoTEEVerifier.TeeType.NITRO, ServiceType.CaffNode
         );
         vm.stopPrank();
     }

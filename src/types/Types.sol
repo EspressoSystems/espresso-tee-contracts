@@ -1,0 +1,18 @@
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.4;
+
+// Enum types for use in the TEEVerifier contracts.
+
+/**
+ * @notice Enum for representing services that can be registered via the EspressoTEEVerifier contract
+ */
+enum ServiceType {
+    BatchPoster,
+    CaffNode
+}
+
+// Error types used across any Espresso(*)TEEVerifier contracts
+error Unimplemented();
+
+//Error representing an unsupported value being provided for a ServiceType parameter
+error UnsupportedServiceType();

@@ -6,6 +6,7 @@ import "@openzeppelin/contracts/access/Ownable2Step.sol";
 import {IEspressoSGXTEEVerifier} from "./interface/IEspressoSGXTEEVerifier.sol";
 import {IEspressoNitroTEEVerifier} from "./interface/IEspressoNitroTEEVerifier.sol";
 import {IEspressoTEEVerifier} from "./interface/IEspressoTEEVerifier.sol";
+import {ServiceType, Unimplemented, UnsupportedServiceType} from "./types/Types.sol";
 
 /**
  * @title EspressoTEEVerifier
@@ -30,48 +31,46 @@ contract EspressoTEEVerifier is Ownable2Step, IEspressoTEEVerifier {
      *     @param signature The signature of the user data
      *     @param userDataHash The hash of the user data
      */
-    function verify(bytes memory signature, bytes32 userDataHash, TeeType teeType)
-        external
-        view
-        returns (bool)
-    {
+    function verify(
+        bytes memory signature,
+        bytes32 userDataHash,
+        TeeType teeType,
+        ServiceType service
+    ) external view returns (bool) {
         address signer = ECDSA.recover(userDataHash, signature);
 
-        if (teeType == TeeType.SGX) {
-            if (!espressoSGXTEEVerifier.registeredSigners(signer)) {
-                revert InvalidSignature();
-            }
-            return true;
+        if (service == ServiceType.BatchPoster) {
+            return checkRegisteredBatchPosters(signer, teeType);
+        } else if (service == ServiceType.CaffNode) {
+            return checkRegisteredCaffNodes(signer, teeType);
+        } else {
+            revert UnsupportedServiceType();
         }
-
-        if (teeType == TeeType.NITRO) {
-            if (!espressoNitroTEEVerifier.registeredSigners(signer)) {
-                revert InvalidSignature();
-            }
-            return true;
-        }
-        revert UnsupportedTeeType();
     }
 
     /* @notice Register a new signer by verifying a quote from the TEE
-        @param attestation The attestation from the TEE
+        @param verificationData The data produced by the TEE for verifying it's authenticity.
         @param data when registering a signer, data can be passed for each TEE type
-        which can be any additiona data that is required for registering a signer
+        which can be any additiona data that is required for registering a signer with
+        that particular tee type
         @param teeType The type of TEE
+        @param service The type of service being registered potentially affects the behavior of registration.
      */
-    function registerSigner(bytes calldata attestation, bytes calldata data, TeeType teeType)
-        external
-    {
-        if (teeType == TeeType.SGX) {
-            espressoSGXTEEVerifier.registerSigner(attestation, data);
+    function registerService(
+        bytes calldata verificationData,
+        bytes calldata data,
+        TeeType teeType,
+        ServiceType service
+    ) external {
+        if (service == ServiceType.BatchPoster) {
+            registerBatchPosterHelper(verificationData, data, teeType);
             return;
-        }
-
-        if (teeType == TeeType.NITRO) {
-            espressoNitroTEEVerifier.registerSigner(attestation, data);
+        } else if (service == ServiceType.CaffNode) {
+            registerCaffNodeHelper(verificationData, data, teeType);
             return;
+        } else {
+            revert UnsupportedServiceType();
         }
-        revert UnsupportedTeeType();
     }
 
     /**
@@ -79,15 +78,18 @@ contract EspressoTEEVerifier is Ownable2Step, IEspressoTEEVerifier {
      *     @param signer The address of the signer
      *     @param teeType The type of TEE
      */
-    function registeredSigners(address signer, TeeType teeType) external view returns (bool) {
-        if (teeType == TeeType.SGX) {
-            return espressoSGXTEEVerifier.registeredSigners(signer);
+    function registeredServices(address signer, TeeType teeType, ServiceType service)
+        external
+        view
+        returns (bool)
+    {
+        if (service == ServiceType.BatchPoster) {
+            return checkRegisteredBatchPosters(signer, teeType);
+        } else if (service == ServiceType.CaffNode) {
+            return checkRegisteredCaffNodes(signer, teeType);
+        } else {
+            revert UnsupportedServiceType();
         }
-
-        if (teeType == TeeType.NITRO) {
-            return espressoNitroTEEVerifier.registeredSigners(signer);
-        }
-        revert UnsupportedTeeType();
     }
 
     /**
@@ -95,19 +97,18 @@ contract EspressoTEEVerifier is Ownable2Step, IEspressoTEEVerifier {
      *     @param enclaveHash The hash of the enclave
      *     @param teeType The type of TEE
      */
-    function registeredEnclaveHashes(bytes32 enclaveHash, TeeType teeType)
+    function registeredEnclaveHashes(bytes32 enclaveHash, TeeType teeType, ServiceType service)
         external
         view
         returns (bool)
     {
-        if (teeType == TeeType.SGX) {
-            return espressoSGXTEEVerifier.registeredEnclaveHash(enclaveHash);
+        if (service == ServiceType.BatchPoster) {
+            return registeredBatchPosterEnclaveHashes(enclaveHash, teeType);
+        } else if (service == ServiceType.CaffNode) {
+            return registeredCaffNodeEnclaveHashes(enclaveHash, teeType);
+        } else {
+            revert UnsupportedServiceType();
         }
-
-        if (teeType == TeeType.NITRO) {
-            return espressoNitroTEEVerifier.registeredEnclaveHash(enclaveHash);
-        }
-        revert UnsupportedTeeType();
     }
 
     /*
@@ -130,5 +131,109 @@ contract EspressoTEEVerifier is Ownable2Step, IEspressoTEEVerifier {
         onlyOwner
     {
         espressoNitroTEEVerifier = _espressoNitroTEEVerifier;
+    }
+
+    /*
+    * @notice: This is a helper function for reducing code duplication when checking for
+    *          registered services; Namely, this handles the batch posters.
+    *
+    */
+    function checkRegisteredBatchPosters(address signer, TeeType teeType)
+        public
+        view
+        returns (bool)
+    {
+        if (teeType == TeeType.SGX) {
+            return espressoSGXTEEVerifier.registeredBatchPosters(signer);
+        } else if (teeType == TeeType.NITRO) {
+            return espressoNitroTEEVerifier.registeredBatchPosters(signer);
+        } else {
+            revert UnsupportedTeeType();
+        }
+    }
+
+    /*
+    * @notice: This is a helper function for reducing code duplication when checking for
+    *          registered services; Namely, this handles the caff nodes.
+    *
+    */
+    function checkRegisteredCaffNodes(address signer, TeeType teeType) public view returns (bool) {
+        if (teeType == TeeType.SGX) {
+            return espressoSGXTEEVerifier.registeredCaffNodes(signer);
+        } else if (teeType == TeeType.NITRO) {
+            return espressoNitroTEEVerifier.registeredCaffNodes(signer);
+        } else {
+            revert UnsupportedTeeType();
+        }
+    }
+
+    function registerBatchPosterHelper(
+        bytes calldata verificationData,
+        bytes calldata data,
+        TeeType teeType
+    ) private {
+        if (teeType == TeeType.SGX) {
+            return espressoSGXTEEVerifier.registerBatchPoster(verificationData, data);
+        }
+
+        if (teeType == TeeType.NITRO) {
+            return espressoNitroTEEVerifier.registerBatchPoster(verificationData, data);
+        }
+        revert UnsupportedTeeType();
+    }
+
+    function registerCaffNodeHelper(
+        bytes calldata verificationData,
+        bytes calldata data,
+        TeeType teeType
+    ) private {
+        if (teeType == TeeType.SGX) {
+            return espressoSGXTEEVerifier.registerCaffNode(verificationData, data);
+        }
+
+        if (teeType == TeeType.NITRO) {
+            return espressoNitroTEEVerifier.registerCaffNode(verificationData, data);
+        }
+        revert UnsupportedTeeType();
+    }
+
+    /**
+     * @notice This function retrieves whether an enclave hash is registered or not
+     *     @param enclaveHash The hash of the enclave
+     *     @param teeType The type of TEE
+     */
+    function registeredBatchPosterEnclaveHashes(bytes32 enclaveHash, TeeType teeType)
+        private
+        view
+        returns (bool)
+    {
+        if (teeType == TeeType.SGX) {
+            return espressoSGXTEEVerifier.registeredBatchPosterEnclaveHashes(enclaveHash);
+        }
+
+        if (teeType == TeeType.NITRO) {
+            return espressoNitroTEEVerifier.registeredBatchPosterEnclaveHashes(enclaveHash);
+        }
+        revert UnsupportedTeeType();
+    }
+
+    /**
+     * @notice This function retrieves whether an enclave hash is registered or not
+     *     @param enclaveHash The hash of the enclave
+     *     @param teeType The type of TEE
+     */
+    function registeredCaffNodeEnclaveHashes(bytes32 enclaveHash, TeeType teeType)
+        private
+        view
+        returns (bool)
+    {
+        if (teeType == TeeType.SGX) {
+            return espressoSGXTEEVerifier.registeredCaffNodeEnclaveHashes(enclaveHash);
+        }
+
+        if (teeType == TeeType.NITRO) {
+            return espressoNitroTEEVerifier.registeredCaffNodeEnclaveHashes(enclaveHash);
+        }
+        revert UnsupportedTeeType();
     }
 }
