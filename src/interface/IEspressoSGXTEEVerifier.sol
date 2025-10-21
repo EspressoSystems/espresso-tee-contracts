@@ -61,17 +61,14 @@ interface IEspressoSGXTEEVerifier {
         view
         returns (EnclaveReport memory);
 
-    function parseQuoteHeader(bytes calldata rawQuote)
-        external
-        pure
-        returns (Header memory header);
+    function parseQuoteHeader(bytes calldata rawQuote) external pure returns (Header memory header);
 
     function parseEnclaveReport(bytes memory rawEnclaveReport)
         external
         pure
         returns (bool success, EnclaveReport memory enclaveReport);
     /*
-    * @notice: This function is responsible for setting the validity of enclave hashes in this inner TEEVerifier contract, It will be 
+    * @notice: This function is responsible for setting the validity of enclave hashes in this inner TEEVerifier contract, It will be
     */
     function setEnclaveHash(bytes32 enclaveHash, bool valid, ServiceType serviceType) external;
     /*

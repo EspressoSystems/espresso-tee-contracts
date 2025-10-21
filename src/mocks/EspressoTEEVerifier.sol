@@ -14,7 +14,7 @@ contract EspressoTEEVerifierMock {
         NITRO
     }
 
-    enum ServiceType{
+    enum ServiceType {
         BatchPoster,
         CaffNode
     }
@@ -23,17 +23,21 @@ contract EspressoTEEVerifierMock {
 
     constructor() {}
 
-    function verify(bytes calldata signature, bytes32 userDataHash, TeeType teeType, ServiceType service)
-        external
-        view
-        returns (bool)
-    {
+    function verify(
+        bytes calldata signature,
+        bytes32 userDataHash,
+        TeeType teeType,
+        ServiceType service
+    ) external view returns (bool) {
         return true;
     }
 
-    function registerService(bytes calldata attestation, bytes calldata data, TeeType teeType, ServiceType service)
-        external
-    {
+    function registerService(
+        bytes calldata attestation,
+        bytes calldata data,
+        TeeType teeType,
+        ServiceType service
+    ) external {
         // data length should be 20 bytes
         require(data.length == 20, "Invalid data length");
 
@@ -41,7 +45,11 @@ contract EspressoTEEVerifierMock {
         registeredServicesMap[signer] = true;
     }
 
-    function registeredServices(address signer, TeeType teeType, ServiceType service) external view returns (bool) {
+    function registeredServices(address signer, TeeType teeType, ServiceType service)
+        external
+        view
+        returns (bool)
+    {
         return registeredServicesMap[signer];
     }
 }
