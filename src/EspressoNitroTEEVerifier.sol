@@ -102,4 +102,20 @@ contract EspressoNitroTEEVerifier is NitroValidator, IEspressoNitroTEEVerifier, 
             emit DeletedAWSRegisteredSigner(signers[i]);
         }
     }
+
+    /**
+     * @notice This function registers a new signer without attestation verification for reduced gas costs
+     * @dev IMPORTANT: Attestation verification must be performed off-chain before calling this function
+     * @param enclaveAddress The address of the signer to register
+     */
+    function registerSignerWithoutAttestationVerification(bytes32 pcr0Hash, bytes calldata attestation, bytes calldata signature, address enclaveAddress) external onlyOwner {
+        if (!registeredEnclaveHash[pcr0Hash]) {
+            revert InvalidAWSEnclaveHash();
+        }
+
+        if (!registeredSigners[enclaveAddress]) {
+            registeredSigners[enclaveAddress] = true;
+            emit AWSSignerRegistered(enclaveAddress, pcr0Hash);
+        }
+    }
 }
