@@ -14,6 +14,12 @@ interface IEspressoNitroTEEVerifier {
     function registeredEnclaveHash(bytes32 enclaveHash) external view returns (bool);
 
     function registerSigner(bytes calldata attestation, bytes calldata data) external;
+    function registerSignerWithoutAttestationVerification(
+        bytes32 pcr0Hash,
+        bytes calldata attestation,
+        bytes calldata signature,
+        address enclaveAddress
+    ) external;
 
     function verifyCACert(bytes calldata certificate, bytes32 parentCertHash) external;
     function verifyClientCert(bytes calldata certificate, bytes32 parentCertHash) external;
