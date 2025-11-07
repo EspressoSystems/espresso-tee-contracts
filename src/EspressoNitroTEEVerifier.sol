@@ -21,9 +21,6 @@ contract EspressoNitroTEEVerifier is NitroValidator, IEspressoNitroTEEVerifier, 
     using LibBytes for bytes;
     using LibCborElement for CborElement;
 
-    // Events
-    event AttestationDataSubmitted(address indexed signer, bytes attestation, bytes signature);
-
     // PCR0 keccak hash
     mapping(bytes32 => bool) public registeredEnclaveHash;
     // Registered signers
