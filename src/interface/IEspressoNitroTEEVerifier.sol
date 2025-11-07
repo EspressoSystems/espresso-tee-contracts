@@ -8,6 +8,7 @@ interface IEspressoNitroTEEVerifier {
     event AWSEnclaveHashSet(bytes32 enclaveHash, bool valid);
     event AWSSignerRegistered(address signer, bytes32 enclaveHash);
     event DeletedAWSRegisteredSigner(address signer);
+    event AttestationDataSubmitted(address indexed signer, bytes attestation, bytes signature);
 
     function registeredSigners(address signer) external view returns (bool);
     function registeredEnclaveHash(bytes32 enclaveHash) external view returns (bool);
