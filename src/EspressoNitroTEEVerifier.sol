@@ -114,7 +114,12 @@ contract EspressoNitroTEEVerifier is NitroValidator, IEspressoNitroTEEVerifier, 
      * @param signature The signature data (for transparency, not verified on-chain)
      * @param enclaveAddress The address of the signer to register
      */
-    function registerSignerWithoutAttestationVerification(bytes32 pcr0Hash, bytes calldata attestation, bytes calldata signature, address enclaveAddress) external onlyOwner {
+    function registerSignerWithoutAttestationVerification(
+        bytes32 pcr0Hash,
+        bytes calldata attestation,
+        bytes calldata signature,
+        address enclaveAddress
+    ) external onlyOwner {
         if (!registeredEnclaveHash[pcr0Hash]) {
             revert InvalidAWSEnclaveHash();
         }
