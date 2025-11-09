@@ -116,7 +116,7 @@ contract EspressoNitroTEEVerifier is NitroValidator, IEspressoNitroTEEVerifier, 
         bytes calldata attestation,
         bytes calldata signature,
         address enclaveAddress
-    ) external onlyOwner {
+    ) external {
         if (!registeredEnclaveHash[pcr0Hash]) {
             revert InvalidAWSEnclaveHash();
         }
