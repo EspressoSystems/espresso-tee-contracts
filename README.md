@@ -1,5 +1,7 @@
 # Espresso TEE Contracts
 
+This repository contains Solidity contracts for verifying attestations from Trusted Execution Environments (TEEs), including AWS Nitro Enclaves and Intel SGX. It is used in our integration projects including [optimism-espresso-integration](https://github.com/EspressoSystems/optimism-espresso-integration) and [nitro-espresso-integration](https://github.com/EspressoSystems/nitro-espresso-integration).
+
 ## Foundry
 
 **Foundry is a blazing fast, portable and modular toolkit for Ethereum application development written in Rust.**

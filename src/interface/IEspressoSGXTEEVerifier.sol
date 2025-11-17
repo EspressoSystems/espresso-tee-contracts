@@ -38,10 +38,7 @@ interface IEspressoSGXTEEVerifier {
         view
         returns (EnclaveReport memory);
 
-    function parseQuoteHeader(bytes calldata rawQuote)
-        external
-        pure
-        returns (Header memory header);
+    function parseQuoteHeader(bytes calldata rawQuote) external pure returns (Header memory header);
 
     function parseEnclaveReport(bytes memory rawEnclaveReport)
         external
