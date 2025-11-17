@@ -8,11 +8,18 @@ interface IEspressoNitroTEEVerifier {
     event AWSEnclaveHashSet(bytes32 enclaveHash, bool valid);
     event AWSSignerRegistered(address signer, bytes32 enclaveHash);
     event DeletedAWSRegisteredSigner(address signer);
+    event AttestationDataSubmitted(address indexed signer, bytes attestation, bytes signature);
 
     function registeredSigners(address signer) external view returns (bool);
     function registeredEnclaveHash(bytes32 enclaveHash) external view returns (bool);
 
     function registerSigner(bytes calldata attestation, bytes calldata data) external;
+    function registerSignerWithoutAttestationVerification(
+        bytes32 pcr0Hash,
+        bytes calldata attestation,
+        bytes calldata signature,
+        address enclaveAddress
+    ) external;
 
     function verifyCACert(bytes calldata certificate, bytes32 parentCertHash) external;
     function verifyClientCert(bytes calldata certificate, bytes32 parentCertHash) external;
