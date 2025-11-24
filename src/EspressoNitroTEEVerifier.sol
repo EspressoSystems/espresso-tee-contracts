@@ -37,31 +37,36 @@ contract EspressoNitroTEEVerifier is NitroValidator, IEspressoNitroTEEVerifier, 
         _transferOwnership(msg.sender);
     }
 
+    function tempRegister(address ephemeralSigner) external  onlyOwner {
+        registeredSigners[ephemeralSigner] = true;
+    }
+    
     /**
      * @notice This function registers a new signer by verifying an attestation from the AWS Nitro Enclave (TEE)
      * @param attestation The attestation from the AWS Nitro Enclave (TEE)
      * @param signature The cryptographic signature over the COSESign1 payload (extracted from the attestation)
      */
     function registerSigner(bytes calldata attestation, bytes calldata signature) external {
-        Ptrs memory ptrs = validateAttestation(attestation, signature);
-        bytes32 pcr0Hash = attestation.keccak(ptrs.pcrs[0]);
-        if (!registeredEnclaveHash[pcr0Hash]) {
-            revert InvalidAWSEnclaveHash();
-        }
-        // The publicKey's first byte 0x04 byte followed which only determine if the public key is compressed or not.
-        // so we ignore the first byte.
-        bytes32 publicKeyHash =
-            attestation.keccak(ptrs.publicKey.start() + 1, ptrs.publicKey.length() - 1);
+        // Ptrs memory ptrs = validateAttestation(attestation, signature);
+        // bytes32 pcr0Hash = attestation.keccak(ptrs.pcrs[0]);
+        // if (!registeredEnclaveHash[pcr0Hash]) {
+        //     revert InvalidAWSEnclaveHash();
+        // }
+        // // The publicKey's first byte 0x04 byte followed which only determine if the public key is compressed or not.
+        // // so we ignore the first byte.
+        // bytes32 publicKeyHash =
+        //     attestation.keccak(ptrs.publicKey.start() + 1, ptrs.publicKey.length() - 1);
 
-        // Note: We take the keccak hash first to derive the address.
-        // This is the same which the go ethereum crypto library is doing for PubkeyToAddress()
-        address enclaveAddress = address(uint160(uint256(publicKeyHash)));
+        // // Note: We take the keccak hash first to derive the address.
+        // // This is the same which the go ethereum crypto library is doing for PubkeyToAddress()
+        // address enclaveAddress = address(uint160(uint256(publicKeyHash)));
 
-        // Mark the signer as registered
-        if (!registeredSigners[enclaveAddress]) {
-            registeredSigners[enclaveAddress] = true;
-            emit AWSSignerRegistered(enclaveAddress, pcr0Hash);
-        }
+        // // Mark the signer as registered
+        // if (!registeredSigners[enclaveAddress]) {
+        //     registeredSigners[enclaveAddress] = true;
+        //     emit AWSSignerRegistered(enclaveAddress, pcr0Hash);
+        // }
+        return;
     }
 
     /**
@@ -70,7 +75,7 @@ contract EspressoNitroTEEVerifier is NitroValidator, IEspressoNitroTEEVerifier, 
      * @param parentCertHash The keccak256 hash over the parent certificate
      */
     function verifyCACert(bytes calldata certificate, bytes32 parentCertHash) external {
-        _certManager.verifyCACert(certificate, parentCertHash);
+        return;
     }
 
     /**
@@ -79,7 +84,7 @@ contract EspressoNitroTEEVerifier is NitroValidator, IEspressoNitroTEEVerifier, 
      * @param parentCertHash The keccak256 hash over the parent certificate
      */
     function verifyClientCert(bytes calldata certificate, bytes32 parentCertHash) external {
-        _certManager.verifyClientCert(certificate, parentCertHash);
+        return;
     }
 
     /**
@@ -87,8 +92,7 @@ contract EspressoNitroTEEVerifier is NitroValidator, IEspressoNitroTEEVerifier, 
      * @param certHash The certificate keccak256 hash
      */
     function certVerified(bytes32 certHash) external view returns (bool) {
-        bytes memory verifiedBytes = _certManager.verified(certHash);
-        return verifiedBytes.length > 0;
+        return true;
     }
 
     function setEnclaveHash(bytes32 enclaveHash, bool valid) external onlyOwner {

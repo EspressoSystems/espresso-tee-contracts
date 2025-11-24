@@ -23,7 +23,11 @@ contract EspressoNitroTEEVerifierTest is Test {
         espressoNitroTEEVerifier = new EspressoNitroTEEVerifier(pcr0Hash, new CertManager());
         vm.stopPrank();
     }
-
+    function testTempRegister() public{
+        vm.startPrank(adminTEE);
+        espressoNitroTEEVerifier.tempRegister(address(0));
+        assertEq(espressoNitroTEEVerifier.registeredSigners(address(0)), true);
+    }
     /**
      * Test register signer succeeds upon valid attestation and signature
      */
