@@ -10,13 +10,14 @@ interface IEspressoNitroTEEVerifier {
     event DeletedAWSRegisteredSigner(address signer);
 
     function registeredSigners(address signer) external view returns (bool);
-    function registeredEnclaveHash(bytes32 enclaveHash) external view returns (bool);
+    function registeredEnclaveHash(
+        bytes32 enclaveHash
+    ) external view returns (bool);
 
-    function registerSigner(bytes calldata attestation, bytes calldata data) external;
-
-    function verifyCACert(bytes calldata certificate, bytes32 parentCertHash) external;
-    function verifyClientCert(bytes calldata certificate, bytes32 parentCertHash) external;
-    function certVerified(bytes32 certHash) external view returns (bool);
+    function registerSigner(
+        bytes calldata attestation,
+        bytes calldata data
+    ) external;
 
     function setEnclaveHash(bytes32 enclaveHash, bool valid) external;
     function deleteRegisteredSigners(address[] memory signers) external;

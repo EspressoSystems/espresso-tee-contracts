@@ -1,0 +1,23 @@
+{
+  "lib/automata-dcap-attestation": {
+    "branch": {
+      "name": "espresso-nitro",
+      "rev": "85baefeaa162b733a39df46a43ec2f9480fb27dc"
+    }
+  },
+  "lib/forge-std": {
+    "rev": "6853b9ec7df5dc0c213b05ae67785ad4f4baa0ea"
+  },
+  "lib/nitro-validator": {
+    "branch": {
+      "name": "main",
+      "rev": "c7a62dfdfa82388a5b9ed1cbdffd8569d19573c8"
+    }
+  },
+  "lib/openzeppelin-contracts": {
+    "rev": "49c0e4370d0cc50ea6090709e3835a3091e33ee2"
+  },
+  "lib/openzeppelin-contracts-upgradeable": {
+    "rev": "dd89bed956f7ca2f72f51b62bd926f3955695fee"
+  }
+}
