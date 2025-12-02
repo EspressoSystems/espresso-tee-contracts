@@ -63,7 +63,6 @@ anvil --help
 cast --help
 ```
 
-
 # Development
 
 For ease of development in go projects, we have included a small utility in this repo to generate go bindings for the TEEVerifier contracts present here.
@@ -116,21 +115,11 @@ source .env
 
 ### 3. **Deployment Process**
 
-1. If CertManager is not deployed on the given chain, deploy it first:
-
-   ```bash
-    forge script scripts/DeployCertManager.sol:DeployCertManager \
-       --rpc-url "$RPC_URL" \
-       --private-key "$PRIVATE_KEY" \
-       --broadcast \
-       --verify --verifier etherscan --chain "$CHAIN_ID"
-   ```
-
-2. **Deploy Nitro Verifier**
-   After CertManager deployment update the `.env` file with:
+1. **Deploy Nitro Verifier**
+   After CertManager deployment update the `.env` file with, you can get this address from here: https://github.com/automata-network/aws-nitro-enclave-attestation
 
    ```text
-   CERT_MANAGER_ADDRESS=<deployed_cert_manager_address>
+   NITRO_ENCLAVE_VERIFIER=<address of nitro verifier>
    ```
 
    then execute:
@@ -143,7 +132,7 @@ source .env
        --verify --verifier etherscan --chain "$CHAIN_ID"
    ```
 
-3. **Deploy SGX Verifier**
+2. **Deploy SGX Verifier**
 
    ```bash
    FOUNDRY_PROFILE=sgx forge script scripts/DeploySGXTEEVerifier.s.sol:DeploySGXTEEVerifier \
@@ -153,7 +142,7 @@ source .env
        --verify --verifier etherscan --chain "$CHAIN_ID"
    ```
 
-4. **Update Environment Variables**
+3. **Update Environment Variables**
 
    After successful AWS Nitro and SGX deployments update the `.env` file with:
 
@@ -162,7 +151,7 @@ source .env
    SGX_VERIFIER_ADDRESS=<deployed_sgx_address>
    ```
 
-5. **Deploy Espresso TEE Verifier**
+4. **Deploy Espresso TEE Verifier**
 
    ```bash
    forge script scripts/DeployTEEVerifier.s.sol:DeployTEEVerifier \

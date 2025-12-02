@@ -3,16 +3,18 @@ import {Script} from "forge-std/Script.sol";
 import {console2} from "forge-std/console2.sol";
 import {CertManager} from "@nitro-validator/CertManager.sol";
 import {EspressoNitroTEEVerifier} from "src/EspressoNitroTEEVerifier.sol";
-import {IEspressoNitroTEEVerifier} from "src/interface/IEspressoNitroTEEVerifier.sol";
+import {
+    IEspressoNitroTEEVerifier
+} from "src/interface/IEspressoNitroTEEVerifier.sol";
 
 contract DeployNitroTEEVerifier is Script {
     function run() external {
         vm.startBroadcast();
 
-        address certManager = vm.envAddress("CERT_MANAGER_ADDRESS");
+        address nitroEnclaveVerifier = vm.envAddress("NITRO_ENCLAVE_VERIFIER");
         require(
-            certManager != address(0),
-            "CERT_MANAGER_ADDRESS environment variable not set or invalid"
+            nitroEnclaveVerifier != address(0),
+            "NITRO_ENCLAVE_VERIFIER environment variable not set or invalid"
         );
         bytes32 pcr0Hash = vm.envBytes32("NITRO_ENCLAVE_HASH");
         require(
