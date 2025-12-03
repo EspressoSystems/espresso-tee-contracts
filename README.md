@@ -116,7 +116,7 @@ source .env
 ### 3. **Deployment Process**
 
 1. **Deploy Nitro Verifier**
-   After CertManager deployment update the `.env` file with, you can get this address from here: https://github.com/automata-network/aws-nitro-enclave-attestation
+   Update the `.env` file with the Nitro Enclave Verifier address, which can be obtained from: https://github.com/automata-network/aws-nitro-enclave-attestation
 
    ```text
    NITRO_ENCLAVE_VERIFIER=<address of nitro verifier>
