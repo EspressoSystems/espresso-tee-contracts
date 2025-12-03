@@ -23,6 +23,8 @@ contract EspressoNitroTEEVerifier is IEspressoNitroTEEVerifier, Ownable2Step {
     INitroEnclaveVerifier public _nitroEnclaveVerifier;
 
     constructor(bytes32 enclaveHash, INitroEnclaveVerifier nitroEnclaveVerifier) Ownable2Step() {
+        require(enclaveHash != bytes32(0), "Enclave hash cannot be zero");
+        require(address(nitroEnclaveVerifier) != address(0), "NitroEnclaveVerifier cannot be zero");
         _nitroEnclaveVerifier = nitroEnclaveVerifier;
         registeredEnclaveHash[enclaveHash] = true;
         _transferOwnership(msg.sender);
@@ -30,7 +32,8 @@ contract EspressoNitroTEEVerifier is IEspressoNitroTEEVerifier, Ownable2Step {
 
     /**
      * @notice This function registers a new signer by verifying an attestation from the AWS Nitro Enclave (TEE)
-     * @param output The output from the AWS Nitro Enclave (TEE)
+     * The signer is not the caller of the function but the address which was generated inside the TEE.
+     * @param output The public output of the ZK proof
      * @param proofBytes The cryptographic proof bytes over attestation
      */
     function registerSigner(bytes calldata output, bytes calldata proofBytes) external {
@@ -40,7 +43,10 @@ contract EspressoNitroTEEVerifier is IEspressoNitroTEEVerifier, Ownable2Step {
             ZkCoProcessorType.Succinct,
             proofBytes
         );
-        // Hash the PCR0 value (combining first 32 bytes and last 16 bytes)
+        // we hash the pcr0 value to get the the pcr0Hash and then
+        // check if the given hash has been registered in the contract by the owner
+        // this allows us to verify that the registerSigner request is coming from a TEE
+        // which is trusted
         bytes32 pcr0Hash =
             keccak256(abi.encodePacked(journal.pcrs[0].value.first, journal.pcrs[0].value.second));
         if (!registeredEnclaveHash[pcr0Hash]) {
@@ -65,7 +71,16 @@ contract EspressoNitroTEEVerifier is IEspressoNitroTEEVerifier, Ownable2Step {
         }
     }
 
+    /**
+     * @notice This function allows the owner to set the enclave hash, setting valid to true will allow any enclave
+     * with a valid pcr0 hash to register a signer (address which was generated inside the TEE). Setting valid to false
+     * will further remove the enclave hash from the registered enclave hash list thus preventing any enclave with the given
+     * hash from registering a signer.
+     * @param enclaveHash The hash of the enclave
+     * @param valid Whether the enclave hash is valid or not
+     */
     function setEnclaveHash(bytes32 enclaveHash, bool valid) external onlyOwner {
+        require(enclaveHash != bytes32(0), "Enclave hash cannot be zero");
         registeredEnclaveHash[enclaveHash] = valid;
         emit AWSEnclaveHashSet(enclaveHash, valid);
     }
