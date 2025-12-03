@@ -1,14 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {NitroValidator} from "@nitro-validator/NitroValidator.sol";
-import {LibBytes} from "@nitro-validator/LibBytes.sol";
-import {
-    LibCborElement,
-    CborElement,
-    CborDecode
-} from "@nitro-validator/CborDecode.sol";
-
 import "@openzeppelin/contracts/access/Ownable2Step.sol";
 import {
     IEspressoNitroTEEVerifier
@@ -21,17 +13,10 @@ import {
 
 /**
  * @title  Verifies quotes from the AWS Nitro Enclave (TEE) and attests on-chain
- * @notice Contains the logic to verify an attestation and signature from the TEE and attest on-chain. It uses the NitroValidator contract
- *         from `base` to verify the quote. Along with some additional verification logic.
- *         (https://github.com/base/nitro-validator)
- * The code of this contract is inspired from SystemConfigGlobal.sol
- * (https://github.com/base/op-enclave/blob/main/contracts/src/SystemConfigGlobal.sol)
+ * @notice Contains the logic to verify zk proof of the attestation on-chain. It uses the EspressoNitroTEEVerifier contract
+ *         from `automata` to verify the proof.
  */
 contract EspressoNitroTEEVerifier is IEspressoNitroTEEVerifier, Ownable2Step {
-    using CborDecode for bytes;
-    using LibBytes for bytes;
-    using LibCborElement for CborElement;
-
     // PCR0 keccak hash
     mapping(bytes32 => bool) public registeredEnclaveHash;
     // Registered signers
@@ -76,10 +61,12 @@ contract EspressoNitroTEEVerifier is IEspressoNitroTEEVerifier, Ownable2Step {
 
         // The publicKey's first byte 0x04 byte followed which only determine if the public key is compressed or not.
         // so we ignore the first byte.
-        bytes memory publicKeyWithoutPrefix = journal.publicKey.slice(
-            1,
+        bytes memory publicKeyWithoutPrefix = new bytes(
             journal.publicKey.length - 1
         );
+        for (uint256 i = 1; i < journal.publicKey.length; i++) {
+            publicKeyWithoutPrefix[i - 1] = journal.publicKey[i];
+        }
 
         bytes32 publicKeyHash = keccak256(publicKeyWithoutPrefix);
         // Note: We take the keccak hash first to derive the address.

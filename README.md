@@ -102,9 +102,10 @@ SGX_ENCLAVE_HASH=<sgx_enclave_measurement>
 SGX_QUOTE_VERIFIER_ADDRESS=<quote_verifier_address_from_automata>  # From: https://github.com/automata-network/automata-dcap-attestation
 
 # To be updated after deployment
-CERT_MANAGER_ADDRESS=""
 NITRO_VERIFIER_ADDRESS=""
 SGX_VERIFIER_ADDRESS=""
+<!-- From https://github.com/automata-network/aws-nitro-enclave-attestation -->
+NITRO_ENCLAVE_VERIFIER=""
 ```
 
 Save the file then source it:
