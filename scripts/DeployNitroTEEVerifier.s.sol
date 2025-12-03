@@ -6,6 +6,9 @@ import {EspressoNitroTEEVerifier} from "src/EspressoNitroTEEVerifier.sol";
 import {
     IEspressoNitroTEEVerifier
 } from "src/interface/IEspressoNitroTEEVerifier.sol";
+import {
+    INitroEnclaveVerifier
+} from "aws-nitro-enclave-attestation/interfaces/INitroEnclaveVerifier.sol";
 
 contract DeployNitroTEEVerifier is Script {
     function run() external {
@@ -25,7 +28,7 @@ contract DeployNitroTEEVerifier is Script {
         // 1. Deploy NitroVerifier
         IEspressoNitroTEEVerifier nitroVerifier = new EspressoNitroTEEVerifier(
             pcr0Hash,
-            CertManager(certManager)
+            INitroEnclaveVerifier(nitroEnclaveVerifier)
         );
         console2.log("NitroVerifier deployed at:", address(nitroVerifier));
 
