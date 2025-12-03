@@ -5,8 +5,9 @@ import "forge-std/Test.sol";
 import {EspressoNitroTEEVerifier} from "../src/EspressoNitroTEEVerifier.sol";
 import {IEspressoNitroTEEVerifier} from "../src/interface/IEspressoNitroTEEVerifier.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
-import {INitroEnclaveVerifier} from
-    "aws-nitro-enclave-attestation/interfaces/INitroEnclaveVerifier.sol";
+import {
+    INitroEnclaveVerifier
+} from "aws-nitro-enclave-attestation/interfaces/INitroEnclaveVerifier.sol";
 
 contract EspressoNitroTEEVerifierTest is Test {
     address proxyAdmin = address(140);

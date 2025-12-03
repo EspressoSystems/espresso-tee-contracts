@@ -10,8 +10,9 @@ import {IEspressoSGXTEEVerifier} from "../src/interface/IEspressoSGXTEEVerifier.
 import {IEspressoNitroTEEVerifier} from "../src/interface/IEspressoNitroTEEVerifier.sol";
 
 import "@openzeppelin/contracts/access/Ownable.sol";
-import {INitroEnclaveVerifier} from
-    "aws-nitro-enclave-attestation/interfaces/INitroEnclaveVerifier.sol";
+import {
+    INitroEnclaveVerifier
+} from "aws-nitro-enclave-attestation/interfaces/INitroEnclaveVerifier.sol";
 
 contract EspressoTEEVerifierTest is Test {
     address adminTEE = address(141);
