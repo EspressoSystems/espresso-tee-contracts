@@ -121,7 +121,7 @@ contract EspressoTEEVerifierTest is Test {
     function testNitroRegisteredEnclaveHash() public {
         assertEq(
             espressoTEEVerifier.registeredEnclaveHashes(
-                bytes32(0x89b2ccf11ff6718a4e015077488f8a98ec11f7c5a14b3a24c3610a7314b680e6),
+                bytes32(0x555797ae2413bb1e4c352434a901032b16d7ac9090322532a3fccb9947977e8b),
                 IEspressoTEEVerifier.TeeType.NITRO
             ),
             true
