@@ -1,62 +1,77 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {NitroValidator} from "@nitro-validator/NitroValidator.sol";
-import {LibBytes} from "@nitro-validator/LibBytes.sol";
-import {LibCborElement, CborElement, CborDecode} from "@nitro-validator/CborDecode.sol";
-import {CertManager} from "@nitro-validator/CertManager.sol";
 import "@openzeppelin/contracts/access/Ownable2Step.sol";
+import "@openzeppelin/contracts/utils/Strings.sol";
+
 import {IEspressoNitroTEEVerifier} from "./interface/IEspressoNitroTEEVerifier.sol";
+import {
+    INitroEnclaveVerifier,
+    VerifierJournal,
+    ZkCoProcessorType,
+    VerificationResult
+} from "aws-nitro-enclave-attestation/interfaces/INitroEnclaveVerifier.sol";
 
 /**
  * @title  Verifies quotes from the AWS Nitro Enclave (TEE) and attests on-chain
- * @notice Contains the logic to verify an attestation and signature from the TEE and attest on-chain. It uses the NitroValidator contract
- *         from `base` to verify the quote. Along with some additional verification logic.
- *         (https://github.com/base/nitro-validator)
- * The code of this contract is inspired from SystemConfigGlobal.sol
- * (https://github.com/base/op-enclave/blob/main/contracts/src/SystemConfigGlobal.sol)
+ * @notice Contains the logic to verify zk proof of the attestation on-chain. It uses the EspressoNitroTEEVerifier contract
+ *         from `automata` to verify the proof.
  */
-contract EspressoNitroTEEVerifier is NitroValidator, IEspressoNitroTEEVerifier, Ownable2Step {
-    using CborDecode for bytes;
-    using LibBytes for bytes;
-    using LibCborElement for CborElement;
-
+contract EspressoNitroTEEVerifier is IEspressoNitroTEEVerifier, Ownable2Step {
     // PCR0 keccak hash
     mapping(bytes32 => bool) public registeredEnclaveHash;
     // Registered signers
     mapping(address => bool) public registeredSigners;
-    // Certificate Manager
-    CertManager _certManager;
 
-    constructor(bytes32 enclaveHash, CertManager certManager)
-        NitroValidator(certManager)
-        Ownable()
-    {
-        _certManager = certManager;
+    INitroEnclaveVerifier public _nitroEnclaveVerifier;
+
+    constructor(bytes32 enclaveHash, INitroEnclaveVerifier nitroEnclaveVerifier) Ownable2Step() {
+        require(enclaveHash != bytes32(0), "Enclave hash cannot be zero");
+        require(address(nitroEnclaveVerifier) != address(0), "NitroEnclaveVerifier cannot be zero");
+        _nitroEnclaveVerifier = nitroEnclaveVerifier;
         registeredEnclaveHash[enclaveHash] = true;
         _transferOwnership(msg.sender);
     }
 
     /**
      * @notice This function registers a new signer by verifying an attestation from the AWS Nitro Enclave (TEE)
-     * @param attestation The attestation from the AWS Nitro Enclave (TEE)
-     * @param signature The cryptographic signature over the COSESign1 payload (extracted from the attestation)
+     * The signer is not the caller of the function but the address which was generated inside the TEE.
+     * @param output The public output of the ZK proof
+     * @param proofBytes The cryptographic proof bytes over attestation
      */
-    function registerSigner(bytes calldata attestation, bytes calldata signature) external {
-        Ptrs memory ptrs = validateAttestation(attestation, signature);
-        bytes32 pcr0Hash = attestation.keccak(ptrs.pcrs[0]);
+    function registerSigner(bytes calldata output, bytes calldata proofBytes) external {
+        VerifierJournal memory journal = _nitroEnclaveVerifier.verify(
+            output,
+            // Currently only Succinct ZK coprocessor is supported
+            ZkCoProcessorType.Succinct,
+            proofBytes
+        );
+
+        if (journal.result != VerificationResult.Success) {
+            revert VerificationFailed(journal.result);
+        }
+
+        // we hash the pcr0 value to get the the pcr0Hash and then
+        // check if the given hash has been registered in the contract by the owner
+        // this allows us to verify that the registerSigner request is coming from a TEE
+        // which is trusted
+        bytes32 pcr0Hash =
+            keccak256(abi.encodePacked(journal.pcrs[0].value.first, journal.pcrs[0].value.second));
         if (!registeredEnclaveHash[pcr0Hash]) {
             revert InvalidAWSEnclaveHash();
         }
+
         // The publicKey's first byte 0x04 byte followed which only determine if the public key is compressed or not.
         // so we ignore the first byte.
-        bytes32 publicKeyHash =
-            attestation.keccak(ptrs.publicKey.start() + 1, ptrs.publicKey.length() - 1);
+        bytes memory publicKeyWithoutPrefix = new bytes(journal.publicKey.length - 1);
+        for (uint256 i = 1; i < journal.publicKey.length; i++) {
+            publicKeyWithoutPrefix[i - 1] = journal.publicKey[i];
+        }
 
+        bytes32 publicKeyHash = keccak256(publicKeyWithoutPrefix);
         // Note: We take the keccak hash first to derive the address.
         // This is the same which the go ethereum crypto library is doing for PubkeyToAddress()
         address enclaveAddress = address(uint160(uint256(publicKeyHash)));
-
         // Mark the signer as registered
         if (!registeredSigners[enclaveAddress]) {
             registeredSigners[enclaveAddress] = true;
@@ -65,33 +80,15 @@ contract EspressoNitroTEEVerifier is NitroValidator, IEspressoNitroTEEVerifier, 
     }
 
     /**
-     * @notice This function verifies a AWS Nitro Attestations CA Certificate on chain
-     * @param certificate The certificate from the attestation
-     * @param parentCertHash The keccak256 hash over the parent certificate
+     * @notice This function allows the owner to set the enclave hash, setting valid to true will allow any enclave
+     * with a valid pcr0 hash to register a signer (address which was generated inside the TEE). Setting valid to false
+     * will further remove the enclave hash from the registered enclave hash list thus preventing any enclave with the given
+     * hash from registering a signer.
+     * @param enclaveHash The hash of the enclave
+     * @param valid Whether the enclave hash is valid or not
      */
-    function verifyCACert(bytes calldata certificate, bytes32 parentCertHash) external {
-        _certManager.verifyCACert(certificate, parentCertHash);
-    }
-
-    /**
-     * @notice This function verifies a AWS Nitro Attestations Client Certificate on chain
-     * @param certificate The certificate from the attestation
-     * @param parentCertHash The keccak256 hash over the parent certificate
-     */
-    function verifyClientCert(bytes calldata certificate, bytes32 parentCertHash) external {
-        _certManager.verifyClientCert(certificate, parentCertHash);
-    }
-
-    /**
-     * @notice This function is a readonly function to check if a certificate is already verified on chain
-     * @param certHash The certificate keccak256 hash
-     */
-    function certVerified(bytes32 certHash) external view returns (bool) {
-        bytes memory verifiedBytes = _certManager.verified(certHash);
-        return verifiedBytes.length > 0;
-    }
-
     function setEnclaveHash(bytes32 enclaveHash, bool valid) external onlyOwner {
+        require(enclaveHash != bytes32(0), "Enclave hash cannot be zero");
         registeredEnclaveHash[enclaveHash] = valid;
         emit AWSEnclaveHashSet(enclaveHash, valid);
     }
