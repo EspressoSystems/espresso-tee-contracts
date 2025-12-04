@@ -2,11 +2,14 @@
 pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/access/Ownable2Step.sol";
+import "@openzeppelin/contracts/utils/Strings.sol";
+
 import {IEspressoNitroTEEVerifier} from "./interface/IEspressoNitroTEEVerifier.sol";
 import {
     INitroEnclaveVerifier,
     VerifierJournal,
-    ZkCoProcessorType
+    ZkCoProcessorType,
+    VerificationResult
 } from "aws-nitro-enclave-attestation/interfaces/INitroEnclaveVerifier.sol";
 
 /**
@@ -19,7 +22,7 @@ contract EspressoNitroTEEVerifier is IEspressoNitroTEEVerifier, Ownable2Step {
     mapping(bytes32 => bool) public registeredEnclaveHash;
     // Registered signers
     mapping(address => bool) public registeredSigners;
-    // Nitro Enclave Verifier
+
     INitroEnclaveVerifier public _nitroEnclaveVerifier;
 
     constructor(bytes32 enclaveHash, INitroEnclaveVerifier nitroEnclaveVerifier) Ownable2Step() {
@@ -43,6 +46,11 @@ contract EspressoNitroTEEVerifier is IEspressoNitroTEEVerifier, Ownable2Step {
             ZkCoProcessorType.Succinct,
             proofBytes
         );
+
+        if (journal.result != VerificationResult.Success) {
+            revert VerificationFailed(journal.result);
+        }
+
         // we hash the pcr0 value to get the the pcr0Hash and then
         // check if the given hash has been registered in the contract by the owner
         // this allows us to verify that the registerSigner request is coming from a TEE

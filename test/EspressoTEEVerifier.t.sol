@@ -22,7 +22,7 @@ contract EspressoTEEVerifierTest is Test {
     EspressoSGXTEEVerifier espressoSGXTEEVerifier;
     EspressoNitroTEEVerifier espressoNitroTEEVerifier;
     bytes32 enclaveHash =
-        bytes32(0x01f7290cb6bbaa427eca3daeb25eecccb87c4b61259b1ae2125182c4d77169c0);
+        bytes32(0x555797ae2413bb1e4c352434a901032b16d7ac9090322532a3fccb9947977e8b);
     //  Address of the automata V3QuoteVerifier deployed on sepolia
     address v3QuoteVerifier = address(0x6E64769A13617f528a2135692484B681Ee1a7169);
     bytes32 pcr0Hash = bytes32(0x89b2ccf11ff6718a4e015077488f8a98ec11f7c5a14b3a24c3610a7314b680e6);
@@ -53,7 +53,7 @@ contract EspressoTEEVerifierTest is Test {
     }
 
     function testNitroRegisterSigner() public {
-        vm.warp(1_743_110_000);
+        vm.warp(1_764_889_188);
         string memory proofPath = "/test/configs/proof.json";
         string memory inputFile = string.concat(vm.projectRoot(), proofPath);
         string memory json = vm.readFile(inputFile);
@@ -91,7 +91,7 @@ contract EspressoTEEVerifierTest is Test {
     }
 
     function testNitroRegisteredSigners() public {
-        vm.warp(1_743_110_000);
+        vm.warp(1_764_889_188);
         string memory proofPath = "/test/configs/proof.json";
         string memory inputFile = string.concat(vm.projectRoot(), proofPath);
         string memory json = vm.readFile(inputFile);
@@ -99,7 +99,7 @@ contract EspressoTEEVerifierTest is Test {
 
         // Extract onchain_proof
         bytes memory onchain = vm.parseJsonBytes(json, ".onchain_proof");
-        address signerAddr = 0x1b76eaFc1f9dD32D42518F08B3059D7fb32636AC;
+        address signerAddr = 0xF8463E0aF00C1910402D2A51B3a8CecD0dC1c3fE;
         espressoTEEVerifier.registerSigner(journal, onchain, IEspressoTEEVerifier.TeeType.NITRO);
 
         assertEq(
@@ -167,7 +167,7 @@ contract EspressoTEEVerifierTest is Test {
      */
     function testNitroRegisterSignerInvalidPCR0Hash() public {
         vm.startPrank(adminTEE);
-        vm.warp(1_743_110_000);
+        vm.warp(1_764_889_188);
         string memory proofPath = "/test/configs/proof.json";
         string memory inputFile = string.concat(vm.projectRoot(), proofPath);
         string memory json = vm.readFile(inputFile);

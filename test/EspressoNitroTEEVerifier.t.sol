@@ -15,7 +15,7 @@ contract EspressoNitroTEEVerifierTest is Test {
     address fakeAddress = address(145);
 
     EspressoNitroTEEVerifier espressoNitroTEEVerifier;
-    bytes32 pcr0Hash = bytes32(0x89b2ccf11ff6718a4e015077488f8a98ec11f7c5a14b3a24c3610a7314b680e6);
+    bytes32 pcr0Hash = bytes32(0x555797ae2413bb1e4c352434a901032b16d7ac9090322532a3fccb9947977e8b);
 
     function setUp() public {
         vm.createSelectFork(
@@ -34,7 +34,7 @@ contract EspressoNitroTEEVerifierTest is Test {
      */
     function testRegisterSigner() public {
         vm.startPrank(adminTEE);
-        vm.warp(1_743_110_000);
+        vm.warp(1_764_889_188);
         string memory proofPath = "/test/configs/proof.json";
         string memory inputFile = string.concat(vm.projectRoot(), proofPath);
         string memory json = vm.readFile(inputFile);
@@ -53,7 +53,7 @@ contract EspressoNitroTEEVerifierTest is Test {
      */
     function testRegisterSignerInvalidPCR0Hash() public {
         vm.startPrank(adminTEE);
-        vm.warp(1_743_110_000);
+        vm.warp(1_764_889_188);
         string memory proofPath = "/test/configs/proof.json";
         string memory inputFile = string.concat(vm.projectRoot(), proofPath);
         string memory json = vm.readFile(inputFile);
@@ -76,8 +76,24 @@ contract EspressoNitroTEEVerifierTest is Test {
      */
     function testInvalidProof() public {
         vm.startPrank(adminTEE);
-        vm.warp(1_743_110_000);
         string memory proofPath = "/test/configs/invalid_proof.json";
+        string memory inputFile = string.concat(vm.projectRoot(), proofPath);
+        string memory json = vm.readFile(inputFile);
+        bytes memory journal = vm.parseJsonBytes(json, ".raw_proof.journal");
+
+        bytes memory onchain = vm.parseJsonBytes(json, ".onchain_proof");
+        vm.expectRevert();
+        espressoNitroTEEVerifier.registerSigner(journal, onchain);
+        vm.stopPrank();
+    }
+
+    /*
+     * Test if expired proof reverts
+     */
+    function testExpiredProof() public {
+        vm.startPrank(adminTEE);
+        vm.warp(1_433_353_188);
+        string memory proofPath = "/test/configs/expired_proof.json";
         string memory inputFile = string.concat(vm.projectRoot(), proofPath);
         string memory json = vm.readFile(inputFile);
         bytes memory journal = vm.parseJsonBytes(json, ".raw_proof.journal");
@@ -129,7 +145,7 @@ contract EspressoNitroTEEVerifierTest is Test {
     function testDeleteRegisterSignerOwnership() public {
         // register signer
         vm.startPrank(adminTEE);
-        vm.warp(1_743_110_000);
+        vm.warp(1_764_889_188);
         string memory proofPath = "/test/configs/proof.json";
         string memory inputFile = string.concat(vm.projectRoot(), proofPath);
         string memory json = vm.readFile(inputFile);
@@ -141,7 +157,7 @@ contract EspressoNitroTEEVerifierTest is Test {
         // register and verify signer exists
         espressoNitroTEEVerifier.registerSigner(journal, onchain);
 
-        address signer = 0x1b76eaFc1f9dD32D42518F08B3059D7fb32636AC;
+        address signer = 0xF8463E0aF00C1910402D2A51B3a8CecD0dC1c3fE;
         assertEq(espressoNitroTEEVerifier.registeredSigners(signer), true);
 
         // start with incorrect admin address
