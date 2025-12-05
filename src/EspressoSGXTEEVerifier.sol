@@ -105,13 +105,7 @@ contract EspressoSGXTEEVerifier is IEspressoSGXTEEVerifier, Ownable2Step {
             revert ReportDataTooShort();
         }
 
-        // Extract address from data (exactly 20 bytes)
-        address signer;
-        assembly {
-            // data.offset points to the length prefix
-            // Add 32 to skip the length and read the actual data
-            signer := calldataload(add(data.offset, 32))
-        }
+        address signer = address(uint160(bytes20(data[:20])));
 
         // Check if the extracted address is valid
         if (signer == address(0)) {
