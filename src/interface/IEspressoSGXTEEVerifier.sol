@@ -1,12 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {
-    Header
-} from "@automata-network/dcap-attestation/contracts/types/CommonStruct.sol";
-import {
-    EnclaveReport
-} from "@automata-network/dcap-attestation/contracts/types/V3Structs.sol";
+import {Header} from "@automata-network/dcap-attestation/contracts/types/CommonStruct.sol";
+import {EnclaveReport} from "@automata-network/dcap-attestation/contracts/types/V3Structs.sol";
 
 interface IEspressoSGXTEEVerifier {
     // We only support version 3 for now
@@ -35,27 +31,21 @@ interface IEspressoSGXTEEVerifier {
     event DeletedRegisteredSigner(address signer);
 
     function registeredSigners(address signer) external view returns (bool);
-    function registeredEnclaveHash(
-        bytes32 enclaveHash
-    ) external view returns (bool);
+    function registeredEnclaveHash(bytes32 enclaveHash) external view returns (bool);
 
-    function registerSigner(
-        bytes calldata attestation,
-        bytes calldata data
-    ) external;
+    function registerSigner(bytes calldata attestation, bytes calldata data) external;
 
-    function verify(
-        bytes calldata rawQuote,
-        bytes32 reportDataHash
-    ) external view returns (EnclaveReport memory);
+    function verify(bytes calldata rawQuote, bytes32 reportDataHash)
+        external
+        view
+        returns (EnclaveReport memory);
 
-    function parseQuoteHeader(
-        bytes calldata rawQuote
-    ) external pure returns (Header memory header);
+    function parseQuoteHeader(bytes calldata rawQuote) external pure returns (Header memory header);
 
-    function parseEnclaveReport(
-        bytes memory rawEnclaveReport
-    ) external pure returns (bool success, EnclaveReport memory enclaveReport);
+    function parseEnclaveReport(bytes memory rawEnclaveReport)
+        external
+        pure
+        returns (bool success, EnclaveReport memory enclaveReport);
 
     function setEnclaveHash(bytes32 enclaveHash, bool valid) external;
     function deleteRegisteredSigners(address[] memory signers) external;

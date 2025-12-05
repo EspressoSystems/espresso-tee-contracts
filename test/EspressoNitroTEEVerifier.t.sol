@@ -3,9 +3,7 @@ pragma solidity ^0.8.20;
 
 import "forge-std/Test.sol";
 import {EspressoNitroTEEVerifier} from "../src/EspressoNitroTEEVerifier.sol";
-import {
-    IEspressoNitroTEEVerifier
-} from "../src/interface/IEspressoNitroTEEVerifier.sol";
+import {IEspressoNitroTEEVerifier} from "../src/interface/IEspressoNitroTEEVerifier.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import {
     INitroEnclaveVerifier
@@ -17,10 +15,7 @@ contract EspressoNitroTEEVerifierTest is Test {
     address fakeAddress = address(145);
 
     EspressoNitroTEEVerifier espressoNitroTEEVerifier;
-    bytes32 pcr0Hash =
-        bytes32(
-            0x555797ae2413bb1e4c352434a901032b16d7ac9090322532a3fccb9947977e8b
-        );
+    bytes32 pcr0Hash = bytes32(0x555797ae2413bb1e4c352434a901032b16d7ac9090322532a3fccb9947977e8b);
 
     function setUp() public {
         vm.createSelectFork(
@@ -69,14 +64,9 @@ contract EspressoNitroTEEVerifierTest is Test {
 
         // Disable pcr0 hash
         espressoNitroTEEVerifier.setEnclaveHash(pcr0Hash, false);
-        assertEq(
-            espressoNitroTEEVerifier.registeredEnclaveHash(pcr0Hash),
-            false
-        );
+        assertEq(espressoNitroTEEVerifier.registeredEnclaveHash(pcr0Hash), false);
 
-        vm.expectRevert(
-            IEspressoNitroTEEVerifier.InvalidAWSEnclaveHash.selector
-        );
+        vm.expectRevert(IEspressoNitroTEEVerifier.InvalidAWSEnclaveHash.selector);
         espressoNitroTEEVerifier.registerSigner(journal, onchain);
         vm.stopPrank();
     }
@@ -139,15 +129,9 @@ contract EspressoNitroTEEVerifierTest is Test {
     function testSetNitroEnclaveHash() public {
         vm.startPrank(adminTEE);
         espressoNitroTEEVerifier.setEnclaveHash(pcr0Hash, true);
-        assertEq(
-            espressoNitroTEEVerifier.registeredEnclaveHash(pcr0Hash),
-            true
-        );
+        assertEq(espressoNitroTEEVerifier.registeredEnclaveHash(pcr0Hash), true);
         espressoNitroTEEVerifier.setEnclaveHash(pcr0Hash, false);
-        assertEq(
-            espressoNitroTEEVerifier.registeredEnclaveHash(pcr0Hash),
-            false
-        );
+        assertEq(espressoNitroTEEVerifier.registeredEnclaveHash(pcr0Hash), false);
         vm.stopPrank();
         // Check that only owner can set the hash
         vm.startPrank(fakeAddress);
