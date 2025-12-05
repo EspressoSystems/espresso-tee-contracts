@@ -3,7 +3,9 @@ pragma solidity ^0.8.20;
 
 import "forge-std/Test.sol";
 import {EspressoNitroTEEVerifier} from "../src/EspressoNitroTEEVerifier.sol";
-import {IEspressoNitroTEEVerifier} from "../src/interface/IEspressoNitroTEEVerifier.sol";
+import {
+    IEspressoNitroTEEVerifier
+} from "../src/interface/IEspressoNitroTEEVerifier.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import {
     INitroEnclaveVerifier
@@ -15,7 +17,10 @@ contract EspressoNitroTEEVerifierTest is Test {
     address fakeAddress = address(145);
 
     EspressoNitroTEEVerifier espressoNitroTEEVerifier;
-    bytes32 pcr0Hash = bytes32(0x555797ae2413bb1e4c352434a901032b16d7ac9090322532a3fccb9947977e8b);
+    bytes32 pcr0Hash =
+        bytes32(
+            0x555797ae2413bb1e4c352434a901032b16d7ac9090322532a3fccb9947977e8b
+        );
 
     function setUp() public {
         vm.createSelectFork(
@@ -64,9 +69,14 @@ contract EspressoNitroTEEVerifierTest is Test {
 
         // Disable pcr0 hash
         espressoNitroTEEVerifier.setEnclaveHash(pcr0Hash, false);
-        assertEq(espressoNitroTEEVerifier.registeredEnclaveHash(pcr0Hash), false);
+        assertEq(
+            espressoNitroTEEVerifier.registeredEnclaveHash(pcr0Hash),
+            false
+        );
 
-        vm.expectRevert(IEspressoNitroTEEVerifier.InvalidAWSEnclaveHash.selector);
+        vm.expectRevert(
+            IEspressoNitroTEEVerifier.InvalidAWSEnclaveHash.selector
+        );
         espressoNitroTEEVerifier.registerSigner(journal, onchain);
         vm.stopPrank();
     }
@@ -76,6 +86,7 @@ contract EspressoNitroTEEVerifierTest is Test {
      */
     function testInvalidProof() public {
         vm.startPrank(adminTEE);
+        vm.warp(1_764_889_188);
         string memory proofPath = "/test/configs/invalid_proof.json";
         string memory inputFile = string.concat(vm.projectRoot(), proofPath);
         string memory json = vm.readFile(inputFile);
@@ -128,14 +139,38 @@ contract EspressoNitroTEEVerifierTest is Test {
     function testSetNitroEnclaveHash() public {
         vm.startPrank(adminTEE);
         espressoNitroTEEVerifier.setEnclaveHash(pcr0Hash, true);
-        assertEq(espressoNitroTEEVerifier.registeredEnclaveHash(pcr0Hash), true);
+        assertEq(
+            espressoNitroTEEVerifier.registeredEnclaveHash(pcr0Hash),
+            true
+        );
         espressoNitroTEEVerifier.setEnclaveHash(pcr0Hash, false);
-        assertEq(espressoNitroTEEVerifier.registeredEnclaveHash(pcr0Hash), false);
+        assertEq(
+            espressoNitroTEEVerifier.registeredEnclaveHash(pcr0Hash),
+            false
+        );
         vm.stopPrank();
         // Check that only owner can set the hash
         vm.startPrank(fakeAddress);
         vm.expectRevert("Ownable: caller is not the owner");
         espressoNitroTEEVerifier.setEnclaveHash(pcr0Hash, true);
+        vm.stopPrank();
+    }
+
+    // check for nonce reuse reverts
+    function testNonceReuseReverts() public {
+        vm.startPrank(adminTEE);
+        vm.warp(1_764_889_188);
+        string memory proofPath = "/test/configs/proof.json";
+        string memory inputFile = string.concat(vm.projectRoot(), proofPath);
+        string memory json = vm.readFile(inputFile);
+        bytes memory journal = vm.parseJsonBytes(json, ".raw_proof.journal");
+        // Extract onchain_proof
+        bytes memory onchain = vm.parseJsonBytes(json, ".onchain_proof");
+        // register and verify signer exists
+        espressoNitroTEEVerifier.registerSigner(journal, onchain);
+        // attempt to register again with same proof should revert
+        vm.expectRevert(IEspressoNitroTEEVerifier.NonceAlreadyUsed.selector);
+        espressoNitroTEEVerifier.registerSigner(journal, onchain);
         vm.stopPrank();
     }
 

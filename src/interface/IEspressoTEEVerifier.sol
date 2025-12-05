@@ -19,33 +19,49 @@ interface IEspressoTEEVerifier {
     error UnsupportedTeeType();
 
     // Get address of Nitro TEE Verifier
-    function espressoNitroTEEVerifier() external view returns (IEspressoNitroTEEVerifier);
+    function espressoNitroTEEVerifier()
+        external
+        view
+        returns (IEspressoNitroTEEVerifier);
 
     // Get addressof SGX TEE Verifier
-    function espressoSGXTEEVerifier() external view returns (IEspressoSGXTEEVerifier);
+    function espressoSGXTEEVerifier()
+        external
+        view
+        returns (IEspressoSGXTEEVerifier);
 
     // Function to verify the signature of the user data is from a registered signer
-    function verify(bytes memory signature, bytes32 userDataHash, TeeType teeType)
-        external
-        view
-        returns (bool);
+    function verify(
+        bytes memory signature,
+        bytes32 userDataHash,
+        TeeType teeType
+    ) external view returns (bool);
 
     // Function to register a signer which has been attested by the TEE
-    function registerSigner(bytes calldata attestation, bytes calldata data, TeeType teeType)
-        external;
+    function registerSigner(
+        bytes calldata attestation,
+        bytes calldata data,
+        TeeType teeType
+    ) external;
 
     // Function to retrieve whether a signer is registered or not
-    function registeredSigners(address signer, TeeType teeType) external view returns (bool);
+    function registeredSigners(
+        address signer,
+        TeeType teeType
+    ) external view returns (bool);
 
-    function registeredEnclaveHashes(bytes32 enclaveHash, TeeType teeType)
-        external
-        view
-        returns (bool);
+    function registeredEnclaveHashes(
+        bytes32 enclaveHash,
+        TeeType teeType
+    ) external view returns (bool);
 
     // Function to set the EspressoSGXTEEVerifier
-    function setEspressoSGXTEEVerifier(IEspressoSGXTEEVerifier _espressoSGXTEEVerifier) external;
+    function setEspressoSGXTEEVerifier(
+        IEspressoSGXTEEVerifier _espressoSGXTEEVerifier
+    ) external;
 
     // Function to set the EspressoNitroTEEVerifier
-    function setEspressoNitroTEEVerifier(IEspressoNitroTEEVerifier _espressoNitroTEEVerifier)
-        external;
+    function setEspressoNitroTEEVerifier(
+        IEspressoNitroTEEVerifier _espressoNitroTEEVerifier
+    ) external;
 }

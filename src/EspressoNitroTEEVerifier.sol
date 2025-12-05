@@ -4,7 +4,9 @@ pragma solidity ^0.8.0;
 import "@openzeppelin/contracts/access/Ownable2Step.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 
-import {IEspressoNitroTEEVerifier} from "./interface/IEspressoNitroTEEVerifier.sol";
+import {
+    IEspressoNitroTEEVerifier
+} from "./interface/IEspressoNitroTEEVerifier.sol";
 import {
     INitroEnclaveVerifier,
     VerifierJournal,
@@ -23,11 +25,20 @@ contract EspressoNitroTEEVerifier is IEspressoNitroTEEVerifier, Ownable2Step {
     // Registered signers
     mapping(address => bool) public registeredSigners;
 
+    // Track used nonces to prevent replay attacks
+    mapping(bytes32 => bool) public usedNonces;
+
     INitroEnclaveVerifier public _nitroEnclaveVerifier;
 
-    constructor(bytes32 enclaveHash, INitroEnclaveVerifier nitroEnclaveVerifier) Ownable2Step() {
+    constructor(
+        bytes32 enclaveHash,
+        INitroEnclaveVerifier nitroEnclaveVerifier
+    ) Ownable2Step() {
         require(enclaveHash != bytes32(0), "Enclave hash cannot be zero");
-        require(address(nitroEnclaveVerifier) != address(0), "NitroEnclaveVerifier cannot be zero");
+        require(
+            address(nitroEnclaveVerifier) != address(0),
+            "NitroEnclaveVerifier cannot be zero"
+        );
         _nitroEnclaveVerifier = nitroEnclaveVerifier;
         registeredEnclaveHash[enclaveHash] = true;
         _transferOwnership(msg.sender);
@@ -39,7 +50,10 @@ contract EspressoNitroTEEVerifier is IEspressoNitroTEEVerifier, Ownable2Step {
      * @param output The public output of the ZK proof
      * @param proofBytes The cryptographic proof bytes over attestation
      */
-    function registerSigner(bytes calldata output, bytes calldata proofBytes) external {
+    function registerSigner(
+        bytes calldata output,
+        bytes calldata proofBytes
+    ) external {
         VerifierJournal memory journal = _nitroEnclaveVerifier.verify(
             output,
             // Currently only Succinct ZK coprocessor is supported
@@ -51,19 +65,32 @@ contract EspressoNitroTEEVerifier is IEspressoNitroTEEVerifier, Ownable2Step {
             revert VerificationFailed(journal.result);
         }
 
+        // Validate nonce hasn't been used before
+        bytes32 nonceHash = keccak256(journal.nonce);
+        if (usedNonces[nonceHash]) {
+            revert NonceAlreadyUsed();
+        }
+        usedNonces[nonceHash] = true;
+
         // we hash the pcr0 value to get the the pcr0Hash and then
         // check if the given hash has been registered in the contract by the owner
         // this allows us to verify that the registerSigner request is coming from a TEE
         // which is trusted
-        bytes32 pcr0Hash =
-            keccak256(abi.encodePacked(journal.pcrs[0].value.first, journal.pcrs[0].value.second));
+        bytes32 pcr0Hash = keccak256(
+            abi.encodePacked(
+                journal.pcrs[0].value.first,
+                journal.pcrs[0].value.second
+            )
+        );
         if (!registeredEnclaveHash[pcr0Hash]) {
             revert InvalidAWSEnclaveHash();
         }
 
         // The publicKey's first byte 0x04 byte followed which only determine if the public key is compressed or not.
         // so we ignore the first byte.
-        bytes memory publicKeyWithoutPrefix = new bytes(journal.publicKey.length - 1);
+        bytes memory publicKeyWithoutPrefix = new bytes(
+            journal.publicKey.length - 1
+        );
         for (uint256 i = 1; i < journal.publicKey.length; i++) {
             publicKeyWithoutPrefix[i - 1] = journal.publicKey[i];
         }
@@ -71,7 +98,10 @@ contract EspressoNitroTEEVerifier is IEspressoNitroTEEVerifier, Ownable2Step {
         bytes32 publicKeyHash = keccak256(publicKeyWithoutPrefix);
         // Note: We take the keccak hash first to derive the address.
         // This is the same which the go ethereum crypto library is doing for PubkeyToAddress()
-        address enclaveAddress = address(uint160(uint256(publicKeyHash)));
+        address enclaveAddress;
+        assembly {
+            enclaveAddress := publicKeyHash
+        }
         // Mark the signer as registered
         if (!registeredSigners[enclaveAddress]) {
             registeredSigners[enclaveAddress] = true;
@@ -87,13 +117,18 @@ contract EspressoNitroTEEVerifier is IEspressoNitroTEEVerifier, Ownable2Step {
      * @param enclaveHash The hash of the enclave
      * @param valid Whether the enclave hash is valid or not
      */
-    function setEnclaveHash(bytes32 enclaveHash, bool valid) external onlyOwner {
+    function setEnclaveHash(
+        bytes32 enclaveHash,
+        bool valid
+    ) external onlyOwner {
         require(enclaveHash != bytes32(0), "Enclave hash cannot be zero");
         registeredEnclaveHash[enclaveHash] = valid;
         emit AWSEnclaveHashSet(enclaveHash, valid);
     }
 
-    function deleteRegisteredSigners(address[] memory signers) external onlyOwner {
+    function deleteRegisteredSigners(
+        address[] memory signers
+    ) external onlyOwner {
         for (uint256 i = 0; i < signers.length; i++) {
             delete registeredSigners[signers[i]];
             emit DeletedAWSRegisteredSigner(signers[i]);

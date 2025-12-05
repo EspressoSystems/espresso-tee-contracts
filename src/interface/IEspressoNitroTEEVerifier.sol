@@ -8,6 +8,8 @@ import {
 interface IEspressoNitroTEEVerifier {
     // This error is thrown when the PCR0 values don't match
     error InvalidAWSEnclaveHash();
+    // This error is thrown when the nonce has already been used
+    error NonceAlreadyUsed();
     // This error is thrown when the ZK proof verification fails
     error VerificationFailed(VerificationResult result);
 
@@ -16,9 +18,14 @@ interface IEspressoNitroTEEVerifier {
     event DeletedAWSRegisteredSigner(address signer);
 
     function registeredSigners(address signer) external view returns (bool);
-    function registeredEnclaveHash(bytes32 enclaveHash) external view returns (bool);
+    function registeredEnclaveHash(
+        bytes32 enclaveHash
+    ) external view returns (bool);
 
-    function registerSigner(bytes calldata output, bytes calldata proofBytes) external;
+    function registerSigner(
+        bytes calldata output,
+        bytes calldata proofBytes
+    ) external;
 
     function setEnclaveHash(bytes32 enclaveHash, bool valid) external;
     function deleteRegisteredSigners(address[] memory signers) external;
