@@ -110,7 +110,6 @@ contract MultiSigTransferTest is Test {
         vm.setEnv(newOwnerEnv, newOwnerString);
         vm.setEnv(teeVerifierEnv, teeVerifierAddress);
 
-
         vm.startPrank(originalOwner);
         console2.log("original owner:", originalOwner);
         console2.log(
