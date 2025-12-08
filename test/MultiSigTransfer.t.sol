@@ -11,11 +11,8 @@ import {
 } from "aws-nitro-enclave-attestation/interfaces/INitroEnclaveVerifier.sol";
 
 import {EspressoTEEVerifier} from "../src/EspressoTEEVerifier.sol";
-import {IEspressoTEEVerifier} from "../src/interface/IEspressoTEEVerifier.sol";
 import {EspressoSGXTEEVerifier} from "../src/EspressoSGXTEEVerifier.sol";
 import {EspressoNitroTEEVerifier} from "../src/EspressoNitroTEEVerifier.sol";
-import {IEspressoSGXTEEVerifier} from "../src/interface/IEspressoSGXTEEVerifier.sol";
-import {IEspressoNitroTEEVerifier} from "../src/interface/IEspressoNitroTEEVerifier.sol";
 
 import {MultiSigTransfer} from "../scripts/MultiSigTransfer.s.sol";
 
@@ -120,6 +117,8 @@ contract MultiSigTransferTest is Test {
         vm.stopPrank();
         // Expect emitted event from script, and initiate transfers.
         vm.startPrank(badNewOwner);
+        console2.log("bad new owner:", badNewOwner);
+        console2.log("pending owner:", Ownable2Step(address(espressoTEEVerifier)).pendingOwner());
         vm.expectRevert(revertReason);
         espressoTEEVerifier.acceptOwnership();
 
