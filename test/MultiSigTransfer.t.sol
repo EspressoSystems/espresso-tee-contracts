@@ -19,7 +19,7 @@ import {IEspressoNitroTEEVerifier} from "../src/interface/IEspressoNitroTEEVerif
 
 import {MultiSigTransfer} from "../scripts/MultiSigTransfer.s.sol";
 
-contract MultiSigTransferTest is Test{
+contract MultiSigTransferTest is Test {
     bytes constant revertReason = bytes("Ownable2Step: caller is not the new owner");
     // declare addresses for the test
     address originalOwner = address(141); // address value: 0x000000000000000000000000000000000000008c
@@ -39,7 +39,7 @@ contract MultiSigTransferTest is Test{
     string constant newOwnerEnv = "MULTISIG_CONTRACT_ADDRESS";
     string constant teeVerifierEnv = "TEE_VERIFIER_ADDRESS";
     string teeVerifierAddress;
-    
+
     // TEE contract global variables for the tests.
     EspressoTEEVerifier espressoTEEVerifier;
     EspressoSGXTEEVerifier espressoSGXTEEVerifier;
@@ -49,9 +49,9 @@ contract MultiSigTransferTest is Test{
     //  Address of the automata V3QuoteVerifier deployed on sepolia
     address v3QuoteVerifier = address(0x6E64769A13617f528a2135692484B681Ee1a7169);
     bytes32 pcr0Hash = bytes32(0x555797ae2413bb1e4c352434a901032b16d7ac9090322532a3fccb9947977e8b);
-    
+
     MultiSigTransfer multiSigTransfer;
-    
+
     function setUp() public {
         // fork an eth sepolia network to populate the quote verifier contract code.
         vm.createSelectFork(
@@ -71,15 +71,18 @@ contract MultiSigTransferTest is Test{
         multiSigTransfer = new MultiSigTransfer();
         vm.stopPrank();
     }
+
     // testValidTransfer tests accepting transfers to a valid address by attempting to accept ownership with the new owner address
     // populated via `vm.setEnv`
-    function testValidTransfer() public{
+    function testValidTransfer() public {
         // set environment variables for the transfer script.
         vm.setEnv(newOwnerEnv, newOwnerString);
         vm.setEnv(teeVerifierEnv, teeVerifierAddress);
         vm.startPrank(originalOwner);
         console2.log("original owner:", originalOwner);
-        console2.log("original owner according to contract:", Ownable(address(espressoTEEVerifier)).owner());
+        console2.log(
+            "original owner according to contract:", Ownable(address(espressoTEEVerifier)).owner()
+        );
 
         // Expect emitted event from script, and initiate transfers.
         // vm.expectEmit(MultiSigTransfer.AllOwnershipTransfersStarted(address(espressoTEEVerifier), address(espressoNitroTEEVerifier), address(espressoSGXTEEVerifier)));
@@ -104,20 +107,22 @@ contract MultiSigTransferTest is Test{
 
     // testInvalidTransfer tests accepting transfers to a non valid address by attempting to accept ownership with the bad new owner address
     // populated via `vm.setEnv`
-    function testInvalidTransfer() public{
+    function testInvalidTransfer() public {
         // set environment variables for the transfer script.
         vm.setEnv(newOwnerEnv, newOwnerString);
         vm.setEnv(teeVerifierEnv, teeVerifierAddress);
 
         // Expect emitted event from script, and initiate transfers.
         // vm.expectEmit(MultiSigTransfer.AllOwnershipTransfersStarted(address(espressoTEEVerifier), address(espressoNitroTEEVerifier), address(espressoSGXTEEVerifier)));
-        
+
         vm.startPrank(originalOwner);
         console2.log("original owner:", originalOwner);
-        console2.log("original owner according to contract:", Ownable(address(espressoTEEVerifier)).owner());
+        console2.log(
+            "original owner according to contract:", Ownable(address(espressoTEEVerifier)).owner()
+        );
         multiSigTransfer.transferTestEntrypoint();
 
-        vm.stopPrank();        
+        vm.stopPrank();
         // Expect emitted event from script, and initiate transfers.
         vm.startPrank(badNewOwner);
         vm.expectRevert(revertReason);
@@ -131,5 +136,4 @@ contract MultiSigTransferTest is Test{
 
         vm.stopPrank();
     }
-    
 }
