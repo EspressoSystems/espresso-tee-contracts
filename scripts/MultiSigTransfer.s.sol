@@ -53,8 +53,8 @@ contract MultiSigTransfer is Script{
     }
      
     // testTransfer() is a helper function that serves as a testing entry point for this script
-    // its purpose is to trick the vm into thinking that the test is not making overwriting msg.sender making the call
-    // seem like its coming from the contract. This is a different behavior between using scripts in tests vs forge script.
+    // its purpose is to trick the vm into thinking that the test is not making cross-contract calls and overwriting msg.sender.
+    // This allows us to spoof more accurate testing conditions, as this script won't ever be deployed/called on chain.
     function transferTestEntrypoint() public{
         vm.startPrank(msg.sender);
 
