@@ -84,8 +84,6 @@ contract MultiSigTransferTest is Test {
             "original owner according to contract:", Ownable(address(espressoTEEVerifier)).owner()
         );
 
-        // Expect emitted event from script, and initiate transfers.
-        // vm.expectEmit(MultiSigTransfer.AllOwnershipTransfersStarted(address(espressoTEEVerifier), address(espressoNitroTEEVerifier), address(espressoSGXTEEVerifier)));
         multiSigTransfer.transferTestEntrypoint();
         vm.stopPrank();
 
@@ -112,8 +110,6 @@ contract MultiSigTransferTest is Test {
         vm.setEnv(newOwnerEnv, newOwnerString);
         vm.setEnv(teeVerifierEnv, teeVerifierAddress);
 
-        // Expect emitted event from script, and initiate transfers.
-        // vm.expectEmit(MultiSigTransfer.AllOwnershipTransfersStarted(address(espressoTEEVerifier), address(espressoNitroTEEVerifier), address(espressoSGXTEEVerifier)));
 
         vm.startPrank(originalOwner);
         console2.log("original owner:", originalOwner);
