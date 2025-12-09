@@ -14,3 +14,6 @@
 [submodule "lib/aws-nitro-enclave-attestation"]
 	path = lib/aws-nitro-enclave-attestation
 	url = https://github.com/automata-network/aws-nitro-enclave-attestation
+[submodule "lib/safe-utils"]
+	path = lib/safe-utils
+	url = https://github.com/Recon-Fuzz/safe-utils
