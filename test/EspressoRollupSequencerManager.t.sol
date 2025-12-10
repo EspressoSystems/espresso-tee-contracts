@@ -6,7 +6,10 @@ import {EspressoRollupSequencerManager} from "../src/EspressoRollupSequencerMana
 import {IEspressoRollupSequencerManager} from "../src/interface/IEspressoRollupSequencerManager.sol";
 import "./OlympixUnitTest.sol";
 
-contract EspressoRollupSequencerManagerTest is Test, OlympixUnitTest("EspressoNitroTEEVerifier") {
+contract EspressoRollupSequencerManagerTest is
+    Test,
+    OlympixUnitTest("EspressoRollupSequencerManager")
+{
     EspressoRollupSequencerManager public rollupSequencerManager;
     address[] public initialSequencers;
 
