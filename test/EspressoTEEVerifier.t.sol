@@ -10,11 +10,11 @@ import {IEspressoSGXTEEVerifier} from "../src/interface/IEspressoSGXTEEVerifier.
 import {IEspressoNitroTEEVerifier} from "../src/interface/IEspressoNitroTEEVerifier.sol";
 
 import "@openzeppelin/contracts/access/Ownable.sol";
-import {
-    INitroEnclaveVerifier
-} from "aws-nitro-enclave-attestation/interfaces/INitroEnclaveVerifier.sol";
+import {INitroEnclaveVerifier} from
+    "aws-nitro-enclave-attestation/interfaces/INitroEnclaveVerifier.sol";
+import "./OlympixUnitTest.sol";
 
-contract EspressoTEEVerifierTest is Test {
+contract EspressoTEEVerifierTest is Test, OlympixUnitTest("EspressoTEEVerifier") {
     address adminTEE = address(141);
     address fakeAddress = address(145);
 
@@ -232,5 +232,97 @@ contract EspressoTEEVerifierTest is Test {
         assertEq(address(espressoSGXTEEVerifier), sgxAddr);
 
         vm.stopPrank();
+    }
+
+    function test_verify_nitro_branch_true() public {
+        // opix-target-branch-51-True: This test will cause `if (teeType == TeeType.NITRO)` branch in verify() to be taken.
+        // To simulate a real ECDSA signature recovery, produce a valid digest and signature for any address.
+        // We'll create a local test keypair for reproducibility and sign on chain.
+        // We need to register the signer in espressoNitroTEEVerifier or else InvalidSignature will revert.
+        // For this test, signature can be arbitrary since we're targeting the NITRO branch and expect revert (branch entered, value is false).
+
+        // Generate private key and signer
+        uint256 sk = 0x12341234beef; // test key
+        address testSigner = vm.addr(sk);
+        // Test message
+        bytes32 dummyHash = keccak256("Olympix TEE Test: Nitrogen");
+        // Sign the message
+        (uint8 v, bytes32 r, bytes32 s) = vm.sign(sk, dummyHash);
+        bytes memory dummySig = abi.encodePacked(r, s, v);
+        IEspressoTEEVerifier.TeeType teeType = IEspressoTEEVerifier.TeeType.NITRO;
+        // The underlying espressoNitroTEEVerifier.registeredSigners(testSigner) will return false (not registered), which reverts InvalidSignature.
+        vm.expectRevert(IEspressoTEEVerifier.InvalidSignature.selector);
+        espressoTEEVerifier.verify(dummySig, dummyHash, teeType);
+        // The revert is expected, and the NITRO branch is covered
+    }
+
+    function test_registerSigner_else_branch_SGX_coverage() public {
+        // Target: Cover the 'else' branch after 'if (teeType == TeeType.SGX)' in registerSigner
+        // We make teeType != TeeType.SGX, which means teeType==TeeType.NITRO
+        // This covers the required else branch and does not panic or revert on invalid enum values
+        // The nested NITRO branch is then hit, but the target 'else' is that after the SGX condition
+        // We use dummy data (can be empty bytes)
+        bytes memory dummyAttestation = hex"cafebabe";
+        bytes memory dummyData = hex"baddad";
+
+        // Since EspressoNitroTEEVerifier expects valid data, it will revert inside that call, which is fine for branch coverage
+        vm.expectRevert(); // Accept any revert as we only want to hit the else branch for SGX
+        espressoTEEVerifier.registerSigner(
+            dummyAttestation, dummyData, IEspressoTEEVerifier.TeeType.NITRO
+        );
+        // Branch at line if (teeType == TeeType.SGX) is false, else branch is thus covered, and then the call reverts internally
+    }
+
+    function test_registerSigner_Nitro_branch_true() public {
+        // We want to cover the branch: if (teeType == TeeType.NITRO) {
+        // To do this, pass teeType == NITRO to registerSigner().
+        // The data passed can be dummy, just needs to be non-empty (could be empty too, if implementation allows).
+        // EspressoNitroTEEVerifier is set up in setUp, use it.
+        bytes memory dummyJournal = hex"11";
+        bytes memory dummyProof = hex"22";
+        // Since EspressoNitroTEEVerifier actually expects valid proof, the call will likely revert deeper.
+        // But the branch at the top of registerSigner will still be hit for coverage. Expect revert is fine.
+        // The revert reason from the implementation may differ, so just use a generic expectRevert.
+        vm.expectRevert();
+        espressoTEEVerifier.registerSigner(
+            dummyJournal, dummyProof, IEspressoTEEVerifier.TeeType.NITRO
+        );
+        // This branch will be hit, though the revert happens inside espressoNitroTEEVerifier.registerSigner
+    }
+
+    function test_registeredSigners_SGX_branch_True() public {
+        // We want to hit the branch: if (teeType == TeeType.SGX) { ... }
+        // To do this, call registeredSigners() with teeType == SGX, and verify branch is entered.
+
+        address testSigner = address(0xdeadbeef);
+        // We need the signer to be registered in underlying espressoSGXTEEVerifier, or at least to call the view.
+        // Instead of registering, we can just call registeredSigners on the SGX TEE type to enter the branch; actual return can be false.
+        bool ret =
+            espressoTEEVerifier.registeredSigners(testSigner, IEspressoTEEVerifier.TeeType.SGX);
+        // We expect false since it's not registered, but the point is to cover the branch
+        assertEq(ret, espressoSGXTEEVerifier.registeredSigners(testSigner));
+    }
+
+    function test_registeredSigners_SGX_if_false_else_branch() public {
+        // opix-target-branch-97-YOUR-TEST-SHOULD-ENTER-THIS-ELSE-BRANCH-BY-MAKING-THE-PRECEDING-IFS-CONDITIONS-FALSE
+        // To enter the 'else' branch after 'if (teeType == TeeType.SGX)',
+        // we must use a TeeType value NOT equal to SGX (which is 0).
+        // So use TeeType.NITRO (which is 1), and force the call to go past the first 'if'.
+        // We will also construct a dummy signer address.
+
+        address dummySigner = address(0xabcdef);
+        // This will enter the else branch of the first 'if', and next check 'if (teeType == TeeType.NITRO)', then return or else continue.
+        // For full coverage of the target 97-else branch, what matters is that teeType != SGX, so NITRO suffices.
+
+        // To hit the ELSE branch specifically, we will assert true afterwards.
+        // The call will then try to process NITRO branch. To avoid revert (and allow test to run),
+        // we assume espressoNitroTEEVerifier exists and can be called. If actual revert is intended for further else branches,
+        // that's fine, but for the main target, just calling with NITRO is sufficient.
+        // This will test the else branch is covered.
+
+        bool result =
+            espressoTEEVerifier.registeredSigners(dummySigner, IEspressoTEEVerifier.TeeType.NITRO);
+        // The actual value is irrelevant for branch coverage, but we can assert it matches the underlying verifier
+        assertEq(result, espressoNitroTEEVerifier.registeredSigners(dummySigner));
     }
 }

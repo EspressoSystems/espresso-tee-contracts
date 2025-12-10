@@ -5,11 +5,11 @@ import "forge-std/Test.sol";
 import {EspressoNitroTEEVerifier} from "../src/EspressoNitroTEEVerifier.sol";
 import {IEspressoNitroTEEVerifier} from "../src/interface/IEspressoNitroTEEVerifier.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
-import {
-    INitroEnclaveVerifier
-} from "aws-nitro-enclave-attestation/interfaces/INitroEnclaveVerifier.sol";
+import {INitroEnclaveVerifier} from
+    "aws-nitro-enclave-attestation/interfaces/INitroEnclaveVerifier.sol";
+import "./OlympixUnitTest.sol";
 
-contract EspressoNitroTEEVerifierTest is Test {
+contract EspressoNitroTEEVerifierTest is Test, OlympixUnitTest("EspressoNitroTEEVerifier") {
     address proxyAdmin = address(140);
     address adminTEE = address(141);
     address fakeAddress = address(145);
@@ -177,5 +177,60 @@ contract EspressoNitroTEEVerifierTest is Test {
         // delete and verify signer address is gone
         espressoNitroTEEVerifier.deleteRegisteredSigners(signersToDelete);
         assertEq(espressoNitroTEEVerifier.registeredSigners(signer), false);
+    }
+
+    /// @dev Covers setEnclaveHash: require(enclaveHash != bytes32(0), ...) opix-target-branch-97-True
+    function testSetEnclaveHashZeroHashReverts() public {
+        // Only owner can call setEnclaveHash. Use adminTEE which is owner per setUp().
+        vm.startPrank(adminTEE);
+        bytes32 zeroHash = bytes32(0);
+        vm.expectRevert(bytes("Enclave hash cannot be zero"));
+        espressoNitroTEEVerifier.setEnclaveHash(zeroHash, true);
+        vm.stopPrank();
+    }
+
+    /// @dev Covers deleteRegisteredSigners: if (true) { ... } opix-target-branch-103-True -- This test covers the unconditional for loop/deletion path for branch coverage, using a dummy address array.
+    function testDeleteRegisteredSignersCoversIfTrueBranch() public {
+        vm.startPrank(adminTEE);
+        // Create an array of addresses to delete (could be empty or dummy -- all that is needed for this branch is to exercise the function as owner)
+        address[] memory signersToDelete = new address[](2);
+        signersToDelete[0] = address(0xABCDE1);
+        signersToDelete[1] = address(0xABCDE2);
+
+        // Optionally, prime a value to test deletion effect:
+        espressoNitroTEEVerifier.setEnclaveHash(pcr0Hash, true);
+        // Set registeredSigners slots directly if wanted:
+        bytes32 slot0 = keccak256(abi.encode(address(0xABCDE1), uint256(1))); // mapping slot for registeredSigners(addr)
+        bytes32 slot1 = keccak256(abi.encode(address(0xABCDE2), uint256(1)));
+        // Use stdstore/cheatcodes to modify storage if you want; but just call the function for now for branch coverage:
+        // Calling the function covers branch as owner.
+        espressoNitroTEEVerifier.deleteRegisteredSigners(signersToDelete);
+        vm.stopPrank();
+        // Optionally, assert postcondition:
+        assertEq(espressoNitroTEEVerifier.registeredSigners(address(0xABCDE1)), false);
+        assertEq(espressoNitroTEEVerifier.registeredSigners(address(0xABCDE2)), false);
+    }
+
+    /**
+     * opix-target-branch-83-YOUR-TEST-SHOULD-ENTER-THIS-ELSE-BRANCH-BY-MAKING-THE-PRECEDING-IFS-CONDITIONS-FALSE
+     * This test covers the branch where the signer has already been registered.
+     * We will register a signer once, then call registerSigner again with the same input/config,
+     * so `if (!registeredSigners[enclaveAddress])` is false, entering the else branch and hitting `assert(true);`.
+     * This is a pure branch-coverage test and does not check for reverts -- just that the second registration is a no-op/assert.
+     */
+    function testRegisterSignerAlreadyRegisteredHitsElseBranch() public {
+        vm.startPrank(adminTEE);
+        vm.warp(1_764_889_188);
+        string memory proofPath = "/test/configs/proof.json";
+        string memory inputFile = string.concat(vm.projectRoot(), proofPath);
+        string memory json = vm.readFile(inputFile);
+        bytes memory journal = vm.parseJsonBytes(json, ".raw_proof.journal");
+        bytes memory onchain = vm.parseJsonBytes(json, ".onchain_proof");
+        // Register the signer the first time (happy-path)
+        espressoNitroTEEVerifier.registerSigner(journal, onchain);
+        // Register the same signer again, to hit the 'already registered' else branch
+        espressoNitroTEEVerifier.registerSigner(journal, onchain);
+        // If the function did not revert, the else branch with `assert(true)` was hit
+        vm.stopPrank();
     }
 }
