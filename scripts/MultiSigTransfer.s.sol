@@ -46,7 +46,7 @@ contract MultiSigTransfer is Script {
     event AllOwnershipTransfersStarted(
         address teeVerifier, address nitroVerifier, address sgxVerifier
     );
-    
+
     // This function is executed by the forge VM whenever the script is executed using forge script.
     function setUp() public {
         //Get transfer initiation env vars
@@ -60,21 +60,19 @@ contract MultiSigTransfer is Script {
         safe.initialize(newOwner);
 
         setUpContractVars();
-
     }
-    
+
     // testSetUp is a helper function to handle the parts of the setUp() function related to the unit tests.
     // setUp() won't be called for this contract when run in a unit test context, so it's useful to have this to enable testing.
-    function testSetUp() internal{
-
+    function testSetUp() internal {
         newOwner = vm.envAddress("MULTISIG_CONTRACT_ADDRESS");
         teeVerifierAddress = vm.envAddress("TEE_VERIFIER_ADDRESS");
 
         setUpContractVars();
     }
-    
+
     // setUpContractVars() populates contract variables at the contract state level in order to compartmentalize this logic for unit tests and normal execution.
-    function setUpContractVars() internal{
+    function setUpContractVars() internal {
         teeVerifier = IEspressoTEEVerifier(teeVerifierAddress);
         ownableTeeVerifier = Ownable(address(teeVerifier));
         originalTeeVerifierOwner = ownableTeeVerifier.owner();
@@ -96,10 +94,9 @@ contract MultiSigTransfer is Script {
     // Reverts:
     //        - If there is not an appropriate OwnershipTransferStarted event emitted by any of the TEEVerifier contracts
     function initiateTransfer() internal {
-            
         // After each step, we assert that the owner of the contract is still the original owner, but that the pending owner has updated.
         // If this doesn't hold, the transaction reverts.
-        
+
         ownable2StepSGXTeeVerifier.transferOwnership(newOwner);
         assertTransferInitiated(address(sgxVerifier), originalSGXTeeVerifierOwner, newOwner);
 
@@ -118,10 +115,12 @@ contract MultiSigTransfer is Script {
     // interact with the safe-transaction-service API to propose a batch transaction for accepting ownership of the TEEVerifier contracts.
     // Return values:
     //              - bytes32 txHash: The transaction hash of the multi-sig transaction that was proposed to the web UI.
-    function proposeOwnershipAcceptanceTransaction() internal returns (bytes32){
+    function proposeOwnershipAcceptanceTransaction() internal returns (bytes32) {
         // Generate transaction target and data arrays for signing.
-        bytes memory transactionDataSGX = abi.encodeCall(ownable2StepSGXTeeVerifier.acceptOwnership, ());
-        bytes memory transactionDataNitro = abi.encodeCall(ownable2StepNitroTeeVerifier.acceptOwnership, ());
+        bytes memory transactionDataSGX =
+            abi.encodeCall(ownable2StepSGXTeeVerifier.acceptOwnership, ());
+        bytes memory transactionDataNitro =
+            abi.encodeCall(ownable2StepNitroTeeVerifier.acceptOwnership, ());
         bytes memory transactionData = abi.encodeCall(ownable2StepTeeVerifier.acceptOwnership, ());
 
         addToBatch(address(sgxVerifier), transactionDataSGX);
@@ -129,10 +128,8 @@ contract MultiSigTransfer is Script {
         addToBatch(address(teeVerifier), transactionData);
 
         return safe.proposeTransactions(batchTargets, batchData, proposerAddress, derivationPath);
-        
     }
 
-    
     // addToBatch is a helper function for appending a transaction to the current batch being built for this ownership transfer.
     // Return values:
     //              - txHash: a bytes32 value representing the transaction hash proposed to the multi-sig wallet.
@@ -167,11 +164,10 @@ contract MultiSigTransfer is Script {
     // It's purpose is to trick the vm into thinking that the test is not making cross-contract calls and overwriting msg.sender.
     // This allows us to spoof more accurate testing conditions, as this script won't ever be deployed/called on chain.
     function transferTestEntrypoint() public {
-
         testSetUp();
 
         vm.startPrank(msg.sender);
-        
+
         initiateTransfer();
 
         vm.stopPrank();
@@ -192,7 +188,7 @@ contract MultiSigTransfer is Script {
         bytes32 txHash = proposeOwnershipAcceptanceTransaction();
         console2.log("multi-sig transaction hash:");
         console2.logBytes32(txHash);
-        
+
         vm.stopBroadcast();
     }
 }
