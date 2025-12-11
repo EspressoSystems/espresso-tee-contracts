@@ -80,12 +80,12 @@ contract MultiSigTransfer is Script {
 
         nitroVerifier = teeVerifier.espressoNitroTEEVerifier();
         ownableNitroTeeVerifier = Ownable(address(nitroVerifier));
-        originalNitroTeeVerifierOwner = ownableTeeVerifier.owner();
+        originalNitroTeeVerifierOwner = ownableNitroTeeVerifier.owner();
         ownable2StepNitroTeeVerifier = Ownable2Step(address(nitroVerifier));
 
         sgxVerifier = teeVerifier.espressoSGXTEEVerifier();
         ownableSGXTeeVerifier = Ownable(address(sgxVerifier));
-        originalSGXTeeVerifierOwner = ownableTeeVerifier.owner();
+        originalSGXTeeVerifierOwner = ownableSGXTeeVerifier.owner();
         ownable2StepSGXTeeVerifier = Ownable2Step(address(sgxVerifier));
     }
 
@@ -161,7 +161,7 @@ contract MultiSigTransfer is Script {
     }
 
     // testTransferEntrypoint() is a helper function that serves as a testing entry point for this script.
-    // It's purpose is to trick the vm into thinking that the test is not making cross-contract calls and overwriting msg.sender.
+    // Its purpose is to trick the vm into thinking that the test is not making cross-contract calls and overwriting msg.sender.
     // This allows us to spoof more accurate testing conditions, as this script won't ever be deployed/called on chain.
     function transferTestEntrypoint() public {
         testSetUp();
