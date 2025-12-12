@@ -3,23 +3,33 @@ pragma solidity ^0.8.20;
 
 import "forge-std/Test.sol";
 import {EspressoSGXTEEVerifier} from "../src/EspressoSGXTEEVerifier.sol";
-import {IEspressoSGXTEEVerifier} from "../src/interface/IEspressoSGXTEEVerifier.sol";
+import {
+    IEspressoSGXTEEVerifier
+} from "../src/interface/IEspressoSGXTEEVerifier.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "./OlympixUnitTest.sol";
 
-contract EspressoSGXTEEVerifierTest is Test, OlympixUnitTest("EspressoSGXTEEVerifier") {
+contract EspressoSGXTEEVerifierTest is
+    Test,
+    OlympixUnitTest("EspressoSGXTEEVerifier")
+{
     address proxyAdmin = address(140);
     address adminTEE = address(141);
     address fakeAddress = address(145);
 
     EspressoSGXTEEVerifier espressoSGXTEEVerifier;
     bytes32 reportDataHash =
-        bytes32(0x38f8abca50cdede6a00d405856857bc3d81135624ee0e287640956d11cc22d5e);
+        bytes32(
+            0x38f8abca50cdede6a00d405856857bc3d81135624ee0e287640956d11cc22d5e
+        );
     bytes32 enclaveHash =
-        bytes32(0x01f7290cb6bbaa427eca3daeb25eecccb87c4b61259b1ae2125182c4d77169c0);
+        bytes32(
+            0x01f7290cb6bbaa427eca3daeb25eecccb87c4b61259b1ae2125182c4d77169c0
+        );
 
     //  Address of the automata V3QuoteVerifier deployed on sepolia
-    address v3QuoteVerifier = address(0x6E64769A13617f528a2135692484B681Ee1a7169);
+    address v3QuoteVerifier =
+        address(0x6E64769A13617f528a2135692484B681Ee1a7169);
 
     function setUp() public {
         vm.createSelectFork(
@@ -27,7 +37,10 @@ contract EspressoSGXTEEVerifierTest is Test, OlympixUnitTest("EspressoSGXTEEVeri
         );
         // Get the instance of the DCAP Attestation QuoteVerifier on the Arbitrum Sepolia Rollup
         vm.startPrank(adminTEE);
-        espressoSGXTEEVerifier = new EspressoSGXTEEVerifier(enclaveHash, v3QuoteVerifier);
+        espressoSGXTEEVerifier = new EspressoSGXTEEVerifier(
+            enclaveHash,
+            v3QuoteVerifier
+        );
         vm.stopPrank();
     }
 
@@ -40,7 +53,9 @@ contract EspressoSGXTEEVerifierTest is Test, OlympixUnitTest("EspressoSGXTEEVeri
 
         // take keccak256 hash of the address of proxyAdmin
 
-        address batchPosterAddress = address(0xe2148eE53c0755215Df69b2616E552154EdC584f);
+        address batchPosterAddress = address(
+            0xe2148eE53c0755215Df69b2616E552154EdC584f
+        );
 
         bytes memory data = abi.encodePacked(batchPosterAddress);
 
@@ -55,7 +70,9 @@ contract EspressoSGXTEEVerifierTest is Test, OlympixUnitTest("EspressoSGXTEEVeri
         string memory inputFile = string.concat(vm.projectRoot(), quotePath);
         bytes memory sampleQuote = vm.readFileBinary(inputFile);
 
-        address batchPosterAddress = address(0xe2148eE53c0755215Df69b2616E552154EdC584f);
+        address batchPosterAddress = address(
+            0xe2148eE53c0755215Df69b2616E552154EdC584f
+        );
 
         bytes memory data = abi.encodePacked(batchPosterAddress);
 
@@ -69,7 +86,9 @@ contract EspressoSGXTEEVerifierTest is Test, OlympixUnitTest("EspressoSGXTEEVeri
         string memory inputFile = string.concat(vm.projectRoot(), quotePath);
         bytes memory sampleQuote = vm.readFileBinary(inputFile);
 
-        address batchPosterAddress = address(0x4C91660a37d613E1Bd278F9Db882Cc5ED2549072);
+        address batchPosterAddress = address(
+            0x4C91660a37d613E1Bd278F9Db882Cc5ED2549072
+        );
 
         bytes memory data = abi.encodePacked(batchPosterAddress);
 
@@ -83,7 +102,9 @@ contract EspressoSGXTEEVerifierTest is Test, OlympixUnitTest("EspressoSGXTEEVeri
         string memory inputFile = string.concat(vm.projectRoot(), quotePath);
         bytes memory sampleQuote = vm.readFileBinary(inputFile);
 
-        address batchPosterAddress = address(0xe2148eE53c0755215Df69b2616E552154EdC584f);
+        address batchPosterAddress = address(
+            0xe2148eE53c0755215Df69b2616E552154EdC584f
+        );
 
         // encode adds padding and the length should become incorrect
         bytes memory data = abi.encode(batchPosterAddress);
@@ -98,7 +119,9 @@ contract EspressoSGXTEEVerifierTest is Test, OlympixUnitTest("EspressoSGXTEEVeri
         string memory inputFile = string.concat(vm.projectRoot(), quotePath);
         bytes memory sampleQuote = vm.readFileBinary(inputFile);
 
-        address batchPosterAddress = address(0xe2148eE53c0755215Df69b2616E552154EdC584f);
+        address batchPosterAddress = address(
+            0xe2148eE53c0755215Df69b2616E552154EdC584f
+        );
 
         // Convert to bytes (dynamically sized)
         bytes memory data = abi.encodePacked(batchPosterAddress);
@@ -110,7 +133,10 @@ contract EspressoSGXTEEVerifierTest is Test, OlympixUnitTest("EspressoSGXTEEVeri
         address[] memory batchPosters = new address[](1);
         batchPosters[0] = batchPosterAddress;
         espressoSGXTEEVerifier.deleteRegisteredSigners(batchPosters);
-        assertEq(espressoSGXTEEVerifier.registeredSigners(batchPosterAddress), false);
+        assertEq(
+            espressoSGXTEEVerifier.registeredSigners(batchPosterAddress),
+            false
+        );
         vm.stopPrank();
 
         // Check that only owner can delete the signer
@@ -190,9 +216,13 @@ contract EspressoSGXTEEVerifierTest is Test, OlympixUnitTest("EspressoSGXTEEVeri
         string memory quotePath = "/test/configs/attestation.bin";
         string memory inputFile = string.concat(vm.projectRoot(), quotePath);
         bytes memory sampleQuote = vm.readFileBinary(inputFile);
-        bytes32 incorrectMrEnclave =
-            bytes32(0x51dfe95acffa8a4075b716257c836895af9202a5fd56c8c2208dacb79c659ff1);
-        espressoSGXTEEVerifier = new EspressoSGXTEEVerifier(incorrectMrEnclave, v3QuoteVerifier);
+        bytes32 incorrectMrEnclave = bytes32(
+            0x51dfe95acffa8a4075b716257c836895af9202a5fd56c8c2208dacb79c659ff1
+        );
+        espressoSGXTEEVerifier = new EspressoSGXTEEVerifier(
+            incorrectMrEnclave,
+            v3QuoteVerifier
+        );
         vm.expectRevert(IEspressoSGXTEEVerifier.InvalidEnclaveHash.selector);
         espressoSGXTEEVerifier.verify(sampleQuote, reportDataHash);
     }
@@ -201,9 +231,15 @@ contract EspressoSGXTEEVerifierTest is Test, OlympixUnitTest("EspressoSGXTEEVeri
         vm.startPrank(adminTEE);
         bytes32 newMrEnclave = bytes32(hex"01");
         espressoSGXTEEVerifier.setEnclaveHash(newMrEnclave, true);
-        assertEq(espressoSGXTEEVerifier.registeredEnclaveHash(newMrEnclave), true);
+        assertEq(
+            espressoSGXTEEVerifier.registeredEnclaveHash(newMrEnclave),
+            true
+        );
         espressoSGXTEEVerifier.setEnclaveHash(newMrEnclave, false);
-        assertEq(espressoSGXTEEVerifier.registeredEnclaveHash(newMrEnclave), false);
+        assertEq(
+            espressoSGXTEEVerifier.registeredEnclaveHash(newMrEnclave),
+            false
+        );
         vm.stopPrank();
         // Check that only owner can set the hash
         vm.startPrank(fakeAddress);
@@ -225,7 +261,9 @@ contract EspressoSGXTEEVerifierTest is Test, OlympixUnitTest("EspressoSGXTEEVeri
     }
 
     /// @dev Covers opix-target-branch-58-True: verify() header.version != 3 triggers InvalidHeaderVersion revert
-    function testVerify_quoteWithNonV3HeaderVersion_revertsWithInvalidHeaderVersion() public {
+    function testVerify_quoteWithNonV3HeaderVersion_revertsWithInvalidHeaderVersion()
+        public
+    {
         // This test expects the test infrastructure has the same file layout and an accessible quote.
         // The primary failing was vm.readFileBinary, not contract logic.
         // To robustly test, if file is missing, fall back to minimal bytes, but in production infra, test config will supply this file.
@@ -256,7 +294,9 @@ contract EspressoSGXTEEVerifierTest is Test, OlympixUnitTest("EspressoSGXTEEVeri
     // This test covers opix-target-branch-60-YOUR-TEST-SHOULD-ENTER-THIS-ELSE-BRANCH-BY-MAKING-THE-PRECEDING-IFS-CONDITIONS-FALSE
     // It ensures that when header.version == 3, the EspressoSGXTEEVerifier.verify() function takes the 'else' branch (assert(true)) and does NOT revert with InvalidHeaderVersion.
     // The test checks that any revert that happens is not due to InvalidHeaderVersion (branch coverage for 60-else path).
-    function test_verify_enterElseBranch_headerVersion3_opixBranch_60_ElseBranch() public {
+    function test_verify_enterElseBranch_headerVersion3_opixBranch_60_ElseBranch()
+        public
+    {
         // Prepare a dummy quote with the first two bytes (little-endian) equal to 3
         bytes memory dummyQuote = new bytes(48); // 48 bytes for just the header
         dummyQuote[0] = bytes1(uint8(0x03)); // low byte = 3
@@ -267,11 +307,14 @@ contract EspressoSGXTEEVerifierTest is Test, OlympixUnitTest("EspressoSGXTEEVeri
         bytes32 dummyReportDataHash = reportDataHash;
 
         // Use inline assembly to catch the revert selector
-        (bool ok, bytes memory revertReason) = address(espressoSGXTEEVerifier).staticcall(
-            abi.encodeWithSelector(
-                espressoSGXTEEVerifier.verify.selector, dummyQuote, dummyReportDataHash
-            )
-        );
+        (bool ok, bytes memory revertReason) = address(espressoSGXTEEVerifier)
+            .staticcall(
+                abi.encodeWithSelector(
+                    espressoSGXTEEVerifier.verify.selector,
+                    dummyQuote,
+                    dummyReportDataHash
+                )
+            );
         // Should NOT revert with InvalidHeaderVersion (selector)
         if (!ok) {
             bytes4 selector = bytes4(0);
@@ -281,7 +324,8 @@ contract EspressoSGXTEEVerifierTest is Test, OlympixUnitTest("EspressoSGXTEEVeri
                 }
             }
             assertTrue(
-                selector != IEspressoSGXTEEVerifier.InvalidHeaderVersion.selector,
+                selector !=
+                    IEspressoSGXTEEVerifier.InvalidHeaderVersion.selector,
                 "verify should not revert with InvalidHeaderVersion when version==3 (should hit else branch)"
             );
             // It is acceptable if it reverts with any other selector (e.g. InvalidQuote, etc) because the dummy quote is otherwise invalid
@@ -349,8 +393,14 @@ contract EspressoSGXTEEVerifierTest is Test, OlympixUnitTest("EspressoSGXTEEVeri
         // Prepare a byte array of incorrect length (e.g., 100 instead of ENCLAVE_REPORT_LENGTH)
         bytes memory badEnclaveReport = new bytes(100);
         // Call parseEnclaveReport directly -- it is a pure function
-        (bool success,) = espressoSGXTEEVerifier.parseEnclaveReport(badEnclaveReport);
-        assertEq(success, false, "Should return false when length is incorrect");
+        (bool success, ) = espressoSGXTEEVerifier.parseEnclaveReport(
+            badEnclaveReport
+        );
+        assertEq(
+            success,
+            false,
+            "Should return false when length is incorrect"
+        );
     }
 
     // This unit test will cover the parseEnclaveReport branch
@@ -365,7 +415,34 @@ contract EspressoSGXTEEVerifierTest is Test, OlympixUnitTest("EspressoSGXTEEVeri
         // Prepare a byte array of the correct length, can be all zeros for branch coverage
         bytes memory goodEnclaveReport = new bytes(ENCLAVE_REPORT_LENGTH);
         // Should hit opix-target-branch-172-YOUR-TEST-SHOULD-ENTER-THIS-ELSE-BRANCH
-        (bool success,) = espressoSGXTEEVerifier.parseEnclaveReport(goodEnclaveReport);
-        assertEq(success, true, "Should return true when length is exactly ENCLAVE_REPORT_LENGTH");
+        (bool success, ) = espressoSGXTEEVerifier.parseEnclaveReport(
+            goodEnclaveReport
+        );
+        assertEq(
+            success,
+            true,
+            "Should return true when length is exactly ENCLAVE_REPORT_LENGTH"
+        );
+    }
+
+    function testSGXConstructorInvalidQuoteVerifierAddress() public {
+        bytes32 dummyEnclaveHash = bytes32(uint256(0x1234));
+        address zeroAddress = address(0);
+        vm.expectRevert(
+            IEspressoSGXTEEVerifier.InvalidQuoteVerifierAddress.selector
+        );
+        new EspressoSGXTEEVerifier(dummyEnclaveHash, zeroAddress);
+    }
+
+    function testSGXConstructorInvalidQuoteVerifierAddressNoCode() public {
+        bytes32 dummyEnclaveHash = bytes32(uint256(0x5678));
+        // Create an address with no code by generating a random address (not a contract)
+        address eoa = address(0x1234567890123456789012345678901234567890);
+        // Ensure the address has no code
+        assertEq(eoa.code.length, 0);
+        vm.expectRevert(
+            IEspressoSGXTEEVerifier.InvalidQuoteVerifierAddress.selector
+        );
+        new EspressoSGXTEEVerifier(dummyEnclaveHash, eoa);
     }
 }

@@ -2,8 +2,12 @@
 pragma solidity ^0.8.0;
 
 import "forge-std/Test.sol";
-import {EspressoRollupSequencerManager} from "../src/EspressoRollupSequencerManager.sol";
-import {IEspressoRollupSequencerManager} from "../src/interface/IEspressoRollupSequencerManager.sol";
+import {
+    EspressoRollupSequencerManager
+} from "../src/EspressoRollupSequencerManager.sol";
+import {
+    IEspressoRollupSequencerManager
+} from "../src/interface/IEspressoRollupSequencerManager.sol";
 import "./OlympixUnitTest.sol";
 
 contract EspressoRollupSequencerManagerTest is
@@ -14,7 +18,9 @@ contract EspressoRollupSequencerManagerTest is
     address[] public initialSequencers;
 
     function setUp() public {
-        rollupSequencerManager = new EspressoRollupSequencerManager(initialSequencers);
+        rollupSequencerManager = new EspressoRollupSequencerManager(
+            initialSequencers
+        );
     }
 
     function testInsertSequencer() public {
@@ -31,7 +37,9 @@ contract EspressoRollupSequencerManagerTest is
     function testInsertSequencerFailsIfSequencerAlreadyExists() public {
         address sequencer = address(0x123);
         rollupSequencerManager.insertSequencer(sequencer);
-        vm.expectRevert(IEspressoRollupSequencerManager.SequencerAlreadyExists.selector);
+        vm.expectRevert(
+            IEspressoRollupSequencerManager.SequencerAlreadyExists.selector
+        );
         rollupSequencerManager.insertSequencer(sequencer);
     }
 
@@ -57,7 +65,9 @@ contract EspressoRollupSequencerManagerTest is
 
     function testRemoveSequencerFailsIfSequencerDoesNotExist() public {
         address sequencer = address(0x123);
-        vm.expectRevert(IEspressoRollupSequencerManager.SequencerDoesNotExist.selector);
+        vm.expectRevert(
+            IEspressoRollupSequencerManager.SequencerDoesNotExist.selector
+        );
         rollupSequencerManager.removeSequencer(sequencer);
     }
 
@@ -78,7 +88,9 @@ contract EspressoRollupSequencerManagerTest is
         assertEq(rollupSequencerManager.getCurrentSequencer(2), sequencer1);
     }
 
-    function testGetCurrentSequencerFailsIViewNumberGreaterThanSequencerLength() public {
+    function testGetCurrentSequencerFailsIViewNumberGreaterThanSequencerLength()
+        public
+    {
         address sequencer1 = address(0x123);
         address sequencer2 = address(0x456);
         rollupSequencerManager.insertSequencer(sequencer1);
@@ -87,5 +99,23 @@ contract EspressoRollupSequencerManagerTest is
         // remove sequencer
         rollupSequencerManager.removeSequencer(sequencer1);
         assertEq(rollupSequencerManager.getCurrentSequencer(5), sequencer2);
+    }
+
+    function testInsertSequencerFailsIfSequencerIsZeroAddress() public {
+        // Test: Should revert with InvalidSequencer error if trying to insert zero address
+        address zeroAddress = address(0);
+        vm.expectRevert(
+            IEspressoRollupSequencerManager.InvalidSequencer.selector
+        );
+        rollupSequencerManager.insertSequencer(zeroAddress);
+    }
+
+    function testGetCurrentSequencerFailsIfListEmpty() public {
+        // The sequencer manager is initialized with no sequencers (see setUp).
+        // This should trigger the branch: if (currentSequencerCount == 0)
+        vm.expectRevert(
+            IEspressoRollupSequencerManager.SequencerListIsEmpty.selector
+        );
+        rollupSequencerManager.getCurrentSequencer(0);
     }
 }
