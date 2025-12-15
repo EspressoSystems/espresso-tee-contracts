@@ -156,7 +156,7 @@ contract MultiSigTransfer is Script {
         );
         require(
             Ownable2Step(contractAddress).pendingOwner() == targetOwner,
-            "Current owner of contract is not the original owner"
+            "Current owner of contract is not the target owner"
         );
     }
 
