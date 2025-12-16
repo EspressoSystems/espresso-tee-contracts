@@ -23,6 +23,9 @@ contract EspressoNitroTEEVerifier is IEspressoNitroTEEVerifier, Ownable2Step {
     // Registered signers
     mapping(address => bool) public registeredSigners;
 
+    // Track used nonces to prevent replay attacks
+    mapping(bytes32 => bool) public usedNonces;
+
     INitroEnclaveVerifier public _nitroEnclaveVerifier;
 
     constructor(bytes32 enclaveHash, INitroEnclaveVerifier nitroEnclaveVerifier) Ownable2Step() {
@@ -51,6 +54,13 @@ contract EspressoNitroTEEVerifier is IEspressoNitroTEEVerifier, Ownable2Step {
             revert VerificationFailed(journal.result);
         }
 
+        // Validate nonce hasn't been used before
+        bytes32 nonceHash = keccak256(journal.nonce);
+        if (usedNonces[nonceHash]) {
+            revert NonceAlreadyUsed();
+        }
+        usedNonces[nonceHash] = true;
+
         // we hash the pcr0 value to get the the pcr0Hash and then
         // check if the given hash has been registered in the contract by the owner
         // this allows us to verify that the registerSigner request is coming from a TEE
@@ -71,7 +81,10 @@ contract EspressoNitroTEEVerifier is IEspressoNitroTEEVerifier, Ownable2Step {
         bytes32 publicKeyHash = keccak256(publicKeyWithoutPrefix);
         // Note: We take the keccak hash first to derive the address.
         // This is the same which the go ethereum crypto library is doing for PubkeyToAddress()
-        address enclaveAddress = address(uint160(uint256(publicKeyHash)));
+        address enclaveAddress;
+        assembly {
+            enclaveAddress := publicKeyHash
+        }
         // Mark the signer as registered
         if (!registeredSigners[enclaveAddress]) {
             registeredSigners[enclaveAddress] = true;

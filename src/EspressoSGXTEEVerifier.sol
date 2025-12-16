@@ -124,15 +124,18 @@ contract EspressoSGXTEEVerifier is IEspressoSGXTEEVerifier, Ownable2Step {
         @return header The parsed header
     */
     function parseQuoteHeader(bytes calldata rawQuote) public pure returns (Header memory header) {
-        header = Header({
-            version: uint16(BELE.leBytesToBeUint(rawQuote[0:2])),
-            attestationKeyType: bytes2(rawQuote[2:4]),
-            teeType: bytes4(uint32(BELE.leBytesToBeUint(rawQuote[4:8]))),
-            qeSvn: bytes2(rawQuote[8:10]),
-            pceSvn: bytes2(rawQuote[10:12]),
-            qeVendorId: bytes16(rawQuote[12:28]),
-            userData: bytes20(rawQuote[28:48])
-        });
+        if (rawQuote.length < HEADER_LENGTH) {
+            revert InvalidQuoteLength();
+        }
+        bytes memory quote = rawQuote;
+
+        header.version = uint16(BELE.leBytesToBeUint(quote.substring(0, 2)));
+        header.attestationKeyType = bytes2(quote.substring(2, 2));
+        header.teeType = bytes4(quote.substring(4, 4));
+        header.qeSvn = bytes2(quote.substring(8, 2));
+        header.pceSvn = bytes2(quote.substring(10, 2));
+        header.qeVendorId = bytes16(quote.substring(12, 16));
+        header.userData = bytes20(quote.substring(28, 20));
     }
 
     /*

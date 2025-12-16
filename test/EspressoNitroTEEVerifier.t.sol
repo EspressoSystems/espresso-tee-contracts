@@ -76,6 +76,7 @@ contract EspressoNitroTEEVerifierTest is Test {
      */
     function testInvalidProof() public {
         vm.startPrank(adminTEE);
+        vm.warp(1_764_889_188);
         string memory proofPath = "/test/configs/invalid_proof.json";
         string memory inputFile = string.concat(vm.projectRoot(), proofPath);
         string memory json = vm.readFile(inputFile);
@@ -136,6 +137,24 @@ contract EspressoNitroTEEVerifierTest is Test {
         vm.startPrank(fakeAddress);
         vm.expectRevert("Ownable: caller is not the owner");
         espressoNitroTEEVerifier.setEnclaveHash(pcr0Hash, true);
+        vm.stopPrank();
+    }
+
+    // check for nonce reuse reverts
+    function testNonceReuseReverts() public {
+        vm.startPrank(adminTEE);
+        vm.warp(1_764_889_188);
+        string memory proofPath = "/test/configs/proof.json";
+        string memory inputFile = string.concat(vm.projectRoot(), proofPath);
+        string memory json = vm.readFile(inputFile);
+        bytes memory journal = vm.parseJsonBytes(json, ".raw_proof.journal");
+        // Extract onchain_proof
+        bytes memory onchain = vm.parseJsonBytes(json, ".onchain_proof");
+        // register and verify signer exists
+        espressoNitroTEEVerifier.registerSigner(journal, onchain);
+        // attempt to register again with same proof should revert
+        vm.expectRevert(IEspressoNitroTEEVerifier.NonceAlreadyUsed.selector);
+        espressoNitroTEEVerifier.registerSigner(journal, onchain);
         vm.stopPrank();
     }
 

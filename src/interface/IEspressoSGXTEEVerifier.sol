@@ -23,6 +23,8 @@ interface IEspressoSGXTEEVerifier {
     error InvalidSignerAddress();
     // This error is thrown when the quote verifier address is invalid
     error InvalidQuoteVerifierAddress();
+    // This error is thrown when the quote length is invalid
+    error InvalidQuoteLength();
 
     event EnclaveHashSet(bytes32 enclaveHash, bool valid);
     event SignerRegistered(address signer, bytes32 enclaveHash);

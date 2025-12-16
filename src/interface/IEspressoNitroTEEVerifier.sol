@@ -8,6 +8,8 @@ import {
 interface IEspressoNitroTEEVerifier {
     // This error is thrown when the PCR0 values don't match
     error InvalidAWSEnclaveHash();
+    // This error is thrown when the nonce has already been used
+    error NonceAlreadyUsed();
     // This error is thrown when the ZK proof verification fails
     error VerificationFailed(VerificationResult result);
 
