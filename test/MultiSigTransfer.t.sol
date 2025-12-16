@@ -65,6 +65,9 @@ contract MultiSigTransferTest is Test {
 
         teeVerifierAddress = Strings.toHexString(address(espressoTEEVerifier));
 
+        vm.setEnv(newOwnerEnv, newOwnerString);
+        vm.setEnv(teeVerifierEnv, teeVerifierAddress);
+
         multiSigTransfer = new MultiSigTransfer();
         vm.stopPrank();
     }
@@ -73,8 +76,6 @@ contract MultiSigTransferTest is Test {
     // populated via `vm.setEnv`
     function testValidTransfer() public {
         // set environment variables for the transfer script.
-        vm.setEnv(newOwnerEnv, newOwnerString);
-        vm.setEnv(teeVerifierEnv, teeVerifierAddress);
         vm.startPrank(originalOwner);
         console2.log("original owner:", originalOwner);
         console2.log(
@@ -104,8 +105,8 @@ contract MultiSigTransferTest is Test {
     // populated via `vm.setEnv`
     function testInvalidTransfer() public {
         // set environment variables for the transfer script.
-        vm.setEnv(newOwnerEnv, newOwnerString);
-        vm.setEnv(teeVerifierEnv, teeVerifierAddress);
+        // vm.setEnv(newOwnerEnv, newOwnerString);
+        // vm.setEnv(teeVerifierEnv, teeVerifierAddress);
 
         vm.startPrank(originalOwner);
         console2.log("original owner:", originalOwner);
