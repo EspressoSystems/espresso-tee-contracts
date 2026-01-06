@@ -20,8 +20,15 @@ jobs:
         with:
           version: nightly
 
+      - name: Install dependencies
+        run: forge install
+
+      - name: Build project
+        run: forge build --build-info
+
       - name: Run Slither
         uses: crytic/slither-action@v0.1.1
         with:
+          ignore-compile: true
           target: "src"
           fail-on: "medium"
