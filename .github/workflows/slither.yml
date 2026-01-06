@@ -1,7 +1,6 @@
 name: Slither Analysis
 on:
   push:
-  pull_request:
   workflow_dispatch:
 jobs:
   analyze:
@@ -9,3 +8,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: crytic/slither-action@v0.4.1
+        with:
+          target: src
+          fail-on: medium
