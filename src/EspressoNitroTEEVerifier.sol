@@ -99,4 +99,12 @@ contract EspressoNitroTEEVerifier is IEspressoNitroTEEVerifier, Ownable2Step {
             emit DeletedAWSRegisteredSigner(signers[i]);
         }
     }
+
+    function setNitroEnclaveVerifier(address nitroEnclaveVerifier) external onlyOwner {
+        if (nitroEnclaveVerifier == address(0)) {
+            revert InvalidNitroEnclaveVerifierAddress();
+        }
+        _nitroEnclaveVerifier = INitroEnclaveVerifier(nitroEnclaveVerifier);
+        emit NitroEnclaveVerifierSet(nitroEnclaveVerifier);
+    }
 }

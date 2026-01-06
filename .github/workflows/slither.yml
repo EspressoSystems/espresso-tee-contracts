@@ -29,7 +29,7 @@ jobs:
           pip install slither-analyzer==0.11.3
 
       - name: "Run Slither"
-        run: "slither . --config-file slither.config.json"
+        run: "slither . --config-file ./slither.config.json"
 
       - name: "Add build summary"
         run: |

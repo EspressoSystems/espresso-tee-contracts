@@ -59,6 +59,7 @@ contract EspressoSGXTEEVerifier is IEspressoSGXTEEVerifier, Ownable2Step {
         }
 
         // Verify the quote
+        //slither-disable-next-line unused-return
         (bool success,) = quoteVerifier.verifyQuote(header, rawQuote);
         if (!success) {
             revert InvalidQuote();
@@ -174,5 +175,13 @@ contract EspressoSGXTEEVerifier is IEspressoSGXTEEVerifier, Ownable2Step {
             delete registeredSigners[signers[i]];
             emit DeletedRegisteredSigner(signers[i]);
         }
+    }
+
+    function setQuoteVerifier(address _quoteVerifier) external onlyOwner {
+        if (_quoteVerifier == address(0) || _quoteVerifier.code.length <= 0) {
+            revert InvalidQuoteVerifierAddress();
+        }
+        quoteVerifier = V3QuoteVerifier(_quoteVerifier);
+        emit QuoteVerifierSet(_quoteVerifier);
     }
 }

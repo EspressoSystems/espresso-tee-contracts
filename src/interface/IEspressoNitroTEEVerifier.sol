@@ -10,10 +10,13 @@ interface IEspressoNitroTEEVerifier {
     error InvalidAWSEnclaveHash();
     // This error is thrown when the ZK proof verification fails
     error VerificationFailed(VerificationResult result);
+    // This error is thrown when the NitroEnclaveVerifier address is invalid
+    error InvalidNitroEnclaveVerifierAddress();
 
     event AWSEnclaveHashSet(bytes32 enclaveHash, bool valid);
     event AWSSignerRegistered(address signer, bytes32 enclaveHash);
     event DeletedAWSRegisteredSigner(address signer);
+    event NitroEnclaveVerifierSet(address nitroEnclaveVerifierAddress);
 
     function registeredSigners(address signer) external view returns (bool);
     function registeredEnclaveHash(bytes32 enclaveHash) external view returns (bool);
@@ -22,4 +25,5 @@ interface IEspressoNitroTEEVerifier {
 
     function setEnclaveHash(bytes32 enclaveHash, bool valid) external;
     function deleteRegisteredSigners(address[] memory signers) external;
+    function setNitroEnclaveVerifier(address nitroEnclaveVerifierAddress) external;
 }
