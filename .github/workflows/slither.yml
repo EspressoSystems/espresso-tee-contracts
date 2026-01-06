@@ -10,34 +10,25 @@ jobs:
   analyze:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - name: Checkout Repository
+        uses: actions/checkout@v3
         with:
           submodules: recursive
 
-      - name: Set up Node
-        uses: actions/setup-node@v4
-
-      - name: Install Yarn
-        run: npm install --global yarn
-
-      - name: Install Nix
-        uses: cachix/install-nix-action@v26
-
-      - name: Configure Cachix
-        uses: cachix/cachix-action@v14
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
         with:
-          name: dapp
+          version: nightly
 
       - name: Install dependencies
-        run: nix-shell --run 'make'
+        run: forge install
 
-      - name: Build the contracts
-        run: nix-shell --run 'make build'
+      - name: Build project
+        run: forge build
 
       - name: Run Slither
-        uses: crytic/slither-action@v0.4.1
+        uses: crytic/slither-action@v0.1.1
         with:
           ignore-compile: true
-          target: src
-          fail-on: medium
+          target: "src"
+          fail-on: "medium"
