@@ -1,19 +1,43 @@
 name: Slither Analysis
+
 on:
   push:
-  workflow_dispatch:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
 jobs:
   analyze:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
         with:
           submodules: recursive
 
-      - name: Install Foundry
-        uses: foundry-rs/foundry-toolchain@v1
+      - name: Set up Node
+        uses: actions/setup-node@v4
 
-      - uses: crytic/slither-action@v0.4.1
+      - name: Install Yarn
+        run: npm install --global yarn
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@v26
+
+      - name: Configure Cachix
+        uses: cachix/cachix-action@v14
         with:
+          name: dapp
+
+      - name: Install dependencies
+        run: nix-shell --run 'make'
+
+      - name: Build the contracts
+        run: nix-shell --run 'make build'
+
+      - name: Run Slither
+        uses: crytic/slither-action@v0.4.1
+        with:
+          ignore-compile: true
           target: src
           fail-on: medium
