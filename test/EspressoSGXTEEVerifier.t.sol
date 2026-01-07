@@ -222,4 +222,16 @@ contract EspressoSGXTEEVerifierTest is Test {
         assertEq(address(espressoSGXTEEVerifier.owner()), fakeAddress);
         vm.stopPrank();
     }
+
+    function testSetQuoteVerifier() public {
+        vm.startPrank(adminTEE);
+
+        espressoSGXTEEVerifier.setQuoteVerifier(address(espressoSGXTEEVerifier));
+        assertEq(address(espressoSGXTEEVerifier.quoteVerifier()), address(espressoSGXTEEVerifier));
+        vm.stopPrank();
+        vm.startPrank(fakeAddress);
+        vm.expectRevert("Ownable: caller is not the owner");
+        espressoSGXTEEVerifier.setQuoteVerifier(address(espressoSGXTEEVerifier));
+        vm.stopPrank();
+    }
 }

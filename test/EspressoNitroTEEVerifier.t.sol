@@ -178,4 +178,16 @@ contract EspressoNitroTEEVerifierTest is Test {
         espressoNitroTEEVerifier.deleteRegisteredSigners(signersToDelete);
         assertEq(espressoNitroTEEVerifier.registeredSigners(signer), false);
     }
+
+    function testSetNitroEnclaveVerifierAddress() public {
+        vm.startPrank(adminTEE);
+        address newVerifierAddress = 0x1234567890123456789012345678901234567890;
+        espressoNitroTEEVerifier.setNitroEnclaveVerifier(newVerifierAddress);
+        vm.stopPrank();
+        // Check that only owner can set the address
+        vm.startPrank(fakeAddress);
+        vm.expectRevert("Ownable: caller is not the owner");
+        espressoNitroTEEVerifier.setNitroEnclaveVerifier(newVerifierAddress);
+        vm.stopPrank();
+    }
 }

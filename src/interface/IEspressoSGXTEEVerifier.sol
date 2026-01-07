@@ -27,6 +27,7 @@ interface IEspressoSGXTEEVerifier {
     event EnclaveHashSet(bytes32 enclaveHash, bool valid);
     event SignerRegistered(address signer, bytes32 enclaveHash);
     event DeletedRegisteredSigner(address signer);
+    event QuoteVerifierSet(address quoteVerifierAddress);
 
     function registeredSigners(address signer) external view returns (bool);
     function registeredEnclaveHash(bytes32 enclaveHash) external view returns (bool);
@@ -47,4 +48,5 @@ interface IEspressoSGXTEEVerifier {
 
     function setEnclaveHash(bytes32 enclaveHash, bool valid) external;
     function deleteRegisteredSigners(address[] memory signers) external;
+    function setQuoteVerifier(address quoteVerifierAddress) external;
 }
