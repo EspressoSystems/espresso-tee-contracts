@@ -17,8 +17,7 @@ import {EspressoNitroTEEVerifier} from "../src/EspressoNitroTEEVerifier.sol";
 import {MultiSigTransfer} from "../scripts/MultiSigTransfer.s.sol";
 
 contract MultiSigTransferTest is Test {
-    bytes constant revertReason =
-        bytes("Ownable2Step: caller is not the new owner");
+    bytes constant revertReason = bytes("Ownable2Step: caller is not the new owner");
     // declare addresses for the test
     address originalOwner = address(141); // address value: 0x000000000000000000000000000000000000008c
     address newOwner = address(145); // address value: 0x0000000000000000000000000000000000000091
@@ -43,16 +42,10 @@ contract MultiSigTransferTest is Test {
     EspressoSGXTEEVerifier espressoSGXTEEVerifier;
     EspressoNitroTEEVerifier espressoNitroTEEVerifier;
     bytes32 enclaveHash =
-        bytes32(
-            0x01f7290cb6bbaa427eca3daeb25eecccb87c4b61259b1ae2125182c4d77169c0
-        );
+        bytes32(0x01f7290cb6bbaa427eca3daeb25eecccb87c4b61259b1ae2125182c4d77169c0);
     //  Address of the automata V3QuoteVerifier deployed on sepolia
-    address v3QuoteVerifier =
-        address(0x6E64769A13617f528a2135692484B681Ee1a7169);
-    bytes32 pcr0Hash =
-        bytes32(
-            0x555797ae2413bb1e4c352434a901032b16d7ac9090322532a3fccb9947977e8b
-        );
+    address v3QuoteVerifier = address(0x6E64769A13617f528a2135692484B681Ee1a7169);
+    bytes32 pcr0Hash = bytes32(0x555797ae2413bb1e4c352434a901032b16d7ac9090322532a3fccb9947977e8b);
 
     MultiSigTransfer multiSigTransfer;
 
@@ -67,10 +60,8 @@ contract MultiSigTransferTest is Test {
         espressoNitroTEEVerifier = new EspressoNitroTEEVerifier(
             INitroEnclaveVerifier(0x2D7fbBAD6792698Ba92e67b7e180f8010B9Ec788)
         );
-        espressoTEEVerifier = new EspressoTEEVerifier(
-            espressoSGXTEEVerifier,
-            espressoNitroTEEVerifier
-        );
+        espressoTEEVerifier =
+            new EspressoTEEVerifier(espressoSGXTEEVerifier, espressoNitroTEEVerifier);
 
         teeVerifierAddress = Strings.toHexString(address(espressoTEEVerifier));
 
@@ -88,8 +79,7 @@ contract MultiSigTransferTest is Test {
         vm.startPrank(originalOwner);
         console2.log("original owner:", originalOwner);
         console2.log(
-            "original owner according to contract:",
-            Ownable(address(espressoTEEVerifier)).owner()
+            "original owner according to contract:", Ownable(address(espressoTEEVerifier)).owner()
         );
 
         multiSigTransfer.transferTestEntrypoint();
@@ -98,10 +88,7 @@ contract MultiSigTransferTest is Test {
         // Expect emitted event from script, and initiate transfers.
         vm.startPrank(newOwner);
         console2.log("new owner:", newOwner);
-        console2.log(
-            "pending owner:",
-            Ownable2Step(address(espressoTEEVerifier)).pendingOwner()
-        );
+        console2.log("pending owner:", Ownable2Step(address(espressoTEEVerifier)).pendingOwner());
         espressoTEEVerifier.acceptOwnership();
         assertEq(Ownable(address(espressoTEEVerifier)).owner(), newOwner);
 
@@ -124,8 +111,7 @@ contract MultiSigTransferTest is Test {
         vm.startPrank(originalOwner);
         console2.log("original owner:", originalOwner);
         console2.log(
-            "original owner according to contract:",
-            Ownable(address(espressoTEEVerifier)).owner()
+            "original owner according to contract:", Ownable(address(espressoTEEVerifier)).owner()
         );
         multiSigTransfer.transferTestEntrypoint();
 
@@ -133,10 +119,7 @@ contract MultiSigTransferTest is Test {
         // Expect emitted event from script, and initiate transfers.
         vm.startPrank(badNewOwner);
         console2.log("bad new owner:", badNewOwner);
-        console2.log(
-            "pending owner:",
-            Ownable2Step(address(espressoTEEVerifier)).pendingOwner()
-        );
+        console2.log("pending owner:", Ownable2Step(address(espressoTEEVerifier)).pendingOwner());
         vm.expectRevert(revertReason);
         espressoTEEVerifier.acceptOwnership();
 

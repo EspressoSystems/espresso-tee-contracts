@@ -4,15 +4,9 @@ pragma solidity ^0.8.0;
 import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import "@openzeppelin/contracts/access/Ownable2Step.sol";
 import {IEspressoSGXTEEVerifier} from "./interface/IEspressoSGXTEEVerifier.sol";
-import {
-    IEspressoNitroTEEVerifier
-} from "./interface/IEspressoNitroTEEVerifier.sol";
+import {IEspressoNitroTEEVerifier} from "./interface/IEspressoNitroTEEVerifier.sol";
 import {IEspressoTEEVerifier} from "./interface/IEspressoTEEVerifier.sol";
-import {
-    ServiceType,
-    Unimplemented,
-    UnsupportedServiceType
-} from "./types/Types.sol";
+import {ServiceType, Unimplemented, UnsupportedServiceType} from "./types/Types.sol";
 
 /**
  * @title EspressoTEEVerifier
@@ -84,11 +78,11 @@ contract EspressoTEEVerifier is Ownable2Step, IEspressoTEEVerifier {
      *     @param signer The address of the signer
      *     @param teeType The type of TEE
      */
-    function registeredServices(
-        address signer,
-        TeeType teeType,
-        ServiceType service
-    ) external view returns (bool) {
+    function registeredServices(address signer, TeeType teeType, ServiceType service)
+        external
+        view
+        returns (bool)
+    {
         if (service == ServiceType.BatchPoster) {
             return checkRegisteredBatchPosters(signer, teeType);
         } else if (service == ServiceType.CaffNode) {
@@ -103,11 +97,11 @@ contract EspressoTEEVerifier is Ownable2Step, IEspressoTEEVerifier {
      *     @param enclaveHash The hash of the enclave
      *     @param teeType The type of TEE
      */
-    function registeredEnclaveHashes(
-        bytes32 enclaveHash,
-        TeeType teeType,
-        ServiceType service
-    ) external view returns (bool) {
+    function registeredEnclaveHashes(bytes32 enclaveHash, TeeType teeType, ServiceType service)
+        external
+        view
+        returns (bool)
+    {
         if (service == ServiceType.BatchPoster) {
             return registeredBatchPosterEnclaveHashes(enclaveHash, teeType);
         } else if (service == ServiceType.CaffNode) {
@@ -121,9 +115,10 @@ contract EspressoTEEVerifier is Ownable2Step, IEspressoTEEVerifier {
         @notice Set the EspressoSGXTEEVerifier
         @param _espressoSGXTEEVerifier The address of the EspressoSGXTEEVerifier
      */
-    function setEspressoSGXTEEVerifier(
-        IEspressoSGXTEEVerifier _espressoSGXTEEVerifier
-    ) public onlyOwner {
+    function setEspressoSGXTEEVerifier(IEspressoSGXTEEVerifier _espressoSGXTEEVerifier)
+        public
+        onlyOwner
+    {
         espressoSGXTEEVerifier = _espressoSGXTEEVerifier;
     }
 
@@ -131,9 +126,10 @@ contract EspressoTEEVerifier is Ownable2Step, IEspressoTEEVerifier {
         @notice Set the EspressoNitroTEEVerifier
         @param _espressoNitroTEEVerifier The address of the EspressoNitroTEEVerifier
      */
-    function setEspressoNitroTEEVerifier(
-        IEspressoNitroTEEVerifier _espressoNitroTEEVerifier
-    ) public onlyOwner {
+    function setEspressoNitroTEEVerifier(IEspressoNitroTEEVerifier _espressoNitroTEEVerifier)
+        public
+        onlyOwner
+    {
         espressoNitroTEEVerifier = _espressoNitroTEEVerifier;
     }
 
@@ -142,10 +138,11 @@ contract EspressoTEEVerifier is Ownable2Step, IEspressoTEEVerifier {
      *          registered services; Namely, this handles the batch posters.
      *
      */
-    function checkRegisteredBatchPosters(
-        address signer,
-        TeeType teeType
-    ) public view returns (bool) {
+    function checkRegisteredBatchPosters(address signer, TeeType teeType)
+        public
+        view
+        returns (bool)
+    {
         if (teeType == TeeType.SGX) {
             return espressoSGXTEEVerifier.registeredBatchPosters(signer);
         } else if (teeType == TeeType.NITRO) {
@@ -160,10 +157,7 @@ contract EspressoTEEVerifier is Ownable2Step, IEspressoTEEVerifier {
      *          registered services; Namely, this handles the caff nodes.
      *
      */
-    function checkRegisteredCaffNodes(
-        address signer,
-        TeeType teeType
-    ) public view returns (bool) {
+    function checkRegisteredCaffNodes(address signer, TeeType teeType) public view returns (bool) {
         if (teeType == TeeType.SGX) {
             return espressoSGXTEEVerifier.registeredCaffNodes(signer);
         } else if (teeType == TeeType.NITRO) {
@@ -179,19 +173,11 @@ contract EspressoTEEVerifier is Ownable2Step, IEspressoTEEVerifier {
         TeeType teeType
     ) private {
         if (teeType == TeeType.SGX) {
-            return
-                espressoSGXTEEVerifier.registerBatchPoster(
-                    verificationData,
-                    data
-                );
+            return espressoSGXTEEVerifier.registerBatchPoster(verificationData, data);
         }
 
         if (teeType == TeeType.NITRO) {
-            return
-                espressoNitroTEEVerifier.registerBatchPoster(
-                    verificationData,
-                    data
-                );
+            return espressoNitroTEEVerifier.registerBatchPoster(verificationData, data);
         }
         revert UnsupportedTeeType();
     }
@@ -202,16 +188,11 @@ contract EspressoTEEVerifier is Ownable2Step, IEspressoTEEVerifier {
         TeeType teeType
     ) private {
         if (teeType == TeeType.SGX) {
-            return
-                espressoSGXTEEVerifier.registerCaffNode(verificationData, data);
+            return espressoSGXTEEVerifier.registerCaffNode(verificationData, data);
         }
 
         if (teeType == TeeType.NITRO) {
-            return
-                espressoNitroTEEVerifier.registerCaffNode(
-                    verificationData,
-                    data
-                );
+            return espressoNitroTEEVerifier.registerCaffNode(verificationData, data);
         }
         revert UnsupportedTeeType();
     }
@@ -221,22 +202,17 @@ contract EspressoTEEVerifier is Ownable2Step, IEspressoTEEVerifier {
      *     @param enclaveHash The hash of the enclave
      *     @param teeType The type of TEE
      */
-    function registeredBatchPosterEnclaveHashes(
-        bytes32 enclaveHash,
-        TeeType teeType
-    ) private view returns (bool) {
+    function registeredBatchPosterEnclaveHashes(bytes32 enclaveHash, TeeType teeType)
+        private
+        view
+        returns (bool)
+    {
         if (teeType == TeeType.SGX) {
-            return
-                espressoSGXTEEVerifier.registeredBatchPosterEnclaveHashes(
-                    enclaveHash
-                );
+            return espressoSGXTEEVerifier.registeredBatchPosterEnclaveHashes(enclaveHash);
         }
 
         if (teeType == TeeType.NITRO) {
-            return
-                espressoNitroTEEVerifier.registeredBatchPosterEnclaveHashes(
-                    enclaveHash
-                );
+            return espressoNitroTEEVerifier.registeredBatchPosterEnclaveHashes(enclaveHash);
         }
         revert UnsupportedTeeType();
     }
@@ -246,22 +222,17 @@ contract EspressoTEEVerifier is Ownable2Step, IEspressoTEEVerifier {
      *     @param enclaveHash The hash of the enclave
      *     @param teeType The type of TEE
      */
-    function registeredCaffNodeEnclaveHashes(
-        bytes32 enclaveHash,
-        TeeType teeType
-    ) private view returns (bool) {
+    function registeredCaffNodeEnclaveHashes(bytes32 enclaveHash, TeeType teeType)
+        private
+        view
+        returns (bool)
+    {
         if (teeType == TeeType.SGX) {
-            return
-                espressoSGXTEEVerifier.registeredCaffNodeEnclaveHashes(
-                    enclaveHash
-                );
+            return espressoSGXTEEVerifier.registeredCaffNodeEnclaveHashes(enclaveHash);
         }
 
         if (teeType == TeeType.NITRO) {
-            return
-                espressoNitroTEEVerifier.registeredCaffNodeEnclaveHashes(
-                    enclaveHash
-                );
+            return espressoNitroTEEVerifier.registeredCaffNodeEnclaveHashes(enclaveHash);
         }
         revert UnsupportedTeeType();
     }

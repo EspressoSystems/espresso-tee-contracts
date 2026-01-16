@@ -3,9 +3,7 @@ pragma solidity ^0.8.20;
 
 import "forge-std/Test.sol";
 import {EspressoNitroTEEVerifier} from "../src/EspressoNitroTEEVerifier.sol";
-import {
-    IEspressoNitroTEEVerifier
-} from "../src/interface/IEspressoNitroTEEVerifier.sol";
+import {IEspressoNitroTEEVerifier} from "../src/interface/IEspressoNitroTEEVerifier.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import {ServiceType} from "../src/types/Types.sol";
 import {
@@ -18,10 +16,7 @@ contract EspressoNitroTEEVerifierTest is Test {
     address fakeAddress = address(145);
 
     EspressoNitroTEEVerifier espressoNitroTEEVerifier;
-    bytes32 pcr0Hash =
-        bytes32(
-            0x555797ae2413bb1e4c352434a901032b16d7ac9090322532a3fccb9947977e8b
-        );
+    bytes32 pcr0Hash = bytes32(0x555797ae2413bb1e4c352434a901032b16d7ac9090322532a3fccb9947977e8b);
 
     function setUp() public {
         vm.createSelectFork(
@@ -31,6 +26,10 @@ contract EspressoNitroTEEVerifierTest is Test {
         espressoNitroTEEVerifier = new EspressoNitroTEEVerifier(
             INitroEnclaveVerifier(0x2D7fbBAD6792698Ba92e67b7e180f8010B9Ec788) // Sepolia Nitro Enclave Verifier address
         );
+        // Register the enclave hash used in bundled proof fixtures
+        espressoNitroTEEVerifier.setEnclaveHash(pcr0Hash, true, ServiceType.BatchPoster);
+        // Register the enclave hash for caff node used in bundled proof fixtures
+        espressoNitroTEEVerifier.setEnclaveHash(pcr0Hash, true, ServiceType.CaffNode);
         vm.stopPrank();
     }
 
@@ -54,6 +53,25 @@ contract EspressoNitroTEEVerifierTest is Test {
     }
 
     /**
+     *     Test register caff node succeeds upon valid attestation and signature
+     */
+    function testRegisterCaffNode() public {
+        vm.startPrank(adminTEE);
+        vm.warp(1_764_889_188);
+        string memory proofPath = "/test/configs/proof.json";
+        string memory inputFile = string.concat(vm.projectRoot(), proofPath);
+        string memory json = vm.readFile(inputFile);
+        bytes memory journal = vm.parseJsonBytes(json, ".raw_proof.journal");
+
+        // Extract onchain_proof
+        bytes memory onchain = vm.parseJsonBytes(json, ".onchain_proof");
+
+        // register and verify signer exists
+        espressoNitroTEEVerifier.registerCaffNode(journal, onchain);
+        vm.stopPrank();
+    }
+
+    /**
      * Test register signer fails upon invalid attestation pcr0
      */
     function testRegisterBatchPosterInvalidPCR0Hash() public {
@@ -68,22 +86,32 @@ contract EspressoNitroTEEVerifierTest is Test {
         bytes memory onchain = vm.parseJsonBytes(json, ".onchain_proof");
 
         // Disable pcr0 hash
-        espressoNitroTEEVerifier.setEnclaveHash(
-            pcr0Hash,
-            false,
-            ServiceType.BatchPoster
-        );
-        assertEq(
-            espressoNitroTEEVerifier.registeredBatchPosterEnclaveHashes(
-                pcr0Hash
-            ),
-            false
-        );
+        espressoNitroTEEVerifier.setEnclaveHash(pcr0Hash, false, ServiceType.BatchPoster);
+        assertEq(espressoNitroTEEVerifier.registeredBatchPosterEnclaveHashes(pcr0Hash), false);
 
-        vm.expectRevert(
-            IEspressoNitroTEEVerifier.InvalidAWSEnclaveHash.selector
-        );
+        vm.expectRevert(IEspressoNitroTEEVerifier.InvalidAWSEnclaveHash.selector);
         espressoNitroTEEVerifier.registerBatchPoster(journal, onchain);
+        vm.stopPrank();
+    }
+
+    /**
+     * Test register caff node fails upon invalid attestation pcr0
+     */
+    function testRegisterCaffNodeInvalidPCR0Hash() public {
+        vm.startPrank(adminTEE);
+        vm.warp(1_764_889_188);
+        string memory proofPath = "/test/configs/proof.json";
+        string memory inputFile = string.concat(vm.projectRoot(), proofPath);
+        string memory json = vm.readFile(inputFile);
+        bytes memory journal = vm.parseJsonBytes(json, ".raw_proof.journal");
+
+        // Extract onchain_proof
+        bytes memory onchain = vm.parseJsonBytes(json, ".onchain_proof");
+        // Disable pcr0 hash
+        espressoNitroTEEVerifier.setEnclaveHash(pcr0Hash, false, ServiceType.CaffNode);
+        assertEq(espressoNitroTEEVerifier.registeredCaffNodeEnclaveHashes(pcr0Hash), false);
+        vm.expectRevert(IEspressoNitroTEEVerifier.InvalidAWSEnclaveHash.selector);
+        espressoNitroTEEVerifier.registerCaffNode(journal, onchain);
         vm.stopPrank();
     }
 
@@ -100,6 +128,9 @@ contract EspressoNitroTEEVerifierTest is Test {
         bytes memory onchain = vm.parseJsonBytes(json, ".onchain_proof");
         vm.expectRevert();
         espressoNitroTEEVerifier.registerBatchPoster(journal, onchain);
+
+        vm.expectRevert();
+        espressoNitroTEEVerifier.registerCaffNode(journal, onchain);
         vm.stopPrank();
     }
 
@@ -117,6 +148,9 @@ contract EspressoNitroTEEVerifierTest is Test {
         bytes memory onchain = vm.parseJsonBytes(json, ".onchain_proof");
         vm.expectRevert();
         espressoNitroTEEVerifier.registerBatchPoster(journal, onchain);
+
+        vm.expectRevert();
+        espressoNitroTEEVerifier.registerCaffNode(journal, onchain);
         vm.stopPrank();
     }
 
@@ -143,37 +177,28 @@ contract EspressoNitroTEEVerifierTest is Test {
     // Test setting Enclave hash for owner and non-owner
     function testSetNitroEnclaveHash() public {
         vm.startPrank(adminTEE);
-        espressoNitroTEEVerifier.setEnclaveHash(
-            pcr0Hash,
-            true,
-            ServiceType.BatchPoster
-        );
-        assertEq(
-            espressoNitroTEEVerifier.registeredBatchPosterEnclaveHashes(
-                pcr0Hash
-            ),
-            true
-        );
-        espressoNitroTEEVerifier.setEnclaveHash(
-            pcr0Hash,
-            false,
-            ServiceType.BatchPoster
-        );
-        assertEq(
-            espressoNitroTEEVerifier.registeredBatchPosterEnclaveHashes(
-                pcr0Hash
-            ),
-            false
-        );
+        espressoNitroTEEVerifier.setEnclaveHash(pcr0Hash, true, ServiceType.BatchPoster);
+        assertEq(espressoNitroTEEVerifier.registeredBatchPosterEnclaveHashes(pcr0Hash), true);
+        espressoNitroTEEVerifier.setEnclaveHash(pcr0Hash, false, ServiceType.BatchPoster);
+        assertEq(espressoNitroTEEVerifier.registeredBatchPosterEnclaveHashes(pcr0Hash), false);
         vm.stopPrank();
         // Check that only owner can set the hash
         vm.startPrank(fakeAddress);
         vm.expectRevert("Ownable: caller is not the owner");
-        espressoNitroTEEVerifier.setEnclaveHash(
-            pcr0Hash,
-            true,
-            ServiceType.BatchPoster
-        );
+        espressoNitroTEEVerifier.setEnclaveHash(pcr0Hash, true, ServiceType.BatchPoster);
+        vm.stopPrank();
+
+        // do the same tests for CaffNode
+        vm.startPrank(adminTEE);
+        espressoNitroTEEVerifier.setEnclaveHash(pcr0Hash, true, ServiceType.CaffNode);
+        assertEq(espressoNitroTEEVerifier.registeredCaffNodeEnclaveHashes(pcr0Hash), true);
+        espressoNitroTEEVerifier.setEnclaveHash(pcr0Hash, false, ServiceType.CaffNode);
+        assertEq(espressoNitroTEEVerifier.registeredCaffNodeEnclaveHashes(pcr0Hash), false);
+        vm.stopPrank();
+        // Check that only owner can set the hash
+        vm.startPrank(fakeAddress);
+        vm.expectRevert("Ownable: caller is not the owner");
+        espressoNitroTEEVerifier.setEnclaveHash(pcr0Hash, true, ServiceType.CaffNode);
         vm.stopPrank();
     }
 
@@ -214,12 +239,36 @@ contract EspressoNitroTEEVerifierTest is Test {
 
         // delete and verify signer address is gone
         espressoNitroTEEVerifier.deleteRegisteredBatchPosters(signersToDelete);
-        assertEq(
-            espressoNitroTEEVerifier.registeredBatchPosters(signer),
-            false
-        );
+        assertEq(espressoNitroTEEVerifier.registeredBatchPosters(signer), false);
     }
 
+    // Test we can delete a registered caff node with only the correct admin address
+    function testDeleteRegisterCaffNodeOwnership() public {
+        // register signer
+        vm.startPrank(adminTEE);
+        vm.warp(1_764_889_188);
+        string memory proofPath = "/test/configs/proof.json";
+        string memory inputFile = string.concat(vm.projectRoot(), proofPath);
+        string memory json = vm.readFile(inputFile);
+        bytes memory journal = vm.parseJsonBytes(json, ".raw_proof.journal");
+
+        // Extract onchain_proof
+        bytes memory onchain = vm.parseJsonBytes(json, ".onchain_proof");
+
+        // register and verify signer exists
+        espressoNitroTEEVerifier.registerCaffNode(journal, onchain);
+
+        address signer = 0xF8463E0aF00C1910402D2A51B3a8CecD0dC1c3fE;
+        assertEq(espressoNitroTEEVerifier.registeredCaffNodes(signer), true);
+
+        // delete and verify signer address is gone
+        address[] memory signersToDelete = new address[](1);
+        signersToDelete[0] = signer;
+        espressoNitroTEEVerifier.deleteRegisteredCaffNodes(signersToDelete);
+        assertEq(espressoNitroTEEVerifier.registeredCaffNodes(signer), false);
+    }
+
+    // Test setting Nitro Enclave Verifier address for owner and non-owner
     function testSetNitroEnclaveVerifierAddress() public {
         vm.startPrank(adminTEE);
         address newVerifierAddress = 0x1234567890123456789012345678901234567890;
