@@ -22,10 +22,16 @@ interface IEspressoTEEVerifier {
     error UnsupportedServiceType();
 
     // Get address of Nitro TEE Verifier
-    function espressoNitroTEEVerifier() external view returns (IEspressoNitroTEEVerifier);
+    function espressoNitroTEEVerifier()
+        external
+        view
+        returns (IEspressoNitroTEEVerifier);
 
     // Get addressof SGX TEE Verifier
-    function espressoSGXTEEVerifier() external view returns (IEspressoSGXTEEVerifier);
+    function espressoSGXTEEVerifier()
+        external
+        view
+        returns (IEspressoSGXTEEVerifier);
 
     // Function to verify the signature of the user data is from a registered signer
     function verify(
@@ -45,20 +51,25 @@ interface IEspressoTEEVerifier {
     ) external;
 
     // Function to retrieve whether a service is registered or not
-    function registeredServices(address signer, TeeType teeType, ServiceType serviceType)
-        external
-        view
-        returns (bool);
+    function registeredServices(
+        address signer,
+        TeeType teeType,
+        ServiceType serviceType
+    ) external view returns (bool);
 
-    function registeredEnclaveHashes(bytes32 enclaveHash, TeeType teeType, ServiceType serviceType)
-        external
-        view
-        returns (bool);
+    function registeredEnclaveHashes(
+        bytes32 enclaveHash,
+        TeeType teeType,
+        ServiceType serviceType
+    ) external view returns (bool);
 
     // Function to set the EspressoSGXTEEVerifier
-    function setEspressoSGXTEEVerifier(IEspressoSGXTEEVerifier _espressoSGXTEEVerifier) external;
+    function setEspressoSGXTEEVerifier(
+        IEspressoSGXTEEVerifier _espressoSGXTEEVerifier
+    ) external;
 
     // Function to set the EspressoNitroTEEVerifier
-    function setEspressoNitroTEEVerifier(IEspressoNitroTEEVerifier _espressoNitroTEEVerifier)
-        external;
+    function setEspressoNitroTEEVerifier(
+        IEspressoNitroTEEVerifier _espressoNitroTEEVerifier
+    ) external;
 }

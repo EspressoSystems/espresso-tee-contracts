@@ -1,8 +1,12 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {Header} from "@automata-network/dcap-attestation/contracts/types/CommonStruct.sol";
-import {EnclaveReport} from "@automata-network/dcap-attestation/contracts/types/V3Structs.sol";
+import {
+    Header
+} from "@automata-network/dcap-attestation/contracts/types/CommonStruct.sol";
+import {
+    EnclaveReport
+} from "@automata-network/dcap-attestation/contracts/types/V3Structs.sol";
 import "../types/Types.sol";
 
 interface IEspressoSGXTEEVerifier {
@@ -26,57 +30,88 @@ interface IEspressoSGXTEEVerifier {
     error InvalidQuoteVerifierAddress();
 
     event EnclaveHashSet(
-        bytes32 indexed enclaveHash, bool indexed valid, ServiceType indexed service
+        bytes32 indexed enclaveHash,
+        bool indexed valid,
+        ServiceType indexed service
     );
     event SGXServiceRegistered(
-        address indexed signer, bytes32 indexed enclaveHash, ServiceType indexed service
+        address indexed signer,
+        bytes32 indexed enclaveHash,
+        ServiceType indexed service
     );
-    event DeletedRegisteredService(address indexed signer, ServiceType indexed service);
+    event DeletedRegisteredService(
+        address indexed signer,
+        ServiceType indexed service
+    );
+    event QuoteVerifierSet(address quoteVerifierAddress);
 
     /*
-    * @notice This function is for checking the registration status of Intel SGX TEE Batch Posters and is a helper function for the EspressoTEEVerifier
-    */
-    function registeredBatchPosters(address signer) external view returns (bool);
+     * @notice This function is for checking the registration status of Intel SGX TEE Batch Posters and is a helper function for the EspressoTEEVerifier
+     */
+    function registeredBatchPosters(
+        address signer
+    ) external view returns (bool);
 
     /*
-    * @notice This function is for checking the registration status of Intel SGX TEE Caff Nodes and is a helper function for the EspressoTEEVerifier
-    */
+     * @notice This function is for checking the registration status of Intel SGX TEE Caff Nodes and is a helper function for the EspressoTEEVerifier
+     */
     function registeredCaffNodes(address signer) external view returns (bool);
 
-    function registeredBatchPosterEnclaveHashes(bytes32 enclaveHash) external view returns (bool);
+    function registeredBatchPosterEnclaveHashes(
+        bytes32 enclaveHash
+    ) external view returns (bool);
 
-    function registeredCaffNodeEnclaveHashes(bytes32 enclaveHash) external view returns (bool);
+    function registeredCaffNodeEnclaveHashes(
+        bytes32 enclaveHash
+    ) external view returns (bool);
 
     /*
-    * @notice This function is for registering Intel SGX TEE Batch Posters and is a helper function for the EspressoTEEVerifier
-    */
-    function registerBatchPoster(bytes calldata attestation, bytes calldata data) external;
+     * @notice This function is for registering Intel SGX TEE Batch Posters and is a helper function for the EspressoTEEVerifier
+     */
+    function registerBatchPoster(
+        bytes calldata attestation,
+        bytes calldata data
+    ) external;
     /*
-    * @notice This function is for registering Intel SGX TEE Batch Posters and is a helper function for the EspressoTEEVerifier
-    */
-    function registerCaffNode(bytes calldata attestation, bytes calldata data) external;
+     * @notice This function is for registering Intel SGX TEE Batch Posters and is a helper function for the EspressoTEEVerifier
+     */
+    function registerCaffNode(
+        bytes calldata attestation,
+        bytes calldata data
+    ) external;
 
-    function verify(bytes calldata rawQuote, bytes32 reportDataHash, ServiceType service)
-        external
-        view
-        returns (EnclaveReport memory);
+    function verify(
+        bytes calldata rawQuote,
+        bytes32 reportDataHash,
+        ServiceType service
+    ) external view returns (EnclaveReport memory);
 
-    function parseQuoteHeader(bytes calldata rawQuote) external pure returns (Header memory header);
+    function parseQuoteHeader(
+        bytes calldata rawQuote
+    ) external pure returns (Header memory header);
 
-    function parseEnclaveReport(bytes memory rawEnclaveReport)
-        external
-        pure
-        returns (bool success, EnclaveReport memory enclaveReport);
+    function parseEnclaveReport(
+        bytes memory rawEnclaveReport
+    ) external pure returns (bool success, EnclaveReport memory enclaveReport);
     /*
-    * @notice: This function is responsible for setting the validity of enclave hashes in this inner TEEVerifier contract, It will be
-    */
-    function setEnclaveHash(bytes32 enclaveHash, bool valid, ServiceType serviceType) external;
+     * @notice: This function is responsible for setting the validity of enclave hashes in this inner TEEVerifier contract, It will be
+     */
+    function setEnclaveHash(
+        bytes32 enclaveHash,
+        bool valid,
+        ServiceType serviceType
+    ) external;
     /*
-    * @notice This function is responsible for removing registered addresses from the list of valid Caff Nodes
-    */
+     * @notice This function is responsible for removing registered addresses from the list of valid Caff Nodes
+     */
     function deleteRegisteredCaffNodes(address[] memory signers) external;
     /*
-    * @notice This function is responsible for removing registered addresses from the list of valid Batch Posters
-    */
+     * @notice This function is responsible for removing registered addresses from the list of valid Batch Posters
+     */
     function deleteRegisteredBatchPosters(address[] memory signers) external;
+
+    /*
+     * @notice This function sets the QuoteVerifier contract address
+     */
+    function setQuoteVerifier(address quoteVerifierAddress) external;
 }

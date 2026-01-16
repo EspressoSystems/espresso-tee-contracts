@@ -3,10 +3,14 @@ pragma solidity ^0.8.20;
 
 import "forge-std/Test.sol";
 import {EspressoNitroTEEVerifier} from "../src/EspressoNitroTEEVerifier.sol";
-import {IEspressoNitroTEEVerifier} from "../src/interface/IEspressoNitroTEEVerifier.sol";
+import {
+    IEspressoNitroTEEVerifier
+} from "../src/interface/IEspressoNitroTEEVerifier.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
-import {CertManager} from "@nitro-validator/CertManager.sol";
 import {ServiceType} from "../src/types/Types.sol";
+import {
+    INitroEnclaveVerifier
+} from "aws-nitro-enclave-attestation/interfaces/INitroEnclaveVerifier.sol";
 
 contract EspressoNitroTEEVerifierTest is Test {
     address proxyAdmin = address(140);
@@ -14,14 +18,19 @@ contract EspressoNitroTEEVerifierTest is Test {
     address fakeAddress = address(145);
 
     EspressoNitroTEEVerifier espressoNitroTEEVerifier;
-    bytes32 pcr0Hash = bytes32(0xc980e59163ce244bb4bb6211f48c7b46f88a4f40943e84eb99bdc41e129bd293);
+    bytes32 pcr0Hash =
+        bytes32(
+            0x555797ae2413bb1e4c352434a901032b16d7ac9090322532a3fccb9947977e8b
+        );
 
     function setUp() public {
         vm.createSelectFork(
             "https://rpc.ankr.com/eth_sepolia/10a56026b3c20655c1dab931446156dea4d63d87d1261934c82a1b8045885923"
         );
         vm.startPrank(adminTEE);
-        espressoNitroTEEVerifier = new EspressoNitroTEEVerifier(pcr0Hash, new CertManager());
+        espressoNitroTEEVerifier = new EspressoNitroTEEVerifier(
+            INitroEnclaveVerifier(0x2D7fbBAD6792698Ba92e67b7e180f8010B9Ec788) // Sepolia Nitro Enclave Verifier address
+        );
         vm.stopPrank();
     }
 
@@ -30,34 +39,17 @@ contract EspressoNitroTEEVerifierTest is Test {
      */
     function testRegisterBatchPoster() public {
         vm.startPrank(adminTEE);
-        vm.warp(1_743_110_000);
-        string memory attestationPath = "/test/configs/nitro-attestation.bin";
-        string memory inputFile = string.concat(vm.projectRoot(), attestationPath);
-        bytes memory attestation = vm.readFileBinary(inputFile);
+        vm.warp(1_764_889_188);
+        string memory proofPath = "/test/configs/proof.json";
+        string memory inputFile = string.concat(vm.projectRoot(), proofPath);
+        string memory json = vm.readFile(inputFile);
+        bytes memory journal = vm.parseJsonBytes(json, ".raw_proof.journal");
 
-        string memory signaturePath = "/test/configs/nitro-valid-signature.bin";
-        string memory sigFile = string.concat(vm.projectRoot(), signaturePath);
-        bytes memory signature = vm.readFileBinary(sigFile);
+        // Extract onchain_proof
+        bytes memory onchain = vm.parseJsonBytes(json, ".onchain_proof");
 
-        espressoNitroTEEVerifier.registerBatchPoster(attestation, signature);
-        vm.stopPrank();
-    }
-
-    /**
-     * Test register signer succeeds upon valid attestation and signature
-     */
-    function testRegisterBatchPosterWithIndefiniteItemLengthAttestation() public {
-        vm.startPrank(adminTEE);
-        vm.warp(1_751_035_200);
-        string memory attestationPath = "/test/configs/indefinite-item-attestation.bin";
-        string memory inputFile = string.concat(vm.projectRoot(), attestationPath);
-        bytes memory attestation = vm.readFileBinary(inputFile);
-
-        string memory signaturePath = "/test/configs/indefinite-item-sig.bin";
-        string memory sigFile = string.concat(vm.projectRoot(), signaturePath);
-        bytes memory signature = vm.readFileBinary(sigFile);
-
-        espressoNitroTEEVerifier.registerBatchPoster(attestation, signature);
+        // register and verify signer exists
+        espressoNitroTEEVerifier.registerBatchPoster(journal, onchain);
         vm.stopPrank();
     }
 
@@ -66,91 +58,65 @@ contract EspressoNitroTEEVerifierTest is Test {
      */
     function testRegisterBatchPosterInvalidPCR0Hash() public {
         vm.startPrank(adminTEE);
-        vm.warp(1_743_110_000);
-        string memory attestationPath = "/test/configs/nitro-attestation.bin";
-        string memory inputFile = string.concat(vm.projectRoot(), attestationPath);
-        bytes memory attestation = vm.readFileBinary(inputFile);
+        vm.warp(1_764_889_188);
+        string memory proofPath = "/test/configs/proof.json";
+        string memory inputFile = string.concat(vm.projectRoot(), proofPath);
+        string memory json = vm.readFile(inputFile);
+        bytes memory journal = vm.parseJsonBytes(json, ".raw_proof.journal");
 
-        string memory signaturePath = "/test/configs/nitro-valid-signature.bin";
-        string memory sigFile = string.concat(vm.projectRoot(), signaturePath);
-        bytes memory signature = vm.readFileBinary(sigFile);
+        // Extract onchain_proof
+        bytes memory onchain = vm.parseJsonBytes(json, ".onchain_proof");
 
         // Disable pcr0 hash
-        espressoNitroTEEVerifier.setEnclaveHash(pcr0Hash, false, ServiceType.BatchPoster);
-        assertEq(espressoNitroTEEVerifier.registeredBatchPosterEnclaveHashes(pcr0Hash), false);
+        espressoNitroTEEVerifier.setEnclaveHash(
+            pcr0Hash,
+            false,
+            ServiceType.BatchPoster
+        );
+        assertEq(
+            espressoNitroTEEVerifier.registeredBatchPosterEnclaveHashes(
+                pcr0Hash
+            ),
+            false
+        );
 
         vm.expectRevert(
-            abi.encodeWithSelector(
-                IEspressoNitroTEEVerifier.InvalidAWSEnclaveHash.selector,
-                pcr0Hash,
-                ServiceType.BatchPoster
-            )
+            IEspressoNitroTEEVerifier.InvalidAWSEnclaveHash.selector
         );
-        espressoNitroTEEVerifier.registerBatchPoster(attestation, signature);
+        espressoNitroTEEVerifier.registerBatchPoster(journal, onchain);
         vm.stopPrank();
     }
 
     /**
-     * Test validate attestation reverts if an invalid signature is passed in
+     * Test invalid proof reverts the transaction
      */
-    function testInvalidSignature() public {
+    function testInvalidProof() public {
         vm.startPrank(adminTEE);
-        vm.warp(1_743_110_000);
-        string memory attestationPath = "/test/configs/nitro-attestation.bin";
-        string memory inputFile = string.concat(vm.projectRoot(), attestationPath);
-        bytes memory attestation = vm.readFileBinary(inputFile);
+        string memory proofPath = "/test/configs/invalid_proof.json";
+        string memory inputFile = string.concat(vm.projectRoot(), proofPath);
+        string memory json = vm.readFile(inputFile);
+        bytes memory journal = vm.parseJsonBytes(json, ".raw_proof.journal");
 
-        string memory signaturePath = "/test/configs/nitro-valid-signature.bin";
-        string memory sigFile = string.concat(vm.projectRoot(), signaturePath);
-        bytes memory signature = vm.readFileBinary(sigFile);
-        signature[0] = 0x00;
-
-        // Incorrect signature
-        vm.expectRevert(bytes("invalid sig"));
-        espressoNitroTEEVerifier.registerBatchPoster(attestation, signature);
+        bytes memory onchain = vm.parseJsonBytes(json, ".onchain_proof");
+        vm.expectRevert();
+        espressoNitroTEEVerifier.registerBatchPoster(journal, onchain);
         vm.stopPrank();
     }
 
-    /**
-     * Test validate attestation reverts if an old valid attestation is passed in
+    /*
+     * Test if expired proof reverts
      */
-    function testOldAttestation() public {
+    function testExpiredProof() public {
         vm.startPrank(adminTEE);
-        vm.warp(1_753_110_000);
-        string memory attestationPath = "/test/configs/nitro-attestation.bin";
-        string memory inputFile = string.concat(vm.projectRoot(), attestationPath);
-        bytes memory attestation = vm.readFileBinary(inputFile);
+        vm.warp(1_433_353_188);
+        string memory proofPath = "/test/configs/expired_proof.json";
+        string memory inputFile = string.concat(vm.projectRoot(), proofPath);
+        string memory json = vm.readFile(inputFile);
+        bytes memory journal = vm.parseJsonBytes(json, ".raw_proof.journal");
 
-        string memory signaturePath = "/test/configs/nitro-valid-signature.bin";
-        string memory sigFile = string.concat(vm.projectRoot(), signaturePath);
-        bytes memory signature = vm.readFileBinary(sigFile);
-
-        // Old Attestation, old certificate
-        vm.expectRevert(bytes("certificate not valid anymore"));
-        espressoNitroTEEVerifier.registerBatchPoster(attestation, signature);
-        vm.stopPrank();
-    }
-
-    /**
-     * Test validate attestation reverts if an invalid attestation prefix is passed in
-     */
-    function testInvalidAttestionPrefix() public {
-        vm.startPrank(adminTEE);
-        vm.warp(1_743_110_000);
-        string memory attestationPath = "/test/configs/nitro-attestation.bin";
-        string memory inputFile = string.concat(vm.projectRoot(), attestationPath);
-        bytes memory attestation = vm.readFileBinary(inputFile);
-        for (uint256 i = 0; i < 5; i++) {
-            attestation[i] = 0x00;
-        }
-
-        string memory signaturePath = "/test/configs/nitro-valid-signature.bin";
-        string memory sigFile = string.concat(vm.projectRoot(), signaturePath);
-        bytes memory signature = vm.readFileBinary(sigFile);
-
-        // Invalid prefix
-        vm.expectRevert(bytes("invalid attestation prefix"));
-        espressoNitroTEEVerifier.registerBatchPoster(attestation, signature);
+        bytes memory onchain = vm.parseJsonBytes(json, ".onchain_proof");
+        vm.expectRevert();
+        espressoNitroTEEVerifier.registerBatchPoster(journal, onchain);
         vm.stopPrank();
     }
 
@@ -177,15 +143,37 @@ contract EspressoNitroTEEVerifierTest is Test {
     // Test setting Enclave hash for owner and non-owner
     function testSetNitroEnclaveHash() public {
         vm.startPrank(adminTEE);
-        espressoNitroTEEVerifier.setEnclaveHash(pcr0Hash, true, ServiceType.BatchPoster);
-        assertEq(espressoNitroTEEVerifier.registeredBatchPosterEnclaveHashes(pcr0Hash), true);
-        espressoNitroTEEVerifier.setEnclaveHash(pcr0Hash, false, ServiceType.BatchPoster);
-        assertEq(espressoNitroTEEVerifier.registeredBatchPosterEnclaveHashes(pcr0Hash), false);
+        espressoNitroTEEVerifier.setEnclaveHash(
+            pcr0Hash,
+            true,
+            ServiceType.BatchPoster
+        );
+        assertEq(
+            espressoNitroTEEVerifier.registeredBatchPosterEnclaveHashes(
+                pcr0Hash
+            ),
+            true
+        );
+        espressoNitroTEEVerifier.setEnclaveHash(
+            pcr0Hash,
+            false,
+            ServiceType.BatchPoster
+        );
+        assertEq(
+            espressoNitroTEEVerifier.registeredBatchPosterEnclaveHashes(
+                pcr0Hash
+            ),
+            false
+        );
         vm.stopPrank();
         // Check that only owner can set the hash
         vm.startPrank(fakeAddress);
         vm.expectRevert("Ownable: caller is not the owner");
-        espressoNitroTEEVerifier.setEnclaveHash(pcr0Hash, true, ServiceType.BatchPoster);
+        espressoNitroTEEVerifier.setEnclaveHash(
+            pcr0Hash,
+            true,
+            ServiceType.BatchPoster
+        );
         vm.stopPrank();
     }
 
@@ -195,20 +183,19 @@ contract EspressoNitroTEEVerifierTest is Test {
     function testDeleteRegisterBatchPosterOwnership() public {
         // register signer
         vm.startPrank(adminTEE);
-        vm.warp(1_743_110_000);
-        string memory attestationPath = "/test/configs/nitro-attestation.bin";
-        string memory inputFile = string.concat(vm.projectRoot(), attestationPath);
-        bytes memory attestation = vm.readFileBinary(inputFile);
+        vm.warp(1_764_889_188);
+        string memory proofPath = "/test/configs/proof.json";
+        string memory inputFile = string.concat(vm.projectRoot(), proofPath);
+        string memory json = vm.readFile(inputFile);
+        bytes memory journal = vm.parseJsonBytes(json, ".raw_proof.journal");
 
-        string memory signaturePath = "/test/configs/nitro-valid-signature.bin";
-        string memory sigFile = string.concat(vm.projectRoot(), signaturePath);
-        bytes memory signature = vm.readFileBinary(sigFile);
+        // Extract onchain_proof
+        bytes memory onchain = vm.parseJsonBytes(json, ".onchain_proof");
 
         // register and verify signer exists
-        espressoNitroTEEVerifier.registerBatchPoster(attestation, signature);
-        bytes memory pubKey =
-            hex"090e39a638094d9805b89a831b7e710db345e701bb0e9865a60b6b50089b3f4b89c168fbf2219ba79b6e86eb63decac3be0dd3e8fb4c0f1b39d4ecd4589704ff";
-        address signer = address(uint160(uint256(keccak256(pubKey))));
+        espressoNitroTEEVerifier.registerBatchPoster(journal, onchain);
+
+        address signer = 0xF8463E0aF00C1910402D2A51B3a8CecD0dC1c3fE;
         assertEq(espressoNitroTEEVerifier.registeredBatchPosters(signer), true);
 
         // start with incorrect admin address
@@ -227,93 +214,21 @@ contract EspressoNitroTEEVerifierTest is Test {
 
         // delete and verify signer address is gone
         espressoNitroTEEVerifier.deleteRegisteredBatchPosters(signersToDelete);
-        assertEq(espressoNitroTEEVerifier.registeredBatchPosters(signer), false);
+        assertEq(
+            espressoNitroTEEVerifier.registeredBatchPosters(signer),
+            false
+        );
     }
 
-    function testVerifyCertParentCertNotVerified() public {
+    function testSetNitroEnclaveVerifierAddress() public {
         vm.startPrank(adminTEE);
-        vm.warp(1_744_913_000);
-        string memory certPath = "/test/configs/unverified-cert.bin";
-        string memory certFile = string.concat(vm.projectRoot(), certPath);
-        bytes memory certificate = vm.readFileBinary(certFile);
-
-        string memory parentCertHashPath = "/test/configs/unverified-parent-cert-hash.bin";
-        string memory parentCertHashFile = string.concat(vm.projectRoot(), parentCertHashPath);
-        bytes32 parentCertHash = bytes32(vm.readFileBinary(parentCertHashFile));
-        bytes32 certHash = keccak256(certificate);
-        assertEq(espressoNitroTEEVerifier.certVerified(certHash), false);
-
-        vm.expectRevert("parent cert unverified");
-        espressoNitroTEEVerifier.verifyCACert(certificate, parentCertHash);
-        assertEq(espressoNitroTEEVerifier.certVerified(certHash), false);
+        address newVerifierAddress = 0x1234567890123456789012345678901234567890;
+        espressoNitroTEEVerifier.setNitroEnclaveVerifier(newVerifierAddress);
         vm.stopPrank();
-    }
-
-    function testVerifyCert() public {
-        vm.startPrank(adminTEE);
-        vm.warp(1_744_913_000);
-        string memory certPath = "/test/configs/verified-cert.bin";
-        string memory certFile = string.concat(vm.projectRoot(), certPath);
-        bytes memory certificate = vm.readFileBinary(certFile);
-
-        string memory parentCertHashPath = "/test/configs/verified-parent-cert-hash.bin";
-        string memory parentCertHashFile = string.concat(vm.projectRoot(), parentCertHashPath);
-        bytes32 parentCertHash = bytes32(vm.readFileBinary(parentCertHashFile));
-        bytes32 certHash = keccak256(certificate);
-        assertEq(espressoNitroTEEVerifier.certVerified(certHash), false);
-
-        espressoNitroTEEVerifier.verifyCACert(certificate, parentCertHash);
-        assertEq(espressoNitroTEEVerifier.certVerified(certHash), true);
-        vm.stopPrank();
-    }
-
-    // Test verification of full certificate chain
-    function testVerifyCertChain() public {
-        vm.startPrank(adminTEE);
-        vm.warp(1_745_596_800);
-
-        string memory certPath = "/test/configs/certs/ca0cert.bin";
-        string memory certFile = string.concat(vm.projectRoot(), certPath);
-        bytes memory certificate = vm.readFileBinary(certFile);
-        bytes32 parentCertHash = keccak256(certificate);
-
-        espressoNitroTEEVerifier.verifyCACert(certificate, parentCertHash);
-        assertEq(espressoNitroTEEVerifier.certVerified(parentCertHash), true);
-
-        certPath = "/test/configs/certs/ca1cert.bin";
-        certFile = string.concat(vm.projectRoot(), certPath);
-        certificate = vm.readFileBinary(certFile);
-        bytes32 certHash = keccak256(certificate);
-        assertEq(espressoNitroTEEVerifier.certVerified(certHash), false);
-        espressoNitroTEEVerifier.verifyCACert(certificate, parentCertHash);
-        assertEq(espressoNitroTEEVerifier.certVerified(certHash), true);
-        parentCertHash = certHash;
-
-        certPath = "/test/configs/certs/ca2cert.bin";
-        certFile = string.concat(vm.projectRoot(), certPath);
-        certificate = vm.readFileBinary(certFile);
-        certHash = keccak256(certificate);
-        assertEq(espressoNitroTEEVerifier.certVerified(certHash), false);
-        espressoNitroTEEVerifier.verifyCACert(certificate, parentCertHash);
-        assertEq(espressoNitroTEEVerifier.certVerified(certHash), true);
-        parentCertHash = certHash;
-
-        certPath = "/test/configs/certs/ca3cert.bin";
-        certFile = string.concat(vm.projectRoot(), certPath);
-        certificate = vm.readFileBinary(certFile);
-        certHash = keccak256(certificate);
-        assertEq(espressoNitroTEEVerifier.certVerified(certHash), false);
-        espressoNitroTEEVerifier.verifyCACert(certificate, parentCertHash);
-        assertEq(espressoNitroTEEVerifier.certVerified(certHash), true);
-        parentCertHash = certHash;
-
-        certPath = "/test/configs/certs/client-cert.bin";
-        certFile = string.concat(vm.projectRoot(), certPath);
-        certificate = vm.readFileBinary(certFile);
-        certHash = keccak256(certificate);
-        assertEq(espressoNitroTEEVerifier.certVerified(certHash), false);
-        espressoNitroTEEVerifier.verifyClientCert(certificate, parentCertHash);
-        assertEq(espressoNitroTEEVerifier.certVerified(certHash), true);
+        // Check that only owner can set the address
+        vm.startPrank(fakeAddress);
+        vm.expectRevert("Ownable: caller is not the owner");
+        espressoNitroTEEVerifier.setNitroEnclaveVerifier(newVerifierAddress);
         vm.stopPrank();
     }
 }
