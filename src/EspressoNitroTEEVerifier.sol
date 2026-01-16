@@ -1,153 +1,230 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {NitroValidator} from "@nitro-validator/NitroValidator.sol";
-import {LibBytes} from "@nitro-validator/LibBytes.sol";
-import {LibCborElement, CborElement, CborDecode} from "@nitro-validator/CborDecode.sol";
-import {CertManager} from "@nitro-validator/CertManager.sol";
 import "@openzeppelin/contracts/access/Ownable2Step.sol";
-import {IEspressoNitroTEEVerifier} from "./interface/IEspressoNitroTEEVerifier.sol";
+import "@openzeppelin/contracts/utils/Strings.sol";
+
+import {
+    IEspressoNitroTEEVerifier
+} from "./interface/IEspressoNitroTEEVerifier.sol";
 import {ServiceType, UnsupportedServiceType} from "./types/Types.sol";
+import {
+    INitroEnclaveVerifier,
+    VerifierJournal,
+    ZkCoProcessorType,
+    VerificationResult
+} from "aws-nitro-enclave-attestation/interfaces/INitroEnclaveVerifier.sol";
 
 /**
  * @title  Verifies quotes from the AWS Nitro Enclave (TEE) and attests on-chain
- * @notice Contains the logic to verify an attestation and signature from the TEE and attest on-chain. It uses the NitroValidator contract
- *         from `base` to verify the quote. Along with some additional verification logic.
- *         (https://github.com/base/nitro-validator)
- * The code of this contract is inspired from SystemConfigGlobal.sol
- * (https://github.com/base/op-enclave/blob/main/contracts/src/SystemConfigGlobal.sol)
+ * @notice Contains the logic to verify zk proof of the attestation on-chain. It uses the EspressoNitroTEEVerifier contract
+ *         from `automata` to verify the proof.
  */
-contract EspressoNitroTEEVerifier is NitroValidator, IEspressoNitroTEEVerifier, Ownable2Step {
-    using CborDecode for bytes;
-    using LibBytes for bytes;
-    using LibCborElement for CborElement;
-    // PCR0 keccak hash for batch posters
-
+contract EspressoNitroTEEVerifier is IEspressoNitroTEEVerifier, Ownable2Step {
     mapping(bytes32 => bool) public registeredBatchPosterEnclaveHashes;
     mapping(bytes32 => bool) public registeredCaffNodeEnclaveHashes;
     // Registered Caff Nodes
     mapping(address => bool) public registeredCaffNodes;
     // Registered Batch Posters
     mapping(address => bool) public registeredBatchPosters;
-    // Certificate Manager
-    CertManager _certManager;
 
-    constructor(bytes32 enclaveHash, CertManager certManager)
-        NitroValidator(certManager)
-        Ownable()
-    {
-        _certManager = certManager;
-        registeredBatchPosterEnclaveHashes[enclaveHash] = true; // TODO: modify this constructor after some review on this.
+    INitroEnclaveVerifier public _nitroEnclaveVerifier;
+
+    constructor(INitroEnclaveVerifier nitroEnclaveVerifier) Ownable2Step() {
+        require(
+            address(nitroEnclaveVerifier) != address(0),
+            "NitroEnclaveVerifier cannot be zero"
+        );
+        _nitroEnclaveVerifier = nitroEnclaveVerifier;
         _transferOwnership(msg.sender);
     }
 
     /**
      * @notice This function registers a new Caff Node by verifying an attestation from the AWS Nitro Enclave (TEE)
-     * @param attestation The attestation from the AWS Nitro Enclave (TEE)
-     * @param signature The cryptographic signature over the COSESign1 payload (extracted from the attestation)
+     * The signer is not the caller of the function but the address which was generated inside the TEE.
+     * @param output The public output of the ZK proof
+     * @param proofBytes The cryptographic proof bytes over attestation
      */
-    function registerCaffNode(bytes calldata attestation, bytes calldata signature) external {
-        Ptrs memory ptrs = validateAttestation(attestation, signature);
-        bytes32 pcr0Hash = attestation.keccak(ptrs.pcrs[0]);
-        if (!registeredCaffNodeEnclaveHashes[pcr0Hash]) {
-            revert InvalidAWSEnclaveHash(pcr0Hash, ServiceType.CaffNode);
-        }
-        // The publicKey's first byte 0x04 byte followed which only determine if the public key is compressed or not.
-        // so we ignore the first byte.
-        bytes32 publicKeyHash =
-            attestation.keccak(ptrs.publicKey.start() + 1, ptrs.publicKey.length() - 1);
-
-        // Note: We take the keccak hash first to derive the address.
-        // This is the same which the go ethereum crypto library is doing for PubkeyToAddress()
-        address enclaveAddress = address(uint160(uint256(publicKeyHash)));
-
+    function registerCaffNode(
+        bytes calldata output,
+        bytes calldata proofBytes
+    ) external {
+        (address enclaveAddress, bytes32 pcr0Hash) = _registerSigner(
+            output,
+            proofBytes,
+            ServiceType.CaffNode
+        );
         // Mark the signer as registered
         if (!registeredCaffNodes[enclaveAddress]) {
             registeredCaffNodes[enclaveAddress] = true;
-            emit AWSNitroServiceRegistered(enclaveAddress, pcr0Hash, ServiceType.CaffNode);
+            emit AWSNitroServiceRegistered(
+                enclaveAddress,
+                pcr0Hash,
+                ServiceType.CaffNode
+            );
         }
     }
+
     /**
      * @notice This function registers a new Batch Poster by verifying an attestation from the AWS Nitro Enclave (TEE)
-     * @param attestation The attestation from the AWS Nitro Enclave (TEE)
-     * @param signature The cryptographic signature over the COSESign1 payload (extracted from the attestation)
+     * @param output The public output of the ZK proof
+     * @param proofBytes The cryptographic proof bytes over attestation
      */
-
-    function registerBatchPoster(bytes calldata attestation, bytes calldata signature) external {
-        Ptrs memory ptrs = validateAttestation(attestation, signature);
-        bytes32 pcr0Hash = attestation.keccak(ptrs.pcrs[0]);
-        if (!registeredBatchPosterEnclaveHashes[pcr0Hash]) {
-            revert InvalidAWSEnclaveHash(pcr0Hash, ServiceType.BatchPoster);
-        }
-        // The publicKey's first byte 0x04 byte followed which only determine if the public key is compressed or not.
-        // so we ignore the first byte.
-        bytes32 publicKeyHash =
-            attestation.keccak(ptrs.publicKey.start() + 1, ptrs.publicKey.length() - 1);
-
-        // Note: We take the keccak hash first to derive the address.
-        // This is the same which the go ethereum crypto library is doing for PubkeyToAddress()
-        address enclaveAddress = address(uint160(uint256(publicKeyHash)));
-
+    function registerBatchPoster(
+        bytes calldata output,
+        bytes calldata proofBytes
+    ) external {
+        (address enclaveAddress, bytes32 pcr0Hash) = _registerSigner(
+            output,
+            proofBytes,
+            ServiceType.BatchPoster
+        );
         // Mark the signer as registered
         if (!registeredBatchPosters[enclaveAddress]) {
             registeredBatchPosters[enclaveAddress] = true;
-            emit AWSNitroServiceRegistered(enclaveAddress, pcr0Hash, ServiceType.BatchPoster);
+            emit AWSNitroServiceRegistered(
+                enclaveAddress,
+                pcr0Hash,
+                ServiceType.BatchPoster
+            );
         }
     }
 
     /**
-     * @notice This function verifies a AWS Nitro Attestations CA Certificate on chain
-     * @param certificate The certificate from the attestation
-     * @param parentCertHash The keccak256 hash over the parent certificate
+     * @notice This internal function verifies the ZK proof of the TEE attestation from the AWS Nitro Enclave
+     * and returns the signer address and pcr0 hash
+     * @param output The public output of the ZK proof
+     * @param proofBytes The cryptographic proof bytes over attestation
+     * @param service The service type (BatchPoster or CaffNode)
      */
-    function verifyCACert(bytes calldata certificate, bytes32 parentCertHash) external {
-        _certManager.verifyCACert(certificate, parentCertHash);
+    function _registerSigner(
+        bytes calldata output,
+        bytes calldata proofBytes,
+        ServiceType service
+    ) internal returns (address, bytes32) {
+        VerifierJournal memory journal = _nitroEnclaveVerifier.verify(
+            output,
+            // Currently only Succinct ZK coprocessor is supported
+            ZkCoProcessorType.Succinct,
+            proofBytes
+        );
+
+        if (journal.result != VerificationResult.Success) {
+            revert VerificationFailed(journal.result);
+        }
+
+        // we hash the pcr0 value to get the the pcr0Hash and then
+        // check if the given hash has been registered in the contract by the owner
+        // this allows us to verify that the registerSigner request is coming from a TEE
+        // which is trusted
+        bytes32 pcr0Hash = keccak256(
+            abi.encodePacked(
+                journal.pcrs[0].value.first,
+                journal.pcrs[0].value.second
+            )
+        );
+
+        if (service == ServiceType.BatchPoster) {
+            if (!registeredBatchPosterEnclaveHashes[pcr0Hash]) {
+                revert InvalidAWSEnclaveHash();
+            }
+        } else if (service == ServiceType.CaffNode) {
+            if (!registeredCaffNodeEnclaveHashes[pcr0Hash]) {
+                revert InvalidAWSEnclaveHash();
+            }
+        } else {
+            revert UnsupportedServiceType();
+        }
+
+        // The publicKey's first byte 0x04 byte followed which only determine if the public key is compressed or not.
+        // so we ignore the first byte.
+        bytes memory publicKeyWithoutPrefix = new bytes(
+            journal.publicKey.length - 1
+        );
+        for (uint256 i = 1; i < journal.publicKey.length; i++) {
+            publicKeyWithoutPrefix[i - 1] = journal.publicKey[i];
+        }
+
+        bytes32 publicKeyHash = keccak256(publicKeyWithoutPrefix);
+        // Note: We take the keccak hash first to derive the address.
+        // This is the same which the go ethereum crypto library is doing for PubkeyToAddress()
+        address enclaveAddress = address(uint160(uint256(publicKeyHash)));
+        return (enclaveAddress, pcr0Hash);
     }
 
     /**
-     * @notice This function verifies a AWS Nitro Attestations Client Certificate on chain
-     * @param certificate The certificate from the attestation
-     * @param parentCertHash The keccak256 hash over the parent certificate
+     * @notice This function allows the owner to set the enclave hash, setting valid to true will allow any enclave
+     * with a valid pcr0 hash to register a signer (address which was generated inside the TEE). Setting valid to false
+     * will further remove the enclave hash from the registered enclave hash list thus preventing any enclave with the given
+     * hash from registering a signer.
+     * @param enclaveHash The hash of the enclave
+     * @param valid Whether the enclave hash is valid or not
+     * @param service The service type (BatchPoster or CaffNode)
      */
-    function verifyClientCert(bytes calldata certificate, bytes32 parentCertHash) external {
-        _certManager.verifyClientCert(certificate, parentCertHash);
-    }
-
-    /**
-     * @notice This function is a readonly function to check if a certificate is already verified on chain
-     * @param certHash The certificate keccak256 hash
-     */
-    function certVerified(bytes32 certHash) external view returns (bool) {
-        bytes memory verifiedBytes = _certManager.verified(certHash);
-        return verifiedBytes.length > 0;
-    }
-
-    function setEnclaveHash(bytes32 enclaveHash, bool valid, ServiceType service)
-        external
-        onlyOwner
-    {
+    function setEnclaveHash(
+        bytes32 enclaveHash,
+        bool valid,
+        ServiceType service
+    ) external onlyOwner {
         if (service == ServiceType.BatchPoster) {
             registeredBatchPosterEnclaveHashes[enclaveHash] = valid;
-            emit AWSServiceEnclaveHashSet(enclaveHash, valid, ServiceType.BatchPoster);
+            emit AWSServiceEnclaveHashSet(
+                enclaveHash,
+                valid,
+                ServiceType.BatchPoster
+            );
         } else if (service == ServiceType.CaffNode) {
             registeredCaffNodeEnclaveHashes[enclaveHash] = valid;
-            emit AWSServiceEnclaveHashSet(enclaveHash, valid, ServiceType.CaffNode);
+            emit AWSServiceEnclaveHashSet(
+                enclaveHash,
+                valid,
+                ServiceType.CaffNode
+            );
         } else {
             revert UnsupportedServiceType();
         }
     }
 
-    function deleteRegisteredCaffNodes(address[] memory signers) external onlyOwner {
+    /**
+     * @notice This function allows the owner to delete registered Caff Nodes
+     * @param signers The list of signer addresses to be deleted
+     */
+    function deleteRegisteredCaffNodes(
+        address[] memory signers
+    ) external onlyOwner {
         for (uint256 i = 0; i < signers.length; i++) {
             delete registeredCaffNodes[signers[i]];
             emit DeletedAWSRegisteredService(signers[i], ServiceType.CaffNode);
         }
     }
 
-    function deleteRegisteredBatchPosters(address[] memory signers) external onlyOwner {
+    /*
+     * @notice This function allows the owner to delete registered Batch Posters
+     * @param signers The list of signer addresses to be deleted
+     */
+    function deleteRegisteredBatchPosters(
+        address[] memory signers
+    ) external onlyOwner {
         for (uint256 i = 0; i < signers.length; i++) {
             delete registeredBatchPosters[signers[i]];
-            emit DeletedAWSRegisteredService(signers[i], ServiceType.BatchPoster);
+            emit DeletedAWSRegisteredService(
+                signers[i],
+                ServiceType.BatchPoster
+            );
         }
+    }
+
+    /*
+     * @notice This function sets the NitroEnclaveVerifier contract address
+     * @param nitroEnclaveVerifier The address of the NitroEnclaveVerifier contract
+     */
+    function setNitroEnclaveVerifier(
+        address nitroEnclaveVerifier
+    ) external onlyOwner {
+        if (nitroEnclaveVerifier == address(0)) {
+            revert InvalidNitroEnclaveVerifierAddress();
+        }
+        _nitroEnclaveVerifier = INitroEnclaveVerifier(nitroEnclaveVerifier);
+        emit NitroEnclaveVerifierSet(nitroEnclaveVerifier);
     }
 }
