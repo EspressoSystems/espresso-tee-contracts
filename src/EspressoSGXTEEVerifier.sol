@@ -82,11 +82,7 @@ contract EspressoSGXTEEVerifier is IEspressoSGXTEEVerifier, Ownable2Step {
         bool isRegistered = checkMembershipInRegisteredHashes(service, localReport.mrEnclave);
 
         if (!isRegistered) {
-            if (service == ServiceType.BatchPoster) {
-                revert InvalidEnclaveHash(localReport.mrEnclave, service);
-            } else if (service == ServiceType.CaffNode) {
-                revert InvalidEnclaveHash(localReport.mrEnclave, service);
-            }
+            revert InvalidEnclaveHash(localReport.mrEnclave, service);
         }
 
         //  Verify that the reportDataHash if the hash signed by the TEE
@@ -268,7 +264,7 @@ contract EspressoSGXTEEVerifier is IEspressoSGXTEEVerifier, Ownable2Step {
             revert UnsupportedServiceType();
         }
 
-        //This is the base case of the function, if we don't fail any of the above checks, then we can say that the encalve hash is registered.
+        // This is the base case of the function, if we don't fail any of the above checks, then we can say that the enclave hash is registered.
         return true;
     }
 

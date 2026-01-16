@@ -36,7 +36,7 @@ interface IEspressoTEEVerifier {
     ) external view returns (bool);
 
     // Function to register a service which has been attested by a TEE or Attestation Verifier
-    // This function can has succeeded if it does not revert.
+    // This function has succeeded if it does not revert.
     function registerService(
         bytes calldata verificationData,
         bytes calldata data,

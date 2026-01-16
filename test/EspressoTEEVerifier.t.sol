@@ -165,7 +165,7 @@ contract EspressoTEEVerifierTest is Test {
             true
         );
         // Assert that this address is not yet registered as a caff node.
-        // if the registration process differes between the caff node and the batcher in the
+        // if the registration process differs between the caff node and the batcher in the
         // future, we will need to update this test.
         assertEq(
             espressoTEEVerifier.registeredServices(
@@ -211,7 +211,7 @@ contract EspressoTEEVerifierTest is Test {
             true
         );
         // Assert that this address is not yet registered as a caff node.
-        // if the registration process differes between the caff node and the batcher in the
+        // if the registration process differs between the caff node and the batcher in the
         // future, we will need to update this test.
         assertEq(
             espressoTEEVerifier.registeredServices(

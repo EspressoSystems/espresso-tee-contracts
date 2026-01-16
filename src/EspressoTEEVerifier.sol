@@ -51,7 +51,7 @@ contract EspressoTEEVerifier is Ownable2Step, IEspressoTEEVerifier {
     /* @notice Register a new signer by verifying a quote from the TEE
         @param verificationData The data produced by the TEE for verifying it's authenticity.
         @param data when registering a signer, data can be passed for each TEE type
-        which can be any additiona data that is required for registering a signer with
+        which can be any additional data that is required for registering a signer with
         that particular tee type
         @param teeType The type of TEE
         @param service The type of service being registered potentially affects the behavior of registration.

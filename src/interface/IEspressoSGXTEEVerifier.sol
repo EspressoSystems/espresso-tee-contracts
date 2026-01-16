@@ -52,8 +52,9 @@ interface IEspressoSGXTEEVerifier {
      * @notice This function is for registering Intel SGX TEE Batch Posters and is a helper function for the EspressoTEEVerifier
      */
     function registerBatchPoster(bytes calldata attestation, bytes calldata data) external;
+
     /*
-     * @notice This function is for registering Intel SGX TEE Batch Posters and is a helper function for the EspressoTEEVerifier
+     * * @notice This function is for registering Intel SGX TEE Caff Nodes and is a helper function for the EspressoTEEVerifier
      */
     function registerCaffNode(bytes calldata attestation, bytes calldata data) external;
 
@@ -63,7 +64,7 @@ interface IEspressoSGXTEEVerifier {
         returns (EnclaveReport memory);
 
     /*
-     * @notice: This function is responsible for setting the validity of enclave hashes in this inner TEEVerifier contract, It will be
+     * @notice This function is responsible for setting the validity of enclave hashes in this inner TEEVerifier contract
      */
     function setEnclaveHash(bytes32 enclaveHash, bool valid, ServiceType serviceType) external;
     /*
