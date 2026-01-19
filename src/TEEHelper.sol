@@ -33,7 +33,6 @@ abstract contract TEEHelper is ITEEHelper, Ownable2Step {
         external
         virtual
         onlyOwner
-        onlySupportedServiceType(service)
     {
         registeredEnclaveHashes[service][enclaveHash] = valid;
         emit EnclaveHashSet(enclaveHash, valid, service);
@@ -49,7 +48,6 @@ abstract contract TEEHelper is ITEEHelper, Ownable2Step {
         external
         view
         virtual
-        onlySupportedServiceType(service)
         returns (bool)
     {
         return registeredServices[service][signer];
@@ -65,7 +63,6 @@ abstract contract TEEHelper is ITEEHelper, Ownable2Step {
         external
         view
         virtual
-        onlySupportedServiceType(service)
         returns (bool)
     {
         return registeredEnclaveHashes[service][enclaveHash];
@@ -81,7 +78,6 @@ abstract contract TEEHelper is ITEEHelper, Ownable2Step {
         external
         view
         virtual
-        onlySupportedServiceType(service)
         returns (address[] memory)
     {
         EnumerableSet.AddressSet storage signersSet = enclaveHashToSigner[service][enclaveHash];
@@ -97,7 +93,6 @@ abstract contract TEEHelper is ITEEHelper, Ownable2Step {
         external
         virtual
         onlyOwner
-        onlySupportedServiceType(service)
     {
         for (uint256 i = 0; i < enclaveHashes.length; i++) {
             // also delete all the corresponding signers from registeredService mapping
