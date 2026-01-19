@@ -22,6 +22,9 @@ contract MultiSigTransfer is Script {
 
     error UnknownStack();
     error InvalidTargetChainForStack(uint256 chainID);
+
+    address constant NitroFirstPartySafeWalletAddress = address(0x6Dc61D9E366697979f69D89a154f2F8cd2F11dA5);
+    address constant NitroOnChainDenSafeWalletAddress = address(0x054E02d743A68dC62076E816fc1f44d57fB4e3ce);
     
     // This is a mapping of chainID to address that represents the cannonical Espresso multi sig wallet addresses
     // for the Nitro integration.
@@ -59,11 +62,11 @@ contract MultiSigTransfer is Script {
     );
 
     function setUpNitroMultiSigAddresses() internal{
-        NitroMultiSigWallets[1] = address(0x6Dc61D9E366697979f69D89a154f2F8cd2F11dA5); // Eth Mainnet
-        NitroMultiSigWallets[11155111] = address(0x6Dc61D9E366697979f69D89a154f2F8cd2F11dA5); // Eth Sepolia
-        NitroMultiSigWallets[42161] = address(0x6Dc61D9E366697979f69D89a154f2F8cd2F11dA5); // Arb One
+        NitroMultiSigWallets[1] = NitroFirstPartySafeWalletAddress; // Eth Mainnet
+        NitroMultiSigWallets[11155111] = NitroFirstPartySafeWalletAddress; // Eth Sepolia
+        NitroMultiSigWallets[42161] = NitroFirstPartySafeWalletAddress; // Arb One
         // This is the result of narrow support across Safe wallet UI providers. None of them currently (20/01/2026) support Arb sepolia, so we have a different address here
-        // NitroMultiSigWallets[421614] = address(0x054E02d743A68dC62076E816fc1f44d57fB4e3ce); // Arb Sepolia. Uncomment this when the underlying library supports arb sepolia multi-sigs
+        // NitroMultiSigWallets[421614] = NitroOnChainDenSafeWalletAddress; // Arb Sepolia. Uncomment this when the underlying safe-utils library supports arb sepolia multi-sigs
     }
 
     function parseMultiSigAddressFromStack(string memory stack) internal{
