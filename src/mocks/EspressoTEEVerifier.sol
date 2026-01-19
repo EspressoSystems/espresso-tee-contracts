@@ -5,13 +5,14 @@ import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import {IEspressoTEEVerifier} from "../interface/IEspressoTEEVerifier.sol";
 import {IEspressoSGXTEEVerifier} from "../interface/IEspressoSGXTEEVerifier.sol";
 import {IEspressoNitroTEEVerifier} from "../interface/IEspressoNitroTEEVerifier.sol";
+import {ServiceType} from "../types/Types.sol";
 
 /**
  * @title EspressoTEEVerifierMock
  * @notice Mock contract for TEE verification. Skips all attestation verification
  *         but still requires signers to be registered before they can be used.
  */
-contract EspressoTEEVerifierMock is IEspressoTEEVerifier {
+contract EspressoTEEVerifierMock {
     IEspressoSGXTEEVerifier public espressoSGXTEEVerifier;
     IEspressoNitroTEEVerifier public espressoNitroTEEVerifier;
 
@@ -29,27 +30,27 @@ contract EspressoTEEVerifierMock is IEspressoTEEVerifier {
      * @param userDataHash The hash of the user data
      * @param teeType The type of TEE
      */
-    function verify(bytes memory signature, bytes32 userDataHash, TeeType teeType)
-        external
-        view
-        returns (bool)
-    {
+    function verify(
+        bytes memory signature,
+        bytes32 userDataHash,
+        IEspressoTEEVerifier.TeeType teeType,
+        ServiceType service
+    ) external view returns (bool) {
         address signer = ECDSA.recover(userDataHash, signature);
 
-        if (teeType == TeeType.SGX) {
-            if (!espressoSGXTEEVerifier.registeredSigners(signer)) {
-                revert InvalidSignature();
+        if (teeType == IEspressoTEEVerifier.TeeType.SGX) {
+            if (!espressoSGXTEEVerifier.registeredService(signer, service)) {
+                revert IEspressoTEEVerifier.InvalidSignature();
             }
             return true;
         }
 
-        if (teeType == TeeType.NITRO) {
-            if (!espressoNitroTEEVerifier.registeredSigners(signer)) {
-                revert InvalidSignature();
+        if (teeType == IEspressoTEEVerifier.TeeType.NITRO) {
+            if (!espressoNitroTEEVerifier.registeredService(signer, service)) {
+                revert IEspressoTEEVerifier.InvalidSignature();
             }
             return true;
         }
-        revert UnsupportedTeeType();
     }
 
     /**
@@ -58,19 +59,21 @@ contract EspressoTEEVerifierMock is IEspressoTEEVerifier {
      * @param data The signer data
      * @param teeType The type of TEE
      */
-    function registerSigner(bytes calldata attestation, bytes calldata data, TeeType teeType)
-        external
-    {
-        if (teeType == TeeType.SGX) {
-            espressoSGXTEEVerifier.registerSigner(attestation, data);
+    function registerService(
+        bytes calldata attestation,
+        bytes calldata data,
+        IEspressoTEEVerifier.TeeType teeType,
+        ServiceType service
+    ) external {
+        if (teeType == IEspressoTEEVerifier.TeeType.SGX) {
+            espressoSGXTEEVerifier.registerService(attestation, data, service);
             return;
         }
 
-        if (teeType == TeeType.NITRO) {
-            espressoNitroTEEVerifier.registerSigner(attestation, data);
+        if (teeType == IEspressoTEEVerifier.TeeType.NITRO) {
+            espressoNitroTEEVerifier.registerService(attestation, data, service);
             return;
         }
-        revert UnsupportedTeeType();
     }
 
     /**
@@ -78,15 +81,18 @@ contract EspressoTEEVerifierMock is IEspressoTEEVerifier {
      * @param signer The address of the signer
      * @param teeType The type of TEE
      */
-    function registeredSigners(address signer, TeeType teeType) external view returns (bool) {
-        if (teeType == TeeType.SGX) {
-            return espressoSGXTEEVerifier.registeredSigners(signer);
+    function registeredService(
+        address signer,
+        IEspressoTEEVerifier.TeeType teeType,
+        ServiceType service
+    ) external view returns (bool) {
+        if (teeType == IEspressoTEEVerifier.TeeType.SGX) {
+            return espressoSGXTEEVerifier.registeredService(signer, service);
         }
 
-        if (teeType == TeeType.NITRO) {
-            return espressoNitroTEEVerifier.registeredSigners(signer);
+        if (teeType == IEspressoTEEVerifier.TeeType.NITRO) {
+            return espressoNitroTEEVerifier.registeredService(signer, service);
         }
-        revert UnsupportedTeeType();
     }
 
     /**
@@ -94,19 +100,18 @@ contract EspressoTEEVerifierMock is IEspressoTEEVerifier {
      * @param enclaveHash The hash of the enclave
      * @param teeType The type of TEE
      */
-    function registeredEnclaveHashes(bytes32 enclaveHash, TeeType teeType)
-        external
-        view
-        returns (bool)
-    {
-        if (teeType == TeeType.SGX) {
-            return espressoSGXTEEVerifier.registeredEnclaveHash(enclaveHash);
+    function registeredEnclaveHashes(
+        bytes32 enclaveHash,
+        IEspressoTEEVerifier.TeeType teeType,
+        ServiceType service
+    ) external view returns (bool) {
+        if (teeType == IEspressoTEEVerifier.TeeType.SGX) {
+            return espressoSGXTEEVerifier.registeredEnclaveHash(enclaveHash, service);
         }
 
-        if (teeType == TeeType.NITRO) {
-            return espressoNitroTEEVerifier.registeredEnclaveHash(enclaveHash);
+        if (teeType == IEspressoTEEVerifier.TeeType.NITRO) {
+            return espressoNitroTEEVerifier.registeredEnclaveHash(enclaveHash, service);
         }
-        revert UnsupportedTeeType();
     }
 
     function setEspressoSGXTEEVerifier(IEspressoSGXTEEVerifier _espressoSGXTEEVerifier) external {

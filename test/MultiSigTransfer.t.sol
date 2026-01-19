@@ -56,9 +56,9 @@ contract MultiSigTransferTest is Test {
         );
 
         vm.startPrank(originalOwner);
-        espressoSGXTEEVerifier = new EspressoSGXTEEVerifier(enclaveHash, v3QuoteVerifier);
+        espressoSGXTEEVerifier = new EspressoSGXTEEVerifier(v3QuoteVerifier);
         espressoNitroTEEVerifier = new EspressoNitroTEEVerifier(
-            pcr0Hash, INitroEnclaveVerifier(0x2D7fbBAD6792698Ba92e67b7e180f8010B9Ec788)
+            INitroEnclaveVerifier(0x2D7fbBAD6792698Ba92e67b7e180f8010B9Ec788)
         );
         espressoTEEVerifier =
             new EspressoTEEVerifier(espressoSGXTEEVerifier, espressoNitroTEEVerifier);

@@ -3,43 +3,42 @@ pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/access/Ownable2Step.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
+import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 
 import {IEspressoNitroTEEVerifier} from "./interface/IEspressoNitroTEEVerifier.sol";
+import {ServiceType} from "./types/Types.sol";
 import {
     INitroEnclaveVerifier,
     VerifierJournal,
     ZkCoProcessorType,
     VerificationResult
 } from "aws-nitro-enclave-attestation/interfaces/INitroEnclaveVerifier.sol";
+import {TEEHelper} from "./TEEHelper.sol";
 
 /**
  * @title  Verifies quotes from the AWS Nitro Enclave (TEE) and attests on-chain
  * @notice Contains the logic to verify zk proof of the attestation on-chain. It uses the EspressoNitroTEEVerifier contract
  *         from `automata` to verify the proof.
  */
-contract EspressoNitroTEEVerifier is IEspressoNitroTEEVerifier, Ownable2Step {
-    // PCR0 keccak hash
-    mapping(bytes32 => bool) public registeredEnclaveHash;
-    // Registered signers
-    mapping(address => bool) public registeredSigners;
-
+contract EspressoNitroTEEVerifier is IEspressoNitroTEEVerifier, TEEHelper {
+    using EnumerableSet for EnumerableSet.AddressSet;
     INitroEnclaveVerifier public _nitroEnclaveVerifier;
 
-    constructor(bytes32 enclaveHash, INitroEnclaveVerifier nitroEnclaveVerifier) Ownable2Step() {
-        require(enclaveHash != bytes32(0), "Enclave hash cannot be zero");
+    constructor(INitroEnclaveVerifier nitroEnclaveVerifier) TEEHelper() {
         require(address(nitroEnclaveVerifier) != address(0), "NitroEnclaveVerifier cannot be zero");
         _nitroEnclaveVerifier = nitroEnclaveVerifier;
-        registeredEnclaveHash[enclaveHash] = true;
-        _transferOwnership(msg.sender);
     }
 
     /**
-     * @notice This function registers a new signer by verifying an attestation from the AWS Nitro Enclave (TEE)
+     * @notice This function registers a new Service by verifying an attestation from the AWS Nitro Enclave (TEE)
      * The signer is not the caller of the function but the address which was generated inside the TEE.
      * @param output The public output of the ZK proof
      * @param proofBytes The cryptographic proof bytes over attestation
+     * @param service The service type (BatchPoster or CaffNode)
      */
-    function registerSigner(bytes calldata output, bytes calldata proofBytes) external {
+    function registerService(bytes calldata output, bytes calldata proofBytes, ServiceType service)
+        external
+    {
         VerifierJournal memory journal = _nitroEnclaveVerifier.verify(
             output,
             // Currently only Succinct ZK coprocessor is supported
@@ -57,8 +56,9 @@ contract EspressoNitroTEEVerifier is IEspressoNitroTEEVerifier, Ownable2Step {
         // which is trusted
         bytes32 pcr0Hash =
             keccak256(abi.encodePacked(journal.pcrs[0].value.first, journal.pcrs[0].value.second));
-        if (!registeredEnclaveHash[pcr0Hash]) {
-            revert InvalidAWSEnclaveHash();
+
+        if (!registeredEnclaveHashes[service][pcr0Hash]) {
+            revert InvalidEnclaveHash(pcr0Hash, service);
         }
 
         // The publicKey's first byte 0x04 byte followed which only determine if the public key is compressed or not.
@@ -72,34 +72,20 @@ contract EspressoNitroTEEVerifier is IEspressoNitroTEEVerifier, Ownable2Step {
         // Note: We take the keccak hash first to derive the address.
         // This is the same which the go ethereum crypto library is doing for PubkeyToAddress()
         address enclaveAddress = address(uint160(uint256(publicKeyHash)));
+
         // Mark the signer as registered
-        if (!registeredSigners[enclaveAddress]) {
-            registeredSigners[enclaveAddress] = true;
-            emit AWSSignerRegistered(enclaveAddress, pcr0Hash);
+        if (!registeredServices[service][enclaveAddress]) {
+            registeredServices[service][enclaveAddress] = true;
+            // slither-disable-next-line unused-return
+            enclaveHashToSigner[service][pcr0Hash].add(enclaveAddress);
+            emit ServiceRegistered(enclaveAddress, pcr0Hash, service);
         }
     }
 
-    /**
-     * @notice This function allows the owner to set the enclave hash, setting valid to true will allow any enclave
-     * with a valid pcr0 hash to register a signer (address which was generated inside the TEE). Setting valid to false
-     * will further remove the enclave hash from the registered enclave hash list thus preventing any enclave with the given
-     * hash from registering a signer.
-     * @param enclaveHash The hash of the enclave
-     * @param valid Whether the enclave hash is valid or not
+    /*
+     * @notice This function sets the NitroEnclaveVerifier contract address
+     * @param nitroEnclaveVerifier The address of the NitroEnclaveVerifier contract
      */
-    function setEnclaveHash(bytes32 enclaveHash, bool valid) external onlyOwner {
-        require(enclaveHash != bytes32(0), "Enclave hash cannot be zero");
-        registeredEnclaveHash[enclaveHash] = valid;
-        emit AWSEnclaveHashSet(enclaveHash, valid);
-    }
-
-    function deleteRegisteredSigners(address[] memory signers) external onlyOwner {
-        for (uint256 i = 0; i < signers.length; i++) {
-            delete registeredSigners[signers[i]];
-            emit DeletedAWSRegisteredSigner(signers[i]);
-        }
-    }
-
     function setNitroEnclaveVerifier(address nitroEnclaveVerifier) external onlyOwner {
         if (nitroEnclaveVerifier == address(0)) {
             revert InvalidNitroEnclaveVerifierAddress();

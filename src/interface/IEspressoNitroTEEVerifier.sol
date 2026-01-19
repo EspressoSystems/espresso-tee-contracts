@@ -4,26 +4,28 @@ pragma solidity ^0.8.0;
 import {
     VerificationResult
 } from "aws-nitro-enclave-attestation/interfaces/INitroEnclaveVerifier.sol";
+import {ServiceType} from "../types/Types.sol";
+import "./ITEEHelper.sol";
 
-interface IEspressoNitroTEEVerifier {
-    // This error is thrown when the PCR0 values don't match
-    error InvalidAWSEnclaveHash();
+interface IEspressoNitroTEEVerifier is ITEEHelper {
     // This error is thrown when the ZK proof verification fails
     error VerificationFailed(VerificationResult result);
     // This error is thrown when the NitroEnclaveVerifier address is invalid
     error InvalidNitroEnclaveVerifierAddress();
-
-    event AWSEnclaveHashSet(bytes32 enclaveHash, bool valid);
-    event AWSSignerRegistered(address signer, bytes32 enclaveHash);
-    event DeletedAWSRegisteredSigner(address signer);
     event NitroEnclaveVerifierSet(address nitroEnclaveVerifierAddress);
 
-    function registeredSigners(address signer) external view returns (bool);
-    function registeredEnclaveHash(bytes32 enclaveHash) external view returns (bool);
+    /*
+     * @notice This function registers a new Service by verifying an attestation from the AWS Nitro Enclave (TEE)
+     * The signer is not the caller of the function but the address which was generated inside the TEE.
+     * @param output The public output of the ZK proof
+     * @param proofBytes The cryptographic proof bytes over attestation
+     * @param service The service type (BatchPoster or CaffNode)
+     */
+    function registerService(bytes calldata output, bytes calldata proofBytes, ServiceType service)
+        external;
 
-    function registerSigner(bytes calldata output, bytes calldata proofBytes) external;
-
-    function setEnclaveHash(bytes32 enclaveHash, bool valid) external;
-    function deleteRegisteredSigners(address[] memory signers) external;
+    /*
+     * @notice This function sets the NitroEnclaveVerifier contract address
+     */
     function setNitroEnclaveVerifier(address nitroEnclaveVerifierAddress) external;
 }

@@ -13,7 +13,10 @@ import {
 import {EnclaveReport} from "@automata-network/dcap-attestation/contracts/types/V3Structs.sol";
 import {BytesUtils} from "@automata-network/dcap-attestation/contracts/utils/BytesUtils.sol";
 import "@openzeppelin/contracts/access/Ownable2Step.sol";
+import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import {IEspressoSGXTEEVerifier} from "./interface/IEspressoSGXTEEVerifier.sol";
+import {ServiceType} from "./types/Types.sol";
+import {TEEHelper} from "./TEEHelper.sol";
 
 /**
  *
@@ -21,21 +24,19 @@ import {IEspressoSGXTEEVerifier} from "./interface/IEspressoSGXTEEVerifier.sol";
  * @notice Contains the logic to verify a quote from the TEE and attest on-chain. It uses the V3QuoteVerifier contract
  *         from automata to verify the quote. Along with some additional verification logic.
  */
-contract EspressoSGXTEEVerifier is IEspressoSGXTEEVerifier, Ownable2Step {
+
+contract EspressoSGXTEEVerifier is IEspressoSGXTEEVerifier, Ownable2Step, TEEHelper {
     using BytesUtils for bytes;
+    using EnumerableSet for EnumerableSet.AddressSet;
 
     // V3QuoteVerififer contract from automata to verify the quote
     V3QuoteVerifier public quoteVerifier;
 
-    mapping(bytes32 => bool) public registeredEnclaveHash;
-    mapping(address => bool) public registeredSigners;
-
-    constructor(bytes32 enclaveHash, address _quoteVerifier) Ownable() {
+    constructor(address _quoteVerifier) TEEHelper() {
         if (_quoteVerifier == address(0) || _quoteVerifier.code.length <= 0) {
             revert InvalidQuoteVerifierAddress();
         }
         quoteVerifier = V3QuoteVerifier(_quoteVerifier);
-        registeredEnclaveHash[enclaveHash] = true;
         _transferOwnership(msg.sender);
     }
 
@@ -44,14 +45,15 @@ contract EspressoSGXTEEVerifier is IEspressoSGXTEEVerifier, Ownable2Step {
         The verification is considered successful if the function does not revert.
         @param rawQuote The quote from the TEE
         @param reportDataHash The hash of the report data
+        @param service an enum representing the service type to verify with a specific enclave hash mapping.
     */
-    function verify(bytes calldata rawQuote, bytes32 reportDataHash)
-        public
+    function _verify(bytes calldata rawQuote, bytes32 reportDataHash, ServiceType service)
+        internal
         view
         returns (EnclaveReport memory)
     {
         // Parse the header
-        Header memory header = parseQuoteHeader(rawQuote);
+        Header memory header = _parseQuoteHeader(rawQuote);
 
         // Currently only version 3 is supported
         if (header.version != 3) {
@@ -68,14 +70,14 @@ contract EspressoSGXTEEVerifier is IEspressoSGXTEEVerifier, Ownable2Step {
         // Parse enclave quote
         uint256 lastIndex = HEADER_LENGTH + ENCLAVE_REPORT_LENGTH;
         EnclaveReport memory localReport;
-        (success, localReport) = parseEnclaveReport(rawQuote[HEADER_LENGTH:lastIndex]);
+        (success, localReport) = _parseEnclaveReport(rawQuote[HEADER_LENGTH:lastIndex]);
         if (!success) {
             revert FailedToParseEnclaveReport();
         }
 
         // Check that mrEnclave match
-        if (!registeredEnclaveHash[localReport.mrEnclave]) {
-            revert InvalidEnclaveHash();
+        if (!registeredEnclaveHashes[service][localReport.mrEnclave]) {
+            revert InvalidEnclaveHash(localReport.mrEnclave, service);
         }
 
         //  Verify that the reportDataHash if the hash signed by the TEE
@@ -88,11 +90,14 @@ contract EspressoSGXTEEVerifier is IEspressoSGXTEEVerifier, Ownable2Step {
     }
 
     /*
-        @notice Register a new signer by verifying a quote from the TEE
+        @notice Register a new service (e.g., BatchPoster or CaffNode) by verifying a quote from the TEE
         @param attestation The attestation from the TEE
-        @param data which the TEE has attested to
+        @param data The data which the TEE has attested to
+        @param service The type of service to register
     */
-    function registerSigner(bytes calldata attestation, bytes calldata data) external {
+    function registerService(bytes calldata attestation, bytes calldata data, ServiceType service)
+        external
+    {
         // Check that the data length is 20 bytes because an address is 20 bytes
         if (data.length != 20) {
             revert InvalidDataLength();
@@ -100,7 +105,7 @@ contract EspressoSGXTEEVerifier is IEspressoSGXTEEVerifier, Ownable2Step {
 
         bytes32 signerAddressHash = keccak256(data);
 
-        EnclaveReport memory localReport = verify(attestation, signerAddressHash);
+        EnclaveReport memory localReport = _verify(attestation, signerAddressHash, service);
 
         if (localReport.reportData.length < 20) {
             revert ReportDataTooShort();
@@ -113,9 +118,11 @@ contract EspressoSGXTEEVerifier is IEspressoSGXTEEVerifier, Ownable2Step {
             revert InvalidSignerAddress(); // Custom revert if the address is invalid
         }
         // Mark the signer as registered
-        if (!registeredSigners[signer]) {
-            registeredSigners[signer] = true;
-            emit SignerRegistered(signer, localReport.mrEnclave);
+        if (!registeredServices[service][signer]) {
+            registeredServices[service][signer] = true;
+            // slither-disable-next-line unused-return
+            enclaveHashToSigner[service][localReport.mrEnclave].add(signer);
+            emit ServiceRegistered(signer, localReport.mrEnclave, service);
         }
     }
 
@@ -124,7 +131,11 @@ contract EspressoSGXTEEVerifier is IEspressoSGXTEEVerifier, Ownable2Step {
         @param rawQuote The raw quote in bytes
         @return header The parsed header
     */
-    function parseQuoteHeader(bytes calldata rawQuote) public pure returns (Header memory header) {
+    function _parseQuoteHeader(bytes calldata rawQuote)
+        internal
+        pure
+        returns (Header memory header)
+    {
         header = Header({
             version: uint16(BELE.leBytesToBeUint(rawQuote[0:2])),
             attestationKeyType: bytes2(rawQuote[2:4]),
@@ -142,8 +153,8 @@ contract EspressoSGXTEEVerifier is IEspressoSGXTEEVerifier, Ownable2Step {
         @return success True if the enclave report was parsed successfully
         @return enclaveReport The parsed enclave report
     */
-    function parseEnclaveReport(bytes memory rawEnclaveReport)
-        public
+    function _parseEnclaveReport(bytes memory rawEnclaveReport)
+        internal
         pure
         returns (bool success, EnclaveReport memory enclaveReport)
     {
@@ -165,18 +176,10 @@ contract EspressoSGXTEEVerifier is IEspressoSGXTEEVerifier, Ownable2Step {
         success = true;
     }
 
-    function setEnclaveHash(bytes32 enclaveHash, bool valid) external onlyOwner {
-        registeredEnclaveHash[enclaveHash] = valid;
-        emit EnclaveHashSet(enclaveHash, valid);
-    }
-
-    function deleteRegisteredSigners(address[] memory signers) external onlyOwner {
-        for (uint256 i = 0; i < signers.length; i++) {
-            delete registeredSigners[signers[i]];
-            emit DeletedRegisteredSigner(signers[i]);
-        }
-    }
-
+    /*
+     * @notice This function allows the owner to set the V3QuoteVerifier contract address
+     * @param _quoteVerifier The address of the V3QuoteVerifier contract
+     */
     function setQuoteVerifier(address _quoteVerifier) external onlyOwner {
         if (_quoteVerifier == address(0) || _quoteVerifier.code.length <= 0) {
             revert InvalidQuoteVerifierAddress();
