@@ -1,56 +1,148 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
+import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
+import {IEspressoTEEVerifier} from "../interface/IEspressoTEEVerifier.sol";
+import {
+    IEspressoSGXTEEVerifier
+} from "../interface/IEspressoSGXTEEVerifier.sol";
+import {
+    IEspressoNitroTEEVerifier
+} from "../interface/IEspressoNitroTEEVerifier.sol";
+import {ServiceType} from "../types/Types.sol";
+
 /**
- *
- * @title  Verifies quotes from the TEE and attests on-chain
- * @notice Contains the logic to verify a quote from the TEE and attest on-chain. It uses the V3QuoteVerifier contract
- *         to verify the quote. Along with some additional verification logic.
+ * @title EspressoTEEVerifierMock
+ * @notice Mock contract for TEE verification. Skips all attestation verification
+ *         but still requires signers to be registered before they can be used.
  */
-
 contract EspressoTEEVerifierMock {
-    enum TeeType {
-        SGX,
-        NITRO,
-        TESTS
+    IEspressoSGXTEEVerifier public espressoSGXTEEVerifier;
+    IEspressoNitroTEEVerifier public espressoNitroTEEVerifier;
+
+    constructor(
+        IEspressoSGXTEEVerifier _espressoSGXTEEVerifier,
+        IEspressoNitroTEEVerifier _espressoNitroTEEVerifier
+    ) {
+        espressoSGXTEEVerifier = _espressoSGXTEEVerifier;
+        espressoNitroTEEVerifier = _espressoNitroTEEVerifier;
     }
 
-    enum ServiceType {
-        BatchPoster,
-        CaffNode
-    }
-
-    mapping(address => bool) public registeredSignersMap;
-
-    constructor() {}
-
+    /**
+     * @notice Verify signature from a registered signer
+     * @param signature The signature of the user data
+     * @param userDataHash The hash of the user data
+     * @param teeType The type of TEE
+     */
     function verify(
-        bytes calldata signature,
+        bytes memory signature,
         bytes32 userDataHash,
-        TeeType teeType,
+        IEspressoTEEVerifier.TeeType teeType,
         ServiceType service
     ) external view returns (bool) {
-        return true;
+        address signer = ECDSA.recover(userDataHash, signature);
+
+        if (teeType == IEspressoTEEVerifier.TeeType.SGX) {
+            if (!espressoSGXTEEVerifier.registeredSigner(signer, service)) {
+                revert IEspressoTEEVerifier.InvalidSignature();
+            }
+            return true;
+        }
+
+        if (teeType == IEspressoTEEVerifier.TeeType.NITRO) {
+            if (!espressoNitroTEEVerifier.registeredSigner(signer, service)) {
+                revert IEspressoTEEVerifier.InvalidSignature();
+            }
+            return true;
+        }
+        revert IEspressoTEEVerifier.UnsupportedTeeType();
     }
 
+    /**
+     * @notice Register a signer - delegates to the appropriate TEE verifier
+     * @param attestation The attestation (ignored in mock verifiers)
+     * @param data The signer data
+     * @param teeType The type of TEE
+     */
     function registerService(
         bytes calldata attestation,
         bytes calldata data,
-        TeeType teeType,
+        IEspressoTEEVerifier.TeeType teeType,
         ServiceType service
     ) external {
-        // data length should be 20 bytes
-        require(data.length == 20, "Invalid data length");
+        if (teeType == IEspressoTEEVerifier.TeeType.SGX) {
+            espressoSGXTEEVerifier.registerService(attestation, data, service);
+            return;
+        }
 
-        address signer = address(uint160(bytes20(data[:20])));
-        registeredSignersMap[signer] = true;
+        if (teeType == IEspressoTEEVerifier.TeeType.NITRO) {
+            espressoNitroTEEVerifier.registerService(
+                attestation,
+                data,
+                service
+            );
+            return;
+        }
+        revert IEspressoTEEVerifier.UnsupportedTeeType();
     }
 
-    function registeredSigners(address signer, TeeType teeType, ServiceType service)
-        external
-        view
-        returns (bool)
-    {
-        return registeredSignersMap[signer];
+    /**
+     * @notice Check if a signer is registered
+     * @param signer The address of the signer
+     * @param teeType The type of TEE
+     */
+    function registeredSigner(
+        address signer,
+        IEspressoTEEVerifier.TeeType teeType,
+        ServiceType service
+    ) external view returns (bool) {
+        if (teeType == IEspressoTEEVerifier.TeeType.SGX) {
+            return espressoSGXTEEVerifier.registeredSigner(signer, service);
+        }
+
+        if (teeType == IEspressoTEEVerifier.TeeType.NITRO) {
+            return espressoNitroTEEVerifier.registeredSigner(signer, service);
+        }
+        revert IEspressoTEEVerifier.UnsupportedTeeType();
+    }
+
+    /**
+     * @notice Check if an enclave hash is registered
+     * @param enclaveHash The hash of the enclave
+     * @param teeType The type of TEE
+     */
+    function registeredEnclaveHashes(
+        bytes32 enclaveHash,
+        IEspressoTEEVerifier.TeeType teeType,
+        ServiceType service
+    ) external view returns (bool) {
+        if (teeType == IEspressoTEEVerifier.TeeType.SGX) {
+            return
+                espressoSGXTEEVerifier.registeredEnclaveHash(
+                    enclaveHash,
+                    service
+                );
+        }
+
+        if (teeType == IEspressoTEEVerifier.TeeType.NITRO) {
+            return
+                espressoNitroTEEVerifier.registeredEnclaveHash(
+                    enclaveHash,
+                    service
+                );
+        }
+        revert IEspressoTEEVerifier.UnsupportedTeeType();
+    }
+
+    function setEspressoSGXTEEVerifier(
+        IEspressoSGXTEEVerifier _espressoSGXTEEVerifier
+    ) external {
+        espressoSGXTEEVerifier = _espressoSGXTEEVerifier;
+    }
+
+    function setEspressoNitroTEEVerifier(
+        IEspressoNitroTEEVerifier _espressoNitroTEEVerifier
+    ) external {
+        espressoNitroTEEVerifier = _espressoNitroTEEVerifier;
     }
 }

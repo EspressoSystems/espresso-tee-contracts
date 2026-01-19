@@ -3,18 +3,20 @@ pragma solidity ^0.8.0;
 import {ServiceType, UnsupportedServiceType} from "./types/Types.sol";
 import "@openzeppelin/contracts/access/Ownable2Step.sol";
 
-import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
-import "./interface/ITEEVerifier.sol";
+import {
+    EnumerableSet
+} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
+import "./interface/ITEEHelper.sol";
 
-abstract contract TEEVerifier is ITEEVerifier, Ownable2Step {
+abstract contract TEEHelper is ITEEHelper, Ownable2Step {
     using EnumerableSet for EnumerableSet.AddressSet;
     // Mappings
-    mapping(ServiceType => mapping(bytes32 enclaveHash => bool valid)) public
-        registeredEnclaveHashes;
+    mapping(ServiceType => mapping(bytes32 enclaveHash => bool valid))
+        public registeredEnclaveHashes;
 
-    mapping(ServiceType => mapping(address signer => bool valid)) public registeredSigners;
-    mapping(ServiceType => mapping(bytes32 enclaveHash => EnumerableSet.AddressSet signers))
-        enclaveHashToSigner;
+    mapping(ServiceType => mapping(address signer => bool valid))
+        public registeredSigners;
+    mapping(ServiceType => mapping(bytes32 enclaveHash => EnumerableSet.AddressSet signers)) enclaveHashToSigner;
 
     // Checks if the service type is supported
     modifier onlySupportedServiceType(ServiceType service) {
@@ -37,11 +39,11 @@ abstract contract TEEVerifier is ITEEVerifier, Ownable2Step {
      * @param valid Whether the enclave hash is valid or not
      * @param service The service type (BatchPoster or CaffNode)
      */
-    function setEnclaveHash(bytes32 enclaveHash, bool valid, ServiceType service)
-        external
-        onlyOwner
-        onlySupportedServiceType(service)
-    {
+    function setEnclaveHash(
+        bytes32 enclaveHash,
+        bool valid,
+        ServiceType service
+    ) external onlyOwner onlySupportedServiceType(service) {
         registeredEnclaveHashes[service][enclaveHash] = valid;
         emit EnclaveHashSet(enclaveHash, valid, service);
     }
@@ -52,12 +54,10 @@ abstract contract TEEVerifier is ITEEVerifier, Ownable2Step {
      * @param service The service type (BatchPoster or CaffNode)
      * @return bool True if the signer is registered, false otherwise
      */
-    function registeredSigner(address signer, ServiceType service)
-        external
-        view
-        onlySupportedServiceType(service)
-        returns (bool)
-    {
+    function registeredSigner(
+        address signer,
+        ServiceType service
+    ) external view onlySupportedServiceType(service) returns (bool) {
         return registeredSigners[service][signer];
     }
 
@@ -67,12 +67,10 @@ abstract contract TEEVerifier is ITEEVerifier, Ownable2Step {
      * @param service The service type (BatchPoster or CaffNode)
      * @return bool True if the enclave hash is registered, false otherwise
      */
-    function registeredEnclaveHash(bytes32 enclaveHash, ServiceType service)
-        external
-        view
-        onlySupportedServiceType(service)
-        returns (bool)
-    {
+    function registeredEnclaveHash(
+        bytes32 enclaveHash,
+        ServiceType service
+    ) external view onlySupportedServiceType(service) returns (bool) {
         return registeredEnclaveHashes[service][enclaveHash];
     }
 
@@ -82,13 +80,18 @@ abstract contract TEEVerifier is ITEEVerifier, Ownable2Step {
      * @param service The service type (BatchPoster or CaffNode)
      * @return address[] The list of signers registered for the given enclave hash
      */
-    function enclaveHashSigners(bytes32 enclaveHash, ServiceType service)
+    function enclaveHashSigners(
+        bytes32 enclaveHash,
+        ServiceType service
+    )
         external
         view
         onlySupportedServiceType(service)
         returns (address[] memory)
     {
-        EnumerableSet.AddressSet storage signersSet = enclaveHashToSigner[service][enclaveHash];
+        EnumerableSet.AddressSet storage signersSet = enclaveHashToSigner[
+            service
+        ][enclaveHash];
         address[] memory signers = new address[](signersSet.length());
         for (uint256 i = 0; i < signersSet.length(); i++) {
             signers[i] = signersSet.at(i);
@@ -97,36 +100,20 @@ abstract contract TEEVerifier is ITEEVerifier, Ownable2Step {
     }
 
     /**
-     * @notice This function allows the owner to delete registered signers from the list of valid signers
-     * @param signers The list of signer addresses to be deleted
-     * @param service The service type (BatchPoster or CaffNode)
-     */
-    function deleteSigners(address[] memory signers, ServiceType service)
-        external
-        onlyOwner
-        onlySupportedServiceType(service)
-    {
-        for (uint256 i = 0; i < signers.length; i++) {
-            delete registeredSigners[service][signers[i]];
-            emit DeletedRegisteredService(signers[i], service);
-        }
-    }
-
-    /**
      * @notice This function allows the owner to delete registered enclave hashes from the list of valid enclave hashes
      * @param enclaveHashes The list of enclave hashes to be deleted
      * @param service The service type (BatchPoster or CaffNode)
      */
-    function deleteEnclaveHashes(bytes32[] memory enclaveHashes, ServiceType service)
-        external
-        onlyOwner
-        onlySupportedServiceType(service)
-    {
+    function deleteEnclaveHashes(
+        bytes32[] memory enclaveHashes,
+        ServiceType service
+    ) external onlyOwner onlySupportedServiceType(service) {
         for (uint256 i = 0; i < enclaveHashes.length; i++) {
             // also delete all the corresponding signers from registeredService mapping
-            EnumerableSet.AddressSet storage signersSet =
-                enclaveHashToSigner[service][enclaveHashes[i]];
-            for (; signersSet.length() > 0;) {
+            EnumerableSet.AddressSet storage signersSet = enclaveHashToSigner[
+                service
+            ][enclaveHashes[i]];
+            while (signersSet.length() > 0) {
                 address signer = signersSet.at(0);
                 delete registeredSigners[service][signer];
                 signersSet.remove(signer);

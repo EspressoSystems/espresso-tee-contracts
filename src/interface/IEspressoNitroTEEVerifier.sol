@@ -5,9 +5,9 @@ import {
     VerificationResult
 } from "aws-nitro-enclave-attestation/interfaces/INitroEnclaveVerifier.sol";
 import {ServiceType} from "../types/Types.sol";
-import "./ITEEVerifier.sol";
+import "./ITEEHelper.sol";
 
-interface IEspressoNitroTEEVerifier is ITEEVerifier {
+interface IEspressoNitroTEEVerifier is ITEEHelper {
     // This error is thrown when the ZK proof verification fails
     error VerificationFailed(VerificationResult result);
     // This error is thrown when the NitroEnclaveVerifier address is invalid
@@ -21,11 +21,16 @@ interface IEspressoNitroTEEVerifier is ITEEVerifier {
      * @param proofBytes The cryptographic proof bytes over attestation
      * @param service The service type (BatchPoster or CaffNode)
      */
-    function registerService(bytes calldata output, bytes calldata proofBytes, ServiceType service)
-        external;
+    function registerService(
+        bytes calldata output,
+        bytes calldata proofBytes,
+        ServiceType service
+    ) external;
 
     /*
      * @notice This function sets the NitroEnclaveVerifier contract address
      */
-    function setNitroEnclaveVerifier(address nitroEnclaveVerifierAddress) external;
+    function setNitroEnclaveVerifier(
+        address nitroEnclaveVerifierAddress
+    ) external;
 }
