@@ -51,7 +51,6 @@ contract EspressoTEEVerifierMock {
             }
             return true;
         }
-        revert IEspressoTEEVerifier.UnsupportedTeeType();
     }
 
     /**
@@ -75,7 +74,6 @@ contract EspressoTEEVerifierMock {
             espressoNitroTEEVerifier.registerService(attestation, data, service);
             return;
         }
-        revert IEspressoTEEVerifier.UnsupportedTeeType();
     }
 
     /**
@@ -95,7 +93,6 @@ contract EspressoTEEVerifierMock {
         if (teeType == IEspressoTEEVerifier.TeeType.NITRO) {
             return espressoNitroTEEVerifier.registeredService(signer, service);
         }
-        revert IEspressoTEEVerifier.UnsupportedTeeType();
     }
 
     /**
@@ -115,7 +112,6 @@ contract EspressoTEEVerifierMock {
         if (teeType == IEspressoTEEVerifier.TeeType.NITRO) {
             return espressoNitroTEEVerifier.registeredEnclaveHash(enclaveHash, service);
         }
-        revert IEspressoTEEVerifier.UnsupportedTeeType();
     }
 
     function setEspressoSGXTEEVerifier(IEspressoSGXTEEVerifier _espressoSGXTEEVerifier) external {

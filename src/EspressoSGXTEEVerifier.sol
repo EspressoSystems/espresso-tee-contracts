@@ -15,7 +15,7 @@ import {BytesUtils} from "@automata-network/dcap-attestation/contracts/utils/Byt
 import "@openzeppelin/contracts/access/Ownable2Step.sol";
 import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import {IEspressoSGXTEEVerifier} from "./interface/IEspressoSGXTEEVerifier.sol";
-import {ServiceType, UnsupportedServiceType} from "./types/Types.sol";
+import {ServiceType} from "./types/Types.sol";
 import {TEEHelper} from "./TEEHelper.sol";
 
 /**
@@ -50,7 +50,6 @@ contract EspressoSGXTEEVerifier is IEspressoSGXTEEVerifier, Ownable2Step, TEEHel
     function _verify(bytes calldata rawQuote, bytes32 reportDataHash, ServiceType service)
         internal
         view
-        onlySupportedServiceType(service)
         returns (EnclaveReport memory)
     {
         // Parse the header
@@ -77,7 +76,6 @@ contract EspressoSGXTEEVerifier is IEspressoSGXTEEVerifier, Ownable2Step, TEEHel
         }
 
         // Check that mrEnclave match
-        // For now just check for batch posters as this is all we would be using verify with.
         if (!registeredEnclaveHashes[service][localReport.mrEnclave]) {
             revert InvalidEnclaveHash(localReport.mrEnclave, service);
         }
@@ -92,13 +90,13 @@ contract EspressoSGXTEEVerifier is IEspressoSGXTEEVerifier, Ownable2Step, TEEHel
     }
 
     /*
-        @notice Register a new Caff Node by verifying a quote from the TEE
+        @notice Register a new service (e.g., BatchPoster or CaffNode) by verifying a quote from the TEE
         @param attestation The attestation from the TEE
-        @param data which the TEE has attested to
+        @param data The data which the TEE has attested to
+        @param service The type of service to register
     */
     function registerService(bytes calldata attestation, bytes calldata data, ServiceType service)
         external
-        onlySupportedServiceType(service)
     {
         // Check that the data length is 20 bytes because an address is 20 bytes
         if (data.length != 20) {

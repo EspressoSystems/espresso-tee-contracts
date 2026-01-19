@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
-import {ServiceType, UnsupportedServiceType} from "./types/Types.sol";
+import {ServiceType} from "./types/Types.sol";
 import "@openzeppelin/contracts/access/Ownable2Step.sol";
 
 import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
@@ -15,14 +15,6 @@ abstract contract TEEHelper is ITEEHelper, Ownable2Step {
     mapping(ServiceType => mapping(address signer => bool valid)) public registeredServices;
     mapping(ServiceType => mapping(bytes32 enclaveHash => EnumerableSet.AddressSet signers))
         enclaveHashToSigner;
-
-    // Checks if the service type is supported
-    modifier onlySupportedServiceType(ServiceType service) {
-        if (uint8(service) > uint8(type(ServiceType).max)) {
-            revert UnsupportedServiceType();
-        }
-        _;
-    }
 
     constructor() Ownable2Step() {
         _transferOwnership(msg.sender);

@@ -6,7 +6,7 @@ import "@openzeppelin/contracts/utils/Strings.sol";
 import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 
 import {IEspressoNitroTEEVerifier} from "./interface/IEspressoNitroTEEVerifier.sol";
-import {ServiceType, UnsupportedServiceType} from "./types/Types.sol";
+import {ServiceType} from "./types/Types.sol";
 import {
     INitroEnclaveVerifier,
     VerifierJournal,
@@ -38,7 +38,6 @@ contract EspressoNitroTEEVerifier is IEspressoNitroTEEVerifier, TEEHelper {
      */
     function registerService(bytes calldata output, bytes calldata proofBytes, ServiceType service)
         external
-        onlySupportedServiceType(service)
     {
         VerifierJournal memory journal = _nitroEnclaveVerifier.verify(
             output,

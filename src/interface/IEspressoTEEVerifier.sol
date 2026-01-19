@@ -16,10 +16,6 @@ interface IEspressoTEEVerifier {
     // This error is thrown when the signature is invalid
 
     error InvalidSignature();
-    // This error is thrown when the TEE type is not supported
-    error UnsupportedTeeType();
-    // This error is thrown when the ServiceType enum provided to a method is unsupported for that method.
-    error UnsupportedServiceType();
 
     // Get address of Nitro TEE Verifier
     function espressoNitroTEEVerifier() external view returns (IEspressoNitroTEEVerifier);

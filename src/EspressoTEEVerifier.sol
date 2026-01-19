@@ -6,7 +6,7 @@ import "@openzeppelin/contracts/access/Ownable2Step.sol";
 import {IEspressoSGXTEEVerifier} from "./interface/IEspressoSGXTEEVerifier.sol";
 import {IEspressoNitroTEEVerifier} from "./interface/IEspressoNitroTEEVerifier.sol";
 import {IEspressoTEEVerifier} from "./interface/IEspressoTEEVerifier.sol";
-import {ServiceType, UnsupportedServiceType} from "./types/Types.sol";
+import {ServiceType} from "./types/Types.sol";
 
 /**
  * @title EspressoTEEVerifier
@@ -26,21 +26,6 @@ contract EspressoTEEVerifier is Ownable2Step, IEspressoTEEVerifier {
         _transferOwnership(msg.sender);
     }
 
-    // Checks if the service type is supported
-    modifier onlySupportedServiceType(ServiceType service) {
-        if (uint8(service) > uint8(type(ServiceType).max)) {
-            revert UnsupportedServiceType();
-        }
-        _;
-    }
-
-    modifier onlySupportedTEE(TeeType teeType) {
-        if (uint8(teeType) > uint8(TeeType.NITRO)) {
-            revert UnsupportedTeeType();
-        }
-        _;
-    }
-
     /**
      * @notice This function is used to verify the signature of the user data
      * @param signature The signature of the user data
@@ -53,15 +38,15 @@ contract EspressoTEEVerifier is Ownable2Step, IEspressoTEEVerifier {
         bytes32 userDataHash,
         TeeType teeType,
         ServiceType service
-    ) external view onlySupportedTEE(teeType) onlySupportedServiceType(service) returns (bool) {
+    ) external view returns (bool) {
         address signer = ECDSA.recover(userDataHash, signature);
         if (teeType == TeeType.SGX) {
             if (!espressoSGXTEEVerifier.registeredService(signer, service)) {
-                revert IEspressoTEEVerifier.InvalidSignature();
+                revert InvalidSignature();
             }
         } else {
             if (!espressoNitroTEEVerifier.registeredService(signer, service)) {
-                revert IEspressoTEEVerifier.InvalidSignature();
+                revert InvalidSignature();
             }
         }
         return true;
@@ -81,7 +66,7 @@ contract EspressoTEEVerifier is Ownable2Step, IEspressoTEEVerifier {
         bytes calldata data,
         TeeType teeType,
         ServiceType service
-    ) external onlySupportedTEE(teeType) onlySupportedServiceType(service) {
+    ) external {
         if (teeType == TeeType.SGX) {
             espressoSGXTEEVerifier.registerService(verificationData, data, service);
             return;
@@ -99,8 +84,6 @@ contract EspressoTEEVerifier is Ownable2Step, IEspressoTEEVerifier {
     function registeredService(address signer, TeeType teeType, ServiceType service)
         external
         view
-        onlySupportedTEE(teeType)
-        onlySupportedServiceType(service)
         returns (bool)
     {
         if (teeType == TeeType.SGX) {
@@ -118,8 +101,6 @@ contract EspressoTEEVerifier is Ownable2Step, IEspressoTEEVerifier {
     function registeredEnclaveHashes(bytes32 enclaveHash, TeeType teeType, ServiceType service)
         external
         view
-        onlySupportedTEE(teeType)
-        onlySupportedServiceType(service)
         returns (bool)
     {
         if (teeType == TeeType.SGX) {
@@ -139,8 +120,6 @@ contract EspressoTEEVerifier is Ownable2Step, IEspressoTEEVerifier {
     function enclaveHashSigners(bytes32 enclaveHash, TeeType teeType, ServiceType service)
         external
         view
-        onlySupportedTEE(teeType)
-        onlySupportedServiceType(service)
         returns (address[] memory)
     {
         if (teeType == TeeType.SGX) {

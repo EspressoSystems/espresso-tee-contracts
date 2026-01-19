@@ -10,6 +10,3 @@ enum ServiceType {
     BatchPoster,
     CaffNode
 }
-
-//Error representing an unsupported value being provided for a ServiceType parameter
-error UnsupportedServiceType();

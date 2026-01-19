@@ -4,9 +4,6 @@ pragma solidity ^0.8.0;
 import {ServiceType} from "../types/Types.sol";
 
 interface ITEEHelper {
-    // Thrown when an unsupported service type is provided
-    // function signature: 0x00bf4e89
-    error UnsupportedServiceType();
     // Thrown when an invalid enclave hash is provided for a service type
     // function signature: 0x94f1e6f9
     error InvalidEnclaveHash(bytes32 enclaveHash, ServiceType service);
