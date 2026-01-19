@@ -187,15 +187,21 @@ Currently this script is *NOT* compatible with ARB Sepolia, only ETH, ETH Sepoli
   Your .env file will need to contain the following items.
 
   ```bash
+  # Env vars required by the script
   LEDGER_DERIVATION_PATH="m/44'/60'/0'/0/0" #Note, depending on what keys your ledger holds, this may be different.
-  MULTISIG_CONTRACT_ADDRESS="Your Multi-Sig address"
   TEE_VERIFIER_ADDRESS="EspressoTEEVerifier contract address" #
   PROPOSER_ADDRESS="Your Multi-sig signer address" #Note, this must be the same as the one provided by the derivation path.
+  PRIVATE_KEY="insert original EspressoTEEVerifier contract owner's private key here" #This is required by the script to run, but is never parsed by the script itself.
 
-  ORIGINAL_OWNER_KEY="insert original EspressoTEEVerifier contract owner's private key here"
+  # Does not need to be supplied if you are using `SAFE_MODE=true`
+  MULTISIG_CONTRACT_ADDRESS="Your Multi-Sig address"
+  #If you are using the following option, you do not need to supply the MULTISIG_CONTRACT_ADDRESS
+  SAFE_MODE="boolean representing wether to use the script in safe mode" #if toggled on, the script will use cannonical espresso multi-sig addresses for the newOwner
+
+  # Env vars that are only necessarty for the forge script command
   RPC_URL="RPC URL for the chain you wish to execute on"
-  CHAIN_ID="Chain ID of the network to execute transactions on"
-  ````
+  CHAIN_ID="Chain ID of the network to execute transactions on" 
+  ```
 
   - LEDGER_DERIVATION_PATH: This is the derivation path of the account you wish to propose the multi-sig transaction with. It is mandatory that this account is a `signer`, or `delegate`, in the multi-sig contract.
 
@@ -213,7 +219,9 @@ Currently this script is *NOT* compatible with ARB Sepolia, only ETH, ETH Sepoli
 
     NOTE: you will need to prepend the `m/` to this path for foundry to correctly locate the account.
 
-  - MULTISIG_CONTRACT_ADDRESS: The address of your Multi-sig wallet on the chain you wish this transaction to occurr on.
+  - MULTISIG_CONTRACT_ADDRESS: The address of your Multi-sig wallet on the chain you wish this transaction to occur on.
+
+  - SAFE_MODE: Run the script in a manner such that it's impossible to propose the transaction to a non espresso controlled multi-sig wallet.
 
   - TEE_VERIFIER_ADDRESS: The address of the outer EspressoTEEVerifier contract.
     Note: this must be the outer TEEVerifier contract. The script locates the inner contracts by calling espressoNitroVerifier and espressoSGXVerifier on the outer contract.
