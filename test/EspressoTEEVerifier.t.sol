@@ -7,12 +7,8 @@ import {IEspressoTEEVerifier} from "../src/interface/IEspressoTEEVerifier.sol";
 import {EspressoSGXTEEVerifier} from "../src/EspressoSGXTEEVerifier.sol";
 import {EspressoNitroTEEVerifier} from "../src/EspressoNitroTEEVerifier.sol";
 import {ITEEHelper} from "../src/interface/ITEEHelper.sol";
-import {
-    IEspressoSGXTEEVerifier
-} from "../src/interface/IEspressoSGXTEEVerifier.sol";
-import {
-    IEspressoNitroTEEVerifier
-} from "../src/interface/IEspressoNitroTEEVerifier.sol";
+import {IEspressoSGXTEEVerifier} from "../src/interface/IEspressoSGXTEEVerifier.sol";
+import {IEspressoNitroTEEVerifier} from "../src/interface/IEspressoNitroTEEVerifier.sol";
 import {ServiceType} from "../src/types/Types.sol";
 import {
     INitroEnclaveVerifier
@@ -26,16 +22,10 @@ contract EspressoTEEVerifierTest is Test {
     EspressoSGXTEEVerifier espressoSGXTEEVerifier;
     EspressoNitroTEEVerifier espressoNitroTEEVerifier;
     bytes32 enclaveHash =
-        bytes32(
-            0x01f7290cb6bbaa427eca3daeb25eecccb87c4b61259b1ae2125182c4d77169c0
-        );
+        bytes32(0x01f7290cb6bbaa427eca3daeb25eecccb87c4b61259b1ae2125182c4d77169c0);
     //  Address of the automata V3QuoteVerifier deployed on sepolia
-    address v3QuoteVerifier =
-        address(0x6E64769A13617f528a2135692484B681Ee1a7169);
-    bytes32 pcr0Hash =
-        bytes32(
-            0x555797ae2413bb1e4c352434a901032b16d7ac9090322532a3fccb9947977e8b
-        );
+    address v3QuoteVerifier = address(0x6E64769A13617f528a2135692484B681Ee1a7169);
+    bytes32 pcr0Hash = bytes32(0x555797ae2413bb1e4c352434a901032b16d7ac9090322532a3fccb9947977e8b);
 
     function setUp() public {
         vm.createSelectFork(
@@ -48,63 +38,27 @@ contract EspressoTEEVerifierTest is Test {
         espressoNitroTEEVerifier = new EspressoNitroTEEVerifier(
             INitroEnclaveVerifier(0x2D7fbBAD6792698Ba92e67b7e180f8010B9Ec788)
         );
-        espressoSGXTEEVerifier.setEnclaveHash(
-            enclaveHash,
-            true,
-            ServiceType.BatchPoster
-        );
-        espressoNitroTEEVerifier.setEnclaveHash(
-            pcr0Hash,
-            true,
-            ServiceType.BatchPoster
-        );
-        espressoTEEVerifier = new EspressoTEEVerifier(
-            espressoSGXTEEVerifier,
-            espressoNitroTEEVerifier
-        );
+        espressoSGXTEEVerifier.setEnclaveHash(enclaveHash, true, ServiceType.BatchPoster);
+        espressoNitroTEEVerifier.setEnclaveHash(pcr0Hash, true, ServiceType.BatchPoster);
+        espressoTEEVerifier =
+            new EspressoTEEVerifier(espressoSGXTEEVerifier, espressoNitroTEEVerifier);
         // Register enclave hashes used by bundled fixtures
-        espressoSGXTEEVerifier.setEnclaveHash(
-            enclaveHash,
-            true,
-            ServiceType.BatchPoster
-        );
-        espressoSGXTEEVerifier.setEnclaveHash(
-            enclaveHash,
-            true,
-            ServiceType.CaffNode
-        );
-        espressoNitroTEEVerifier.setEnclaveHash(
-            pcr0Hash,
-            true,
-            ServiceType.BatchPoster
-        );
-        espressoNitroTEEVerifier.setEnclaveHash(
-            pcr0Hash,
-            true,
-            ServiceType.CaffNode
-        );
+        espressoSGXTEEVerifier.setEnclaveHash(enclaveHash, true, ServiceType.BatchPoster);
+        espressoSGXTEEVerifier.setEnclaveHash(enclaveHash, true, ServiceType.CaffNode);
+        espressoNitroTEEVerifier.setEnclaveHash(pcr0Hash, true, ServiceType.BatchPoster);
+        espressoNitroTEEVerifier.setEnclaveHash(pcr0Hash, true, ServiceType.CaffNode);
         vm.stopPrank();
     }
 
     // Helper to toggle the caff node enclave hash for different TEEs during tests.
-    function setCaffNodeEnclaveHash(
-        IEspressoTEEVerifier.TeeType tee,
-        bytes32 hash,
-        bool valid
-    ) internal {
+    function setCaffNodeEnclaveHash(IEspressoTEEVerifier.TeeType tee, bytes32 hash, bool valid)
+        internal
+    {
         vm.startPrank(adminTEE);
         if (tee == IEspressoTEEVerifier.TeeType.NITRO) {
-            espressoNitroTEEVerifier.setEnclaveHash(
-                hash,
-                valid,
-                ServiceType.CaffNode
-            );
+            espressoNitroTEEVerifier.setEnclaveHash(hash, valid, ServiceType.CaffNode);
         } else if (tee == IEspressoTEEVerifier.TeeType.SGX) {
-            espressoSGXTEEVerifier.setEnclaveHash(
-                hash,
-                valid,
-                ServiceType.CaffNode
-            );
+            espressoSGXTEEVerifier.setEnclaveHash(hash, valid, ServiceType.CaffNode);
         }
         vm.stopPrank();
     }
@@ -122,65 +76,39 @@ contract EspressoTEEVerifierTest is Test {
         if (tee == IEspressoTEEVerifier.TeeType.NITRO) {
             vm.expectRevert(
                 abi.encodeWithSelector(
-                    ITEEHelper.InvalidEnclaveHash.selector,
-                    pcr0Hash,
-                    ServiceType.CaffNode
+                    ITEEHelper.InvalidEnclaveHash.selector, pcr0Hash, ServiceType.CaffNode
                 )
             );
         } else if (tee == IEspressoTEEVerifier.TeeType.SGX) {
             vm.expectRevert(
                 abi.encodeWithSelector(
-                    ITEEHelper.InvalidEnclaveHash.selector,
-                    enclaveHash,
-                    ServiceType.CaffNode
+                    ITEEHelper.InvalidEnclaveHash.selector, enclaveHash, ServiceType.CaffNode
                 )
             );
         } // Add more cases here if we support more TEE's
-        espressoTEEVerifier.registerService(
-            sampleQuote,
-            data,
-            tee,
-            ServiceType.CaffNode
-        );
+        espressoTEEVerifier.registerService(sampleQuote, data, tee, ServiceType.CaffNode);
         setCaffNodeEnclaveHash(tee, revertHash, true);
 
         // At this point the Caff node enclave hash is registered so this should succeed
-        espressoTEEVerifier.registerService(
-            sampleQuote,
-            data,
-            tee,
-            ServiceType.CaffNode
-        );
+        espressoTEEVerifier.registerService(sampleQuote, data, tee, ServiceType.CaffNode);
     }
 
     function testSGXRegisterService() public {
         string memory quotePath = "/test/configs/attestation.bin";
         string memory inputFile = string.concat(vm.projectRoot(), quotePath);
         bytes memory sampleQuote = vm.readFileBinary(inputFile);
-        address batchPosterAddress = address(
-            0xe2148eE53c0755215Df69b2616E552154EdC584f
-        );
+        address batchPosterAddress = address(0xe2148eE53c0755215Df69b2616E552154EdC584f);
         bytes memory data = abi.encodePacked(batchPosterAddress);
         // Test registering the batch poster
         espressoTEEVerifier.registerService(
-            sampleQuote,
-            data,
-            IEspressoTEEVerifier.TeeType.SGX,
-            ServiceType.BatchPoster
+            sampleQuote, data, IEspressoTEEVerifier.TeeType.SGX, ServiceType.BatchPoster
         );
 
         vm.startPrank(adminTEE);
-        espressoSGXTEEVerifier.setEnclaveHash(
-            enclaveHash,
-            true,
-            ServiceType.CaffNode
-        );
+        espressoSGXTEEVerifier.setEnclaveHash(enclaveHash, true, ServiceType.CaffNode);
         vm.stopPrank();
         espressoTEEVerifier.registerService(
-            sampleQuote,
-            data,
-            IEspressoTEEVerifier.TeeType.SGX,
-            ServiceType.CaffNode
+            sampleQuote, data, IEspressoTEEVerifier.TeeType.SGX, ServiceType.CaffNode
         );
     }
 
@@ -194,10 +122,7 @@ contract EspressoTEEVerifierTest is Test {
         // Extract onchain_proof
         bytes memory onchain = vm.parseJsonBytes(json, ".onchain_proof");
         espressoTEEVerifier.registerService(
-            journal,
-            onchain,
-            IEspressoTEEVerifier.TeeType.NITRO,
-            ServiceType.BatchPoster
+            journal, onchain, IEspressoTEEVerifier.TeeType.NITRO, ServiceType.BatchPoster
         );
     }
 
@@ -205,16 +130,11 @@ contract EspressoTEEVerifierTest is Test {
         string memory quotePath = "/test/configs/invalid_quote.bin";
         string memory inputFile = string.concat(vm.projectRoot(), quotePath);
         bytes memory sampleQuote = vm.readFileBinary(inputFile);
-        address batchPosterAddress = address(
-            0xe2148eE53c0755215Df69b2616E552154EdC584f
-        );
+        address batchPosterAddress = address(0xe2148eE53c0755215Df69b2616E552154EdC584f);
         bytes memory data = abi.encodePacked(batchPosterAddress);
         vm.expectRevert(IEspressoSGXTEEVerifier.InvalidQuote.selector);
         espressoTEEVerifier.registerService(
-            sampleQuote,
-            data,
-            IEspressoTEEVerifier.TeeType.SGX,
-            ServiceType.BatchPoster
+            sampleQuote, data, IEspressoTEEVerifier.TeeType.SGX, ServiceType.BatchPoster
         );
 
         vm.expectRevert(IEspressoSGXTEEVerifier.InvalidQuote.selector);
@@ -222,10 +142,7 @@ contract EspressoTEEVerifierTest is Test {
         // This would also fail with an invalid enclave hash as well, as this test doesn't register the caff node,
         // But that isn't needed for this test.
         espressoTEEVerifier.registerService(
-            sampleQuote,
-            data,
-            IEspressoTEEVerifier.TeeType.SGX,
-            ServiceType.CaffNode
+            sampleQuote, data, IEspressoTEEVerifier.TeeType.SGX, ServiceType.CaffNode
         );
     }
 
@@ -233,22 +150,15 @@ contract EspressoTEEVerifierTest is Test {
         string memory quotePath = "/test/configs/attestation.bin";
         string memory inputFile = string.concat(vm.projectRoot(), quotePath);
         bytes memory sampleQuote = vm.readFileBinary(inputFile);
-        address batchPosterAddress = address(
-            0xe2148eE53c0755215Df69b2616E552154EdC584f
-        );
+        address batchPosterAddress = address(0xe2148eE53c0755215Df69b2616E552154EdC584f);
         bytes memory data = abi.encodePacked(batchPosterAddress);
         espressoTEEVerifier.registerService(
-            sampleQuote,
-            data,
-            IEspressoTEEVerifier.TeeType.SGX,
-            ServiceType.BatchPoster
+            sampleQuote, data, IEspressoTEEVerifier.TeeType.SGX, ServiceType.BatchPoster
         );
 
         assertEq(
             espressoTEEVerifier.registeredSigner(
-                batchPosterAddress,
-                IEspressoTEEVerifier.TeeType.SGX,
-                ServiceType.BatchPoster
+                batchPosterAddress, IEspressoTEEVerifier.TeeType.SGX, ServiceType.BatchPoster
             ),
             true
         );
@@ -257,9 +167,7 @@ contract EspressoTEEVerifierTest is Test {
         // future, we will need to update this test.
         assertEq(
             espressoTEEVerifier.registeredSigner(
-                batchPosterAddress,
-                IEspressoTEEVerifier.TeeType.SGX,
-                ServiceType.CaffNode
+                batchPosterAddress, IEspressoTEEVerifier.TeeType.SGX, ServiceType.CaffNode
             ),
             false
         );
@@ -274,9 +182,7 @@ contract EspressoTEEVerifierTest is Test {
 
         assertEq(
             espressoTEEVerifier.registeredSigner(
-                batchPosterAddress,
-                IEspressoTEEVerifier.TeeType.SGX,
-                ServiceType.CaffNode
+                batchPosterAddress, IEspressoTEEVerifier.TeeType.SGX, ServiceType.CaffNode
             ),
             true
         );
@@ -293,17 +199,12 @@ contract EspressoTEEVerifierTest is Test {
         bytes memory onchain = vm.parseJsonBytes(json, ".onchain_proof");
         address signerAddr = 0xF8463E0aF00C1910402D2A51B3a8CecD0dC1c3fE;
         espressoTEEVerifier.registerService(
-            journal,
-            onchain,
-            IEspressoTEEVerifier.TeeType.NITRO,
-            ServiceType.BatchPoster
+            journal, onchain, IEspressoTEEVerifier.TeeType.NITRO, ServiceType.BatchPoster
         );
 
         assertEq(
             espressoTEEVerifier.registeredSigner(
-                signerAddr,
-                IEspressoTEEVerifier.TeeType.NITRO,
-                ServiceType.BatchPoster
+                signerAddr, IEspressoTEEVerifier.TeeType.NITRO, ServiceType.BatchPoster
             ),
             true
         );
@@ -312,9 +213,7 @@ contract EspressoTEEVerifierTest is Test {
         // future, we will need to update this test.
         assertEq(
             espressoTEEVerifier.registeredSigner(
-                signerAddr,
-                IEspressoTEEVerifier.TeeType.NITRO,
-                ServiceType.CaffNode
+                signerAddr, IEspressoTEEVerifier.TeeType.NITRO, ServiceType.CaffNode
             ),
             false
         );
@@ -329,9 +228,7 @@ contract EspressoTEEVerifierTest is Test {
 
         assertEq(
             espressoTEEVerifier.registeredSigner(
-                signerAddr,
-                IEspressoTEEVerifier.TeeType.NITRO,
-                ServiceType.CaffNode
+                signerAddr, IEspressoTEEVerifier.TeeType.NITRO, ServiceType.CaffNode
             ),
             true
         );
@@ -340,9 +237,7 @@ contract EspressoTEEVerifierTest is Test {
     function testSGXRegisteredEnclaveHash() public {
         assertEq(
             espressoTEEVerifier.registeredEnclaveHashes(
-                bytes32(
-                    0x01f7290cb6bbaa427eca3daeb25eecccb87c4b61259b1ae2125182c4d77169c0
-                ),
+                bytes32(0x01f7290cb6bbaa427eca3daeb25eecccb87c4b61259b1ae2125182c4d77169c0),
                 IEspressoTEEVerifier.TeeType.SGX,
                 ServiceType.BatchPoster
             ),
@@ -351,9 +246,7 @@ contract EspressoTEEVerifierTest is Test {
 
         assertEq(
             espressoTEEVerifier.registeredEnclaveHashes(
-                bytes32(
-                    0x01f7290cb6bbaa427eca3daeb25eecccb87c4b61259b1ae2125182c4d77169c0
-                ),
+                bytes32(0x01f7290cb6bbaa427eca3daeb25eecccb87c4b61259b1ae2125182c4d77169c0),
                 IEspressoTEEVerifier.TeeType.SGX,
                 ServiceType.CaffNode
             ),
@@ -364,9 +257,7 @@ contract EspressoTEEVerifierTest is Test {
     function testNitroRegisteredEnclaveHash() public {
         assertEq(
             espressoTEEVerifier.registeredEnclaveHashes(
-                bytes32(
-                    0x555797ae2413bb1e4c352434a901032b16d7ac9090322532a3fccb9947977e8b
-                ),
+                bytes32(0x555797ae2413bb1e4c352434a901032b16d7ac9090322532a3fccb9947977e8b),
                 IEspressoTEEVerifier.TeeType.NITRO,
                 ServiceType.BatchPoster
             ),
@@ -379,9 +270,7 @@ contract EspressoTEEVerifierTest is Test {
         string memory quotePath = "/test/configs/attestation.bin";
         string memory inputFile = string.concat(vm.projectRoot(), quotePath);
         bytes memory sampleQuote = vm.readFileBinary(inputFile);
-        address batchPosterAddress = address(
-            0xe2148eE53c0755215Df69b2616E552154EdC584f
-        );
+        address batchPosterAddress = address(0xe2148eE53c0755215Df69b2616E552154EdC584f);
         espressoTEEVerifier.registerService(
             sampleQuote,
             abi.encodePacked(batchPosterAddress),
@@ -390,39 +279,28 @@ contract EspressoTEEVerifierTest is Test {
         );
 
         address[] memory signers = espressoTEEVerifier.enclaveHashSigners(
-            enclaveHash,
-            IEspressoTEEVerifier.TeeType.SGX,
-            ServiceType.BatchPoster
+            enclaveHash, IEspressoTEEVerifier.TeeType.SGX, ServiceType.BatchPoster
         );
         assertEq(signers.length, 1);
         assertEq(signers[0], batchPosterAddress);
 
         bytes32[] memory enclaveHashes = new bytes32[](1);
         enclaveHashes[0] = enclaveHash;
-        espressoSGXTEEVerifier.deleteEnclaveHashes(
-            enclaveHashes,
-            ServiceType.BatchPoster
-        );
+        espressoSGXTEEVerifier.deleteEnclaveHashes(enclaveHashes, ServiceType.BatchPoster);
         assertEq(
             espressoTEEVerifier.registeredEnclaveHashes(
-                enclaveHash,
-                IEspressoTEEVerifier.TeeType.SGX,
-                ServiceType.BatchPoster
+                enclaveHash, IEspressoTEEVerifier.TeeType.SGX, ServiceType.BatchPoster
             ),
             false
         );
         assertEq(
             espressoTEEVerifier.registeredSigner(
-                batchPosterAddress,
-                IEspressoTEEVerifier.TeeType.SGX,
-                ServiceType.BatchPoster
+                batchPosterAddress, IEspressoTEEVerifier.TeeType.SGX, ServiceType.BatchPoster
             ),
             false
         );
         address[] memory signersAfter = espressoTEEVerifier.enclaveHashSigners(
-            enclaveHash,
-            IEspressoTEEVerifier.TeeType.SGX,
-            ServiceType.BatchPoster
+            enclaveHash, IEspressoTEEVerifier.TeeType.SGX, ServiceType.BatchPoster
         );
         assertEq(signersAfter.length, 0);
         vm.stopPrank();
@@ -438,47 +316,33 @@ contract EspressoTEEVerifierTest is Test {
         bytes memory proofBytes = vm.parseJsonBytes(json, ".onchain_proof");
 
         espressoTEEVerifier.registerService(
-            output,
-            proofBytes,
-            IEspressoTEEVerifier.TeeType.NITRO,
-            ServiceType.BatchPoster
+            output, proofBytes, IEspressoTEEVerifier.TeeType.NITRO, ServiceType.BatchPoster
         );
 
         address signer = 0xF8463E0aF00C1910402D2A51B3a8CecD0dC1c3fE;
         address[] memory signers = espressoTEEVerifier.enclaveHashSigners(
-            pcr0Hash,
-            IEspressoTEEVerifier.TeeType.NITRO,
-            ServiceType.BatchPoster
+            pcr0Hash, IEspressoTEEVerifier.TeeType.NITRO, ServiceType.BatchPoster
         );
         assertEq(signers.length, 1);
         assertEq(signers[0], signer);
 
         bytes32[] memory enclaveHashes = new bytes32[](1);
         enclaveHashes[0] = pcr0Hash;
-        espressoNitroTEEVerifier.deleteEnclaveHashes(
-            enclaveHashes,
-            ServiceType.BatchPoster
-        );
+        espressoNitroTEEVerifier.deleteEnclaveHashes(enclaveHashes, ServiceType.BatchPoster);
         assertEq(
             espressoTEEVerifier.registeredEnclaveHashes(
-                pcr0Hash,
-                IEspressoTEEVerifier.TeeType.NITRO,
-                ServiceType.BatchPoster
+                pcr0Hash, IEspressoTEEVerifier.TeeType.NITRO, ServiceType.BatchPoster
             ),
             false
         );
         assertEq(
             espressoTEEVerifier.registeredSigner(
-                signer,
-                IEspressoTEEVerifier.TeeType.NITRO,
-                ServiceType.BatchPoster
+                signer, IEspressoTEEVerifier.TeeType.NITRO, ServiceType.BatchPoster
             ),
             false
         );
         address[] memory signersAfter = espressoTEEVerifier.enclaveHashSigners(
-            pcr0Hash,
-            IEspressoTEEVerifier.TeeType.NITRO,
-            ServiceType.BatchPoster
+            pcr0Hash, IEspressoTEEVerifier.TeeType.NITRO, ServiceType.BatchPoster
         );
         assertEq(signersAfter.length, 0);
         vm.stopPrank();
@@ -486,12 +350,9 @@ contract EspressoTEEVerifierTest is Test {
 
     function testSetEspressoSGXTEEVerifier() public {
         vm.startPrank(adminTEE);
-        IEspressoSGXTEEVerifier newEspressoSGXTEEVerifier = new EspressoSGXTEEVerifier(
-                v3QuoteVerifier
-            );
-        espressoTEEVerifier.setEspressoSGXTEEVerifier(
-            newEspressoSGXTEEVerifier
-        );
+        IEspressoSGXTEEVerifier newEspressoSGXTEEVerifier =
+            new EspressoSGXTEEVerifier(v3QuoteVerifier);
+        espressoTEEVerifier.setEspressoSGXTEEVerifier(newEspressoSGXTEEVerifier);
         assertEq(
             address(espressoTEEVerifier.espressoSGXTEEVerifier()),
             address(newEspressoSGXTEEVerifier)
@@ -499,22 +360,16 @@ contract EspressoTEEVerifierTest is Test {
         vm.stopPrank();
         vm.startPrank(fakeAddress);
         vm.expectRevert("Ownable: caller is not the owner");
-        espressoTEEVerifier.setEspressoSGXTEEVerifier(
-            newEspressoSGXTEEVerifier
-        );
+        espressoTEEVerifier.setEspressoSGXTEEVerifier(newEspressoSGXTEEVerifier);
         vm.stopPrank();
     }
 
     function testSetEspressoNitroTEEVerifier() public {
         vm.startPrank(adminTEE);
         IEspressoNitroTEEVerifier newEspressoNitroTEEVerifier = new EspressoNitroTEEVerifier(
-                INitroEnclaveVerifier(
-                    0x2D7fbBAD6792698Ba92e67b7e180f8010B9Ec788
-                ) // Sepolia Nitro Enclave Verifier address
-            );
-        espressoTEEVerifier.setEspressoNitroTEEVerifier(
-            newEspressoNitroTEEVerifier
+            INitroEnclaveVerifier(0x2D7fbBAD6792698Ba92e67b7e180f8010B9Ec788) // Sepolia Nitro Enclave Verifier address
         );
+        espressoTEEVerifier.setEspressoNitroTEEVerifier(newEspressoNitroTEEVerifier);
         assertEq(
             address(espressoTEEVerifier.espressoNitroTEEVerifier()),
             address(newEspressoNitroTEEVerifier)
@@ -522,9 +377,7 @@ contract EspressoTEEVerifierTest is Test {
         vm.stopPrank();
         vm.startPrank(fakeAddress);
         vm.expectRevert("Ownable: caller is not the owner");
-        espressoTEEVerifier.setEspressoNitroTEEVerifier(
-            newEspressoNitroTEEVerifier
-        );
+        espressoTEEVerifier.setEspressoNitroTEEVerifier(newEspressoNitroTEEVerifier);
         vm.stopPrank();
     }
 
@@ -543,32 +396,20 @@ contract EspressoTEEVerifierTest is Test {
         bytes memory onchain = vm.parseJsonBytes(json, ".onchain_proof");
 
         // Disable pcr0 hash
-        espressoNitroTEEVerifier.setEnclaveHash(
-            pcr0Hash,
-            false,
-            ServiceType.BatchPoster
-        );
+        espressoNitroTEEVerifier.setEnclaveHash(pcr0Hash, false, ServiceType.BatchPoster);
         assertEq(
-            espressoNitroTEEVerifier.registeredEnclaveHashes(
-                ServiceType.BatchPoster,
-                pcr0Hash
-            ),
+            espressoNitroTEEVerifier.registeredEnclaveHashes(ServiceType.BatchPoster, pcr0Hash),
             false
         );
 
         // Expect revert
         vm.expectRevert(
             abi.encodeWithSelector(
-                ITEEHelper.InvalidEnclaveHash.selector,
-                pcr0Hash,
-                ServiceType.BatchPoster
+                ITEEHelper.InvalidEnclaveHash.selector, pcr0Hash, ServiceType.BatchPoster
             )
         );
         espressoTEEVerifier.registerService(
-            journal,
-            onchain,
-            IEspressoTEEVerifier.TeeType.NITRO,
-            ServiceType.BatchPoster
+            journal, onchain, IEspressoTEEVerifier.TeeType.NITRO, ServiceType.BatchPoster
         );
         vm.stopPrank();
     }
@@ -590,16 +431,12 @@ contract EspressoTEEVerifierTest is Test {
         vm.startPrank(adminTEE);
 
         // Test without using interface
-        address nitroAddr = address(
-            espressoTEEVerifier.espressoNitroTEEVerifier()
-        );
+        address nitroAddr = address(espressoTEEVerifier.espressoNitroTEEVerifier());
         assertEq(address(espressoNitroTEEVerifier), nitroAddr);
 
         // Test with using EspressoTEEVerifier Interface
-        IEspressoTEEVerifier iespressoTEEVerifier = new EspressoTEEVerifier(
-            espressoSGXTEEVerifier,
-            espressoNitroTEEVerifier
-        );
+        IEspressoTEEVerifier iespressoTEEVerifier =
+            new EspressoTEEVerifier(espressoSGXTEEVerifier, espressoNitroTEEVerifier);
         // Without espressoNitroTEEVerifier() added to interface, the test would fail to compile
         nitroAddr = address(iespressoTEEVerifier.espressoNitroTEEVerifier());
         assertEq(address(espressoNitroTEEVerifier), nitroAddr);
@@ -616,10 +453,8 @@ contract EspressoTEEVerifierTest is Test {
         assertEq(address(espressoSGXTEEVerifier), sgxAddr);
 
         // Test with using EspressoTEEVerifier Interface
-        IEspressoTEEVerifier iespressoTEEVerifier = new EspressoTEEVerifier(
-            espressoSGXTEEVerifier,
-            espressoNitroTEEVerifier
-        );
+        IEspressoTEEVerifier iespressoTEEVerifier =
+            new EspressoTEEVerifier(espressoSGXTEEVerifier, espressoNitroTEEVerifier);
         // Without espressoSGXTEEVerifier() added to interface, the test would fail to compile
         sgxAddr = address(iespressoTEEVerifier.espressoSGXTEEVerifier());
         assertEq(address(espressoSGXTEEVerifier), sgxAddr);

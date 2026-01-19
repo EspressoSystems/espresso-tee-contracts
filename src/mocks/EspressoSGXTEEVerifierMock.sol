@@ -1,9 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {
-    IEspressoSGXTEEVerifier
-} from "../interface/IEspressoSGXTEEVerifier.sol";
+import {IEspressoSGXTEEVerifier} from "../interface/IEspressoSGXTEEVerifier.sol";
 
 import {ServiceType} from "../types/Types.sol";
 
@@ -13,8 +11,7 @@ import {ServiceType} from "../types/Types.sol";
  *         but still requires signers to be registered before they can be used.
  */
 contract EspressoSGXTEEVerifierMock {
-    mapping(ServiceType => mapping(bytes32 => bool))
-        public registeredEnclaveHashes;
+    mapping(ServiceType => mapping(bytes32 => bool)) public registeredEnclaveHashes;
     mapping(ServiceType => mapping(address => bool)) public registeredSigners;
 
     constructor() {
@@ -26,11 +23,9 @@ contract EspressoSGXTEEVerifierMock {
      * @param attestation The attestation (ignored in mock)
      * @param data The signer address as bytes (20 bytes)
      */
-    function registerSigner(
-        bytes calldata attestation,
-        bytes calldata data,
-        ServiceType service
-    ) external {
+    function registerSigner(bytes calldata attestation, bytes calldata data, ServiceType service)
+        external
+    {
         require(data.length == 20, "Invalid data length");
 
         address signer = address(uint160(bytes20(data[:20])));
@@ -41,11 +36,7 @@ contract EspressoSGXTEEVerifierMock {
         }
     }
 
-    function setEnclaveHash(
-        bytes32 enclaveHash,
-        bool valid,
-        ServiceType service
-    ) external {
+    function setEnclaveHash(bytes32 enclaveHash, bool valid, ServiceType service) external {
         registeredEnclaveHashes[service][enclaveHash] = valid;
     }
 }

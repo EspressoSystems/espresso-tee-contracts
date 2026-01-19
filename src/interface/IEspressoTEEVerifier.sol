@@ -22,16 +22,10 @@ interface IEspressoTEEVerifier {
     error UnsupportedServiceType();
 
     // Get address of Nitro TEE Verifier
-    function espressoNitroTEEVerifier()
-        external
-        view
-        returns (IEspressoNitroTEEVerifier);
+    function espressoNitroTEEVerifier() external view returns (IEspressoNitroTEEVerifier);
 
     // Get addressof SGX TEE Verifier
-    function espressoSGXTEEVerifier()
-        external
-        view
-        returns (IEspressoSGXTEEVerifier);
+    function espressoSGXTEEVerifier() external view returns (IEspressoSGXTEEVerifier);
 
     // Function to verify the signature of the user data is from a registered signer
     function verify(
@@ -51,11 +45,10 @@ interface IEspressoTEEVerifier {
     ) external;
 
     // Function to retrieve whether a service is registered or not
-    function registeredSigner(
-        address signer,
-        TeeType teeType,
-        ServiceType serviceType
-    ) external view returns (bool);
+    function registeredSigner(address signer, TeeType teeType, ServiceType serviceType)
+        external
+        view
+        returns (bool);
 
     /**
      * @notice This function retrieves whether an enclave hash is registered or not
@@ -64,11 +57,10 @@ interface IEspressoTEEVerifier {
      * @param serviceType The service type (BatchPoster or CaffNode)
      * @return bool True if the enclave hash is registered, false otherwise
      */
-    function registeredEnclaveHashes(
-        bytes32 enclaveHash,
-        TeeType teeType,
-        ServiceType serviceType
-    ) external view returns (bool);
+    function registeredEnclaveHashes(bytes32 enclaveHash, TeeType teeType, ServiceType serviceType)
+        external
+        view
+        returns (bool);
 
     /**
      * @notice This function retrieves the list of signers registered for a given enclave hash
@@ -78,19 +70,15 @@ interface IEspressoTEEVerifier {
      * @return address[] The list of signers registered for the given enclave hash
      *
      */
-    function enclaveHashSigners(
-        bytes32 enclaveHash,
-        TeeType teeType,
-        ServiceType serviceType
-    ) external view returns (address[] memory);
+    function enclaveHashSigners(bytes32 enclaveHash, TeeType teeType, ServiceType serviceType)
+        external
+        view
+        returns (address[] memory);
 
     // Function to set the EspressoSGXTEEVerifier
-    function setEspressoSGXTEEVerifier(
-        IEspressoSGXTEEVerifier _espressoSGXTEEVerifier
-    ) external;
+    function setEspressoSGXTEEVerifier(IEspressoSGXTEEVerifier _espressoSGXTEEVerifier) external;
 
     // Function to set the EspressoNitroTEEVerifier
-    function setEspressoNitroTEEVerifier(
-        IEspressoNitroTEEVerifier _espressoNitroTEEVerifier
-    ) external;
+    function setEspressoNitroTEEVerifier(IEspressoNitroTEEVerifier _espressoNitroTEEVerifier)
+        external;
 }

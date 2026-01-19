@@ -4,26 +4,16 @@ pragma solidity ^0.8.0;
 import {
     V3QuoteVerifier
 } from "@automata-network/dcap-attestation/contracts/verifiers/V3QuoteVerifier.sol";
-import {
-    BELE
-} from "@automata-network/dcap-attestation/contracts/utils/BELE.sol";
-import {
-    Header
-} from "@automata-network/dcap-attestation/contracts/types/CommonStruct.sol";
+import {BELE} from "@automata-network/dcap-attestation/contracts/utils/BELE.sol";
+import {Header} from "@automata-network/dcap-attestation/contracts/types/CommonStruct.sol";
 import {
     HEADER_LENGTH,
     ENCLAVE_REPORT_LENGTH
 } from "@automata-network/dcap-attestation/contracts/types/Constants.sol";
-import {
-    EnclaveReport
-} from "@automata-network/dcap-attestation/contracts/types/V3Structs.sol";
-import {
-    BytesUtils
-} from "@automata-network/dcap-attestation/contracts/utils/BytesUtils.sol";
+import {EnclaveReport} from "@automata-network/dcap-attestation/contracts/types/V3Structs.sol";
+import {BytesUtils} from "@automata-network/dcap-attestation/contracts/utils/BytesUtils.sol";
 import "@openzeppelin/contracts/access/Ownable2Step.sol";
-import {
-    EnumerableSet
-} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
+import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import {IEspressoSGXTEEVerifier} from "./interface/IEspressoSGXTEEVerifier.sol";
 import {ServiceType, UnsupportedServiceType} from "./types/Types.sol";
 import {TEEHelper} from "./TEEHelper.sol";
@@ -35,11 +25,7 @@ import {TEEHelper} from "./TEEHelper.sol";
  *         from automata to verify the quote. Along with some additional verification logic.
  */
 
-contract EspressoSGXTEEVerifier is
-    IEspressoSGXTEEVerifier,
-    Ownable2Step,
-    TEEHelper
-{
+contract EspressoSGXTEEVerifier is IEspressoSGXTEEVerifier, Ownable2Step, TEEHelper {
     using BytesUtils for bytes;
     using EnumerableSet for EnumerableSet.AddressSet;
 
@@ -61,11 +47,7 @@ contract EspressoSGXTEEVerifier is
         @param reportDataHash The hash of the report data
         @param service an enum representing the service type to verify with a specific enclave hash mapping.
     */
-    function _verify(
-        bytes calldata rawQuote,
-        bytes32 reportDataHash,
-        ServiceType service
-    )
+    function _verify(bytes calldata rawQuote, bytes32 reportDataHash, ServiceType service)
         internal
         view
         onlySupportedServiceType(service)
@@ -81,7 +63,7 @@ contract EspressoSGXTEEVerifier is
 
         // Verify the quote
         //slither-disable-next-line unused-return
-        (bool success, ) = quoteVerifier.verifyQuote(header, rawQuote);
+        (bool success,) = quoteVerifier.verifyQuote(header, rawQuote);
         if (!success) {
             revert InvalidQuote();
         }
@@ -89,9 +71,7 @@ contract EspressoSGXTEEVerifier is
         // Parse enclave quote
         uint256 lastIndex = HEADER_LENGTH + ENCLAVE_REPORT_LENGTH;
         EnclaveReport memory localReport;
-        (success, localReport) = _parseEnclaveReport(
-            rawQuote[HEADER_LENGTH:lastIndex]
-        );
+        (success, localReport) = _parseEnclaveReport(rawQuote[HEADER_LENGTH:lastIndex]);
         if (!success) {
             revert FailedToParseEnclaveReport();
         }
@@ -104,9 +84,7 @@ contract EspressoSGXTEEVerifier is
 
         //  Verify that the reportDataHash if the hash signed by the TEE
         // We do not check the signature because `quoteVerifier.verifyQuote` already does that
-        if (
-            reportDataHash != bytes32(localReport.reportData.substring(0, 32))
-        ) {
+        if (reportDataHash != bytes32(localReport.reportData.substring(0, 32))) {
             revert InvalidReportDataHash();
         }
 
@@ -118,11 +96,10 @@ contract EspressoSGXTEEVerifier is
         @param attestation The attestation from the TEE
         @param data which the TEE has attested to
     */
-    function registerService(
-        bytes calldata attestation,
-        bytes calldata data,
-        ServiceType service
-    ) external onlySupportedServiceType(service) {
+    function registerService(bytes calldata attestation, bytes calldata data, ServiceType service)
+        external
+        onlySupportedServiceType(service)
+    {
         // Check that the data length is 20 bytes because an address is 20 bytes
         if (data.length != 20) {
             revert InvalidDataLength();
@@ -130,11 +107,7 @@ contract EspressoSGXTEEVerifier is
 
         bytes32 signerAddressHash = keccak256(data);
 
-        EnclaveReport memory localReport = _verify(
-            attestation,
-            signerAddressHash,
-            service
-        );
+        EnclaveReport memory localReport = _verify(attestation, signerAddressHash, service);
 
         if (localReport.reportData.length < 20) {
             revert ReportDataTooShort();
@@ -159,9 +132,11 @@ contract EspressoSGXTEEVerifier is
         @param rawQuote The raw quote in bytes
         @return header The parsed header
     */
-    function _parseQuoteHeader(
-        bytes calldata rawQuote
-    ) internal pure returns (Header memory header) {
+    function _parseQuoteHeader(bytes calldata rawQuote)
+        internal
+        pure
+        returns (Header memory header)
+    {
         header = Header({
             version: uint16(BELE.leBytesToBeUint(rawQuote[0:2])),
             attestationKeyType: bytes2(rawQuote[2:4]),
@@ -179,9 +154,11 @@ contract EspressoSGXTEEVerifier is
         @return success True if the enclave report was parsed successfully
         @return enclaveReport The parsed enclave report
     */
-    function _parseEnclaveReport(
-        bytes memory rawEnclaveReport
-    ) internal pure returns (bool success, EnclaveReport memory enclaveReport) {
+    function _parseEnclaveReport(bytes memory rawEnclaveReport)
+        internal
+        pure
+        returns (bool success, EnclaveReport memory enclaveReport)
+    {
         if (rawEnclaveReport.length != ENCLAVE_REPORT_LENGTH) {
             return (false, enclaveReport);
         }
@@ -193,12 +170,8 @@ contract EspressoSGXTEEVerifier is
         enclaveReport.reserved2 = bytes32(rawEnclaveReport.substring(96, 32));
         enclaveReport.mrSigner = bytes32(rawEnclaveReport.substring(128, 32));
         enclaveReport.reserved3 = rawEnclaveReport.substring(160, 96);
-        enclaveReport.isvProdId = uint16(
-            BELE.leBytesToBeUint(rawEnclaveReport.substring(256, 2))
-        );
-        enclaveReport.isvSvn = uint16(
-            BELE.leBytesToBeUint(rawEnclaveReport.substring(258, 2))
-        );
+        enclaveReport.isvProdId = uint16(BELE.leBytesToBeUint(rawEnclaveReport.substring(256, 2)));
+        enclaveReport.isvSvn = uint16(BELE.leBytesToBeUint(rawEnclaveReport.substring(258, 2)));
         enclaveReport.reserved4 = rawEnclaveReport.substring(260, 60);
         enclaveReport.reportData = rawEnclaveReport.substring(320, 64);
         success = true;

@@ -3,13 +3,9 @@ pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/access/Ownable2Step.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
-import {
-    EnumerableSet
-} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
+import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 
-import {
-    IEspressoNitroTEEVerifier
-} from "./interface/IEspressoNitroTEEVerifier.sol";
+import {IEspressoNitroTEEVerifier} from "./interface/IEspressoNitroTEEVerifier.sol";
 import {ServiceType, UnsupportedServiceType} from "./types/Types.sol";
 import {
     INitroEnclaveVerifier,
@@ -29,10 +25,7 @@ contract EspressoNitroTEEVerifier is IEspressoNitroTEEVerifier, TEEHelper {
     INitroEnclaveVerifier public _nitroEnclaveVerifier;
 
     constructor(INitroEnclaveVerifier nitroEnclaveVerifier) TEEHelper() {
-        require(
-            address(nitroEnclaveVerifier) != address(0),
-            "NitroEnclaveVerifier cannot be zero"
-        );
+        require(address(nitroEnclaveVerifier) != address(0), "NitroEnclaveVerifier cannot be zero");
         _nitroEnclaveVerifier = nitroEnclaveVerifier;
     }
 
@@ -43,11 +36,10 @@ contract EspressoNitroTEEVerifier is IEspressoNitroTEEVerifier, TEEHelper {
      * @param proofBytes The cryptographic proof bytes over attestation
      * @param service The service type (BatchPoster or CaffNode)
      */
-    function registerService(
-        bytes calldata output,
-        bytes calldata proofBytes,
-        ServiceType service
-    ) external onlySupportedServiceType(service) {
+    function registerService(bytes calldata output, bytes calldata proofBytes, ServiceType service)
+        external
+        onlySupportedServiceType(service)
+    {
         VerifierJournal memory journal = _nitroEnclaveVerifier.verify(
             output,
             // Currently only Succinct ZK coprocessor is supported
@@ -63,12 +55,8 @@ contract EspressoNitroTEEVerifier is IEspressoNitroTEEVerifier, TEEHelper {
         // check if the given hash has been registered in the contract by the owner
         // this allows us to verify that the registerSigner request is coming from a TEE
         // which is trusted
-        bytes32 pcr0Hash = keccak256(
-            abi.encodePacked(
-                journal.pcrs[0].value.first,
-                journal.pcrs[0].value.second
-            )
-        );
+        bytes32 pcr0Hash =
+            keccak256(abi.encodePacked(journal.pcrs[0].value.first, journal.pcrs[0].value.second));
 
         if (!registeredEnclaveHashes[service][pcr0Hash]) {
             revert InvalidEnclaveHash(pcr0Hash, service);
@@ -76,9 +64,7 @@ contract EspressoNitroTEEVerifier is IEspressoNitroTEEVerifier, TEEHelper {
 
         // The publicKey's first byte 0x04 byte followed which only determine if the public key is compressed or not.
         // so we ignore the first byte.
-        bytes memory publicKeyWithoutPrefix = new bytes(
-            journal.publicKey.length - 1
-        );
+        bytes memory publicKeyWithoutPrefix = new bytes(journal.publicKey.length - 1);
         for (uint256 i = 1; i < journal.publicKey.length; i++) {
             publicKeyWithoutPrefix[i - 1] = journal.publicKey[i];
         }
@@ -100,9 +86,7 @@ contract EspressoNitroTEEVerifier is IEspressoNitroTEEVerifier, TEEHelper {
      * @notice This function sets the NitroEnclaveVerifier contract address
      * @param nitroEnclaveVerifier The address of the NitroEnclaveVerifier contract
      */
-    function setNitroEnclaveVerifier(
-        address nitroEnclaveVerifier
-    ) external onlyOwner {
+    function setNitroEnclaveVerifier(address nitroEnclaveVerifier) external onlyOwner {
         if (nitroEnclaveVerifier == address(0)) {
             revert InvalidNitroEnclaveVerifierAddress();
         }

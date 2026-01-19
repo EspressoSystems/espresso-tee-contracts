@@ -15,29 +15,19 @@ interface ITEEHelper {
     error InvalidSignerAddress();
 
     // Emitted when an enclave hash is deleted
-    event DeletedEnclaveHash(
-        bytes32 indexed enclaveHash,
-        ServiceType indexed service
-    );
+    event DeletedEnclaveHash(bytes32 indexed enclaveHash, ServiceType indexed service);
 
     // Emitted when a registered service is deleted
-    event DeletedRegisteredService(
-        address indexed signer,
-        ServiceType indexed service
-    );
+    event DeletedRegisteredService(address indexed signer, ServiceType indexed service);
 
     // Emitted when a service is registered
     event ServiceRegistered(
-        address indexed signer,
-        bytes32 indexed enclaveHash,
-        ServiceType indexed service
+        address indexed signer, bytes32 indexed enclaveHash, ServiceType indexed service
     );
 
     // Emitted when an enclave hash is set
     event EnclaveHashSet(
-        bytes32 indexed enclaveHash,
-        bool indexed valid,
-        ServiceType indexed service
+        bytes32 indexed enclaveHash, bool indexed valid, ServiceType indexed service
     );
 
     /**
@@ -49,11 +39,7 @@ interface ITEEHelper {
      * @param valid Whether the enclave hash is valid or not
      * @param service The service type (BatchPoster or CaffNode)
      */
-    function setEnclaveHash(
-        bytes32 enclaveHash,
-        bool valid,
-        ServiceType service
-    ) external;
+    function setEnclaveHash(bytes32 enclaveHash, bool valid, ServiceType service) external;
 
     /*
      * @notice This function retrieves whether an enclave hash is registered or not
@@ -61,10 +47,10 @@ interface ITEEHelper {
      * @param service The service type (BatchPoster or CaffNode)
      * @return bool True if the enclave hash is registered, false otherwise
      */
-    function registeredEnclaveHash(
-        bytes32 enclaveHash,
-        ServiceType service
-    ) external view returns (bool);
+    function registeredEnclaveHash(bytes32 enclaveHash, ServiceType service)
+        external
+        view
+        returns (bool);
 
     /*
      * @notice This function retrieves whether a signer is registered or not
@@ -72,10 +58,7 @@ interface ITEEHelper {
      * @param service The service type (BatchPoster or CaffNode)
      * @return bool True if the signer is registered, false otherwise
      */
-    function registeredSigner(
-        address signer,
-        ServiceType service
-    ) external view returns (bool);
+    function registeredSigner(address signer, ServiceType service) external view returns (bool);
 
     /*
      * @notice This function retrieves the list of signers registered for a given enclave hash
@@ -83,18 +66,15 @@ interface ITEEHelper {
      * @param service The service type (BatchPoster or CaffNode)
      * @return address[] The list of signers registered for the given enclave hash
      */
-    function enclaveHashSigners(
-        bytes32 enclaveHash,
-        ServiceType service
-    ) external view returns (address[] memory);
+    function enclaveHashSigners(bytes32 enclaveHash, ServiceType service)
+        external
+        view
+        returns (address[] memory);
 
     /*
      * @notice This function allows the owner to delete registered enclave hashes from the list of valid enclave hashes
      * @param enclaveHashes The array of enclave hashes to delete
      * @param service The service type (BatchPoster or CaffNode)
      */
-    function deleteEnclaveHashes(
-        bytes32[] memory enclaveHashes,
-        ServiceType service
-    ) external;
+    function deleteEnclaveHashes(bytes32[] memory enclaveHashes, ServiceType service) external;
 }

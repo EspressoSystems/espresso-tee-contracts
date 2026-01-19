@@ -9,8 +9,7 @@ import {ServiceType} from "../types/Types.sol";
  *         but still requires signers to be registered before they can be used.
  */
 contract EspressoNitroTEEVerifierMock {
-    mapping(ServiceType => mapping(bytes32 => bool))
-        public registeredEnclaveHash;
+    mapping(ServiceType => mapping(bytes32 => bool)) public registeredEnclaveHash;
     mapping(address => bool) public registeredSigner;
 
     constructor() {
@@ -22,11 +21,9 @@ contract EspressoNitroTEEVerifierMock {
      * @param output The public output (ignored in mock, but we extract signer from it)
      * @param proofBytes The proof bytes (ignored in mock)
      */
-    function registerSigner(
-        bytes calldata output,
-        bytes calldata proofBytes,
-        ServiceType service
-    ) external {
+    function registerSigner(bytes calldata output, bytes calldata proofBytes, ServiceType service)
+        external
+    {
         // In mock, we expect the signer address to be passed in the output parameter
         // as the first 20 bytes for simplicity
         require(output.length >= 20, "Output must contain signer address");
@@ -39,11 +36,7 @@ contract EspressoNitroTEEVerifierMock {
         }
     }
 
-    function setEnclaveHash(
-        bytes32 enclaveHash,
-        bool valid,
-        ServiceType service
-    ) external {
+    function setEnclaveHash(bytes32 enclaveHash, bool valid, ServiceType service) external {
         registeredEnclaveHash[service][enclaveHash] = valid;
     }
 }

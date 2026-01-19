@@ -3,12 +3,8 @@ pragma solidity ^0.8.0;
 
 import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import {IEspressoTEEVerifier} from "../interface/IEspressoTEEVerifier.sol";
-import {
-    IEspressoSGXTEEVerifier
-} from "../interface/IEspressoSGXTEEVerifier.sol";
-import {
-    IEspressoNitroTEEVerifier
-} from "../interface/IEspressoNitroTEEVerifier.sol";
+import {IEspressoSGXTEEVerifier} from "../interface/IEspressoSGXTEEVerifier.sol";
+import {IEspressoNitroTEEVerifier} from "../interface/IEspressoNitroTEEVerifier.sol";
 import {ServiceType} from "../types/Types.sol";
 
 /**
@@ -76,11 +72,7 @@ contract EspressoTEEVerifierMock {
         }
 
         if (teeType == IEspressoTEEVerifier.TeeType.NITRO) {
-            espressoNitroTEEVerifier.registerService(
-                attestation,
-                data,
-                service
-            );
+            espressoNitroTEEVerifier.registerService(attestation, data, service);
             return;
         }
         revert IEspressoTEEVerifier.UnsupportedTeeType();
@@ -117,32 +109,22 @@ contract EspressoTEEVerifierMock {
         ServiceType service
     ) external view returns (bool) {
         if (teeType == IEspressoTEEVerifier.TeeType.SGX) {
-            return
-                espressoSGXTEEVerifier.registeredEnclaveHash(
-                    enclaveHash,
-                    service
-                );
+            return espressoSGXTEEVerifier.registeredEnclaveHash(enclaveHash, service);
         }
 
         if (teeType == IEspressoTEEVerifier.TeeType.NITRO) {
-            return
-                espressoNitroTEEVerifier.registeredEnclaveHash(
-                    enclaveHash,
-                    service
-                );
+            return espressoNitroTEEVerifier.registeredEnclaveHash(enclaveHash, service);
         }
         revert IEspressoTEEVerifier.UnsupportedTeeType();
     }
 
-    function setEspressoSGXTEEVerifier(
-        IEspressoSGXTEEVerifier _espressoSGXTEEVerifier
-    ) external {
+    function setEspressoSGXTEEVerifier(IEspressoSGXTEEVerifier _espressoSGXTEEVerifier) external {
         espressoSGXTEEVerifier = _espressoSGXTEEVerifier;
     }
 
-    function setEspressoNitroTEEVerifier(
-        IEspressoNitroTEEVerifier _espressoNitroTEEVerifier
-    ) external {
+    function setEspressoNitroTEEVerifier(IEspressoNitroTEEVerifier _espressoNitroTEEVerifier)
+        external
+    {
         espressoNitroTEEVerifier = _espressoNitroTEEVerifier;
     }
 }

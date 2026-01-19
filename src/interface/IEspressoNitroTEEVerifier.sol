@@ -21,16 +21,11 @@ interface IEspressoNitroTEEVerifier is ITEEHelper {
      * @param proofBytes The cryptographic proof bytes over attestation
      * @param service The service type (BatchPoster or CaffNode)
      */
-    function registerService(
-        bytes calldata output,
-        bytes calldata proofBytes,
-        ServiceType service
-    ) external;
+    function registerService(bytes calldata output, bytes calldata proofBytes, ServiceType service)
+        external;
 
     /*
      * @notice This function sets the NitroEnclaveVerifier contract address
      */
-    function setNitroEnclaveVerifier(
-        address nitroEnclaveVerifierAddress
-    ) external;
+    function setNitroEnclaveVerifier(address nitroEnclaveVerifierAddress) external;
 }

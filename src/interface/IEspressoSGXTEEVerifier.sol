@@ -1,12 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {
-    Header
-} from "@automata-network/dcap-attestation/contracts/types/CommonStruct.sol";
-import {
-    EnclaveReport
-} from "@automata-network/dcap-attestation/contracts/types/V3Structs.sol";
+import {Header} from "@automata-network/dcap-attestation/contracts/types/CommonStruct.sol";
+import {EnclaveReport} from "@automata-network/dcap-attestation/contracts/types/V3Structs.sol";
 import "../types/Types.sol";
 import "./ITEEHelper.sol";
 
@@ -31,11 +27,8 @@ interface IEspressoSGXTEEVerifier is ITEEHelper {
     /*
      * @notice This function is for registering Intel SGX TEE Batch Posters and is a helper function for the EspressoTEEVerifier
      */
-    function registerService(
-        bytes calldata attestation,
-        bytes calldata data,
-        ServiceType service
-    ) external;
+    function registerService(bytes calldata attestation, bytes calldata data, ServiceType service)
+        external;
 
     /*
      * @notice This function sets the QuoteVerifier contract address
