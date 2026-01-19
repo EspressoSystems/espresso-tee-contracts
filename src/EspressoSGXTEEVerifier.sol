@@ -120,6 +120,7 @@ contract EspressoSGXTEEVerifier is IEspressoSGXTEEVerifier, Ownable2Step, TEEVer
         // Mark the signer as registered
         if (!registeredSigners[service][signer]) {
             registeredSigners[service][signer] = true;
+            enclaveHashToSigner[service][localReport.mrEnclave].add(signer);
             emit ServiceRegistered(signer, localReport.mrEnclave, service);
         }
     }

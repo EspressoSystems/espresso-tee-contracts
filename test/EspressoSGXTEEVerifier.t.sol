@@ -29,6 +29,7 @@ contract EspressoSGXTEEVerifierTest is Test {
         vm.startPrank(adminTEE);
         espressoSGXTEEVerifier = new EspressoSGXTEEVerifier(v3QuoteVerifier);
         espressoSGXTEEVerifier.setEnclaveHash(enclaveHash, true, ServiceType.BatchPoster);
+        espressoSGXTEEVerifier.setEnclaveHash(enclaveHash, true, ServiceType.CaffNode);
         vm.stopPrank();
     }
 
@@ -53,6 +54,20 @@ contract EspressoSGXTEEVerifierTest is Test {
         vm.stopPrank();
     }
 
+    function testRegisterCaffNode() public {
+        vm.startPrank(adminTEE);
+        string memory quotePath = "/test/configs/attestation.bin";
+        string memory inputFile = string.concat(vm.projectRoot(), quotePath);
+        bytes memory sampleQuote = vm.readFileBinary(inputFile);
+
+        address caffNodeAddress = address(0xe2148eE53c0755215Df69b2616E552154EdC584f);
+
+        bytes memory data = abi.encodePacked(caffNodeAddress);
+
+        espressoSGXTEEVerifier.registerService(sampleQuote, data, ServiceType.CaffNode);
+        vm.stopPrank();
+    }
+
     function testRegisterBatchPosterInvalidQuote() public {
         vm.startPrank(adminTEE);
         string memory quotePath = "/test/configs/invalid_quote.bin";
@@ -65,6 +80,20 @@ contract EspressoSGXTEEVerifierTest is Test {
 
         vm.expectRevert(IEspressoSGXTEEVerifier.InvalidQuote.selector);
         espressoSGXTEEVerifier.registerService(sampleQuote, data, ServiceType.BatchPoster);
+    }
+
+    function testRegisterCaffNodeInvalidQuote() public {
+        vm.startPrank(adminTEE);
+        string memory quotePath = "/test/configs/invalid_quote.bin";
+        string memory inputFile = string.concat(vm.projectRoot(), quotePath);
+        bytes memory sampleQuote = vm.readFileBinary(inputFile);
+
+        address caffNodeAddress = address(0xe2148eE53c0755215Df69b2616E552154EdC584f);
+
+        bytes memory data = abi.encodePacked(caffNodeAddress);
+
+        vm.expectRevert(IEspressoSGXTEEVerifier.InvalidQuote.selector);
+        espressoSGXTEEVerifier.registerService(sampleQuote, data, ServiceType.CaffNode);
     }
 
     function testRegisterBatchPosterInvalidAddress() public {
@@ -81,6 +110,21 @@ contract EspressoSGXTEEVerifierTest is Test {
         espressoSGXTEEVerifier.registerService(sampleQuote, data, ServiceType.BatchPoster);
     }
 
+    function testRegisterCaffNodeInvalidAddress() public {
+        vm.startPrank(adminTEE);
+        string memory quotePath = "/test/configs/attestation.bin";
+        string memory inputFile = string.concat(vm.projectRoot(), quotePath);
+        bytes memory sampleQuote = vm.readFileBinary(inputFile);
+
+        address caffNodeAddress = address(0x4C91660a37d613E1Bd278F9Db882Cc5ED2549072);
+
+        bytes memory data = abi.encodePacked(caffNodeAddress);
+
+        vm.expectRevert(IEspressoSGXTEEVerifier.InvalidReportDataHash.selector);
+        espressoSGXTEEVerifier.registerService(sampleQuote, data, ServiceType.CaffNode);
+        vm.stopPrank();
+    }
+
     function testRegisterBatchPosterInvalidDataLength() public {
         vm.startPrank(adminTEE);
         string memory quotePath = "/test/configs/attestation.bin";
@@ -94,6 +138,22 @@ contract EspressoSGXTEEVerifierTest is Test {
 
         vm.expectRevert(IEspressoSGXTEEVerifier.InvalidDataLength.selector);
         espressoSGXTEEVerifier.registerService(sampleQuote, data, ServiceType.BatchPoster);
+    }
+
+    function testRegisterCaffNodeInvalidDataLength() public {
+        vm.startPrank(adminTEE);
+        string memory quotePath = "/test/configs/attestation.bin";
+        string memory inputFile = string.concat(vm.projectRoot(), quotePath);
+        bytes memory sampleQuote = vm.readFileBinary(inputFile);
+
+        address caffNodeAddress = address(0xe2148eE53c0755215Df69b2616E552154EdC584f);
+
+        // encode adds padding and the length should become incorrect
+        bytes memory data = abi.encode(caffNodeAddress);
+
+        vm.expectRevert(IEspressoSGXTEEVerifier.InvalidDataLength.selector);
+        espressoSGXTEEVerifier.registerService(sampleQuote, data, ServiceType.CaffNode);
+        vm.stopPrank();
     }
 
     function testDeleteRegisteredSigner() public {
@@ -125,6 +185,61 @@ contract EspressoSGXTEEVerifierTest is Test {
         vm.expectRevert("Ownable: caller is not the owner");
 
         espressoSGXTEEVerifier.deleteSigners(batchPosters, ServiceType.BatchPoster);
+        vm.stopPrank();
+
+        // Similarly for CaffNode
+        vm.startPrank(adminTEE);
+        address caffNodeAddress = address(0xe2148eE53c0755215Df69b2616E552154EdC584f);
+
+        bytes memory dataCaff = abi.encodePacked(caffNodeAddress);
+        espressoSGXTEEVerifier.registerService(sampleQuote, dataCaff, ServiceType.CaffNode);
+        vm.stopPrank();
+
+        vm.startPrank(adminTEE);
+        address[] memory caffNodes = new address[](1);
+        caffNodes[0] = caffNodeAddress;
+        espressoSGXTEEVerifier.deleteSigners(caffNodes, ServiceType.CaffNode);
+        assertEq(
+            espressoSGXTEEVerifier.registeredSigners(ServiceType.CaffNode, caffNodeAddress), false
+        );
+        vm.stopPrank();
+
+        // Check that only owner can delete the signer
+        vm.startPrank(fakeAddress);
+        vm.expectRevert("Ownable: caller is not the owner");
+        espressoSGXTEEVerifier.deleteSigners(caffNodes, ServiceType.CaffNode);
+        vm.stopPrank();
+    }
+
+    function testEnclaveHashSignersAndDeleteEnclaveHashes() public {
+        vm.startPrank(adminTEE);
+        string memory quotePath = "/test/configs/attestation.bin";
+        string memory inputFile = string.concat(vm.projectRoot(), quotePath);
+        bytes memory sampleQuote = vm.readFileBinary(inputFile);
+
+        address batchPosterAddress = address(0xe2148eE53c0755215Df69b2616E552154EdC584f);
+        bytes memory data = abi.encodePacked(batchPosterAddress);
+        espressoSGXTEEVerifier.registerService(sampleQuote, data, ServiceType.BatchPoster);
+
+        address[] memory signers =
+            espressoSGXTEEVerifier.enclaveHashSigners(enclaveHash, ServiceType.BatchPoster);
+        assertEq(signers.length, 1);
+        assertEq(signers[0], batchPosterAddress);
+
+        bytes32[] memory enclaveHashes = new bytes32[](1);
+        enclaveHashes[0] = enclaveHash;
+        espressoSGXTEEVerifier.deleteEnclaveHashes(enclaveHashes, ServiceType.BatchPoster);
+        assertEq(
+            espressoSGXTEEVerifier.registeredEnclaveHashes(ServiceType.BatchPoster, enclaveHash),
+            false
+        );
+        assertEq(
+            espressoSGXTEEVerifier.registeredSigners(ServiceType.BatchPoster, batchPosterAddress),
+            false
+        );
+        address[] memory signersAfter =
+            espressoSGXTEEVerifier.enclaveHashSigners(enclaveHash, ServiceType.BatchPoster);
+        assertEq(signersAfter.length, 0);
         vm.stopPrank();
     }
 
@@ -239,6 +354,23 @@ contract EspressoSGXTEEVerifierTest is Test {
         vm.startPrank(fakeAddress);
         vm.expectRevert("Ownable: caller is not the owner");
         espressoSGXTEEVerifier.setEnclaveHash(newMrEnclave, true, ServiceType.BatchPoster);
+        vm.stopPrank();
+
+        vm.startPrank(adminTEE);
+        espressoSGXTEEVerifier.setEnclaveHash(newMrEnclave, true, ServiceType.CaffNode);
+        assertEq(
+            espressoSGXTEEVerifier.registeredEnclaveHashes(ServiceType.CaffNode, newMrEnclave), true
+        );
+        espressoSGXTEEVerifier.setEnclaveHash(newMrEnclave, false, ServiceType.CaffNode);
+        assertEq(
+            espressoSGXTEEVerifier.registeredEnclaveHashes(ServiceType.CaffNode, newMrEnclave),
+            false
+        );
+        vm.stopPrank();
+        // Check that only owner can set the hash
+        vm.startPrank(fakeAddress);
+        vm.expectRevert("Ownable: caller is not the owner");
+        espressoSGXTEEVerifier.setEnclaveHash(newMrEnclave, true, ServiceType.CaffNode);
         vm.stopPrank();
     }
 

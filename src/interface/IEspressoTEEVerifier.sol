@@ -36,7 +36,7 @@ interface IEspressoTEEVerifier {
     ) external view returns (bool);
 
     // Function to register a service which has been attested by a TEE or Attestation Verifier
-    // This function can has succeeded if it does not revert.
+    // This function has succeeded if it does not revert.
     function registerService(
         bytes calldata verificationData,
         bytes calldata data,
@@ -50,10 +50,30 @@ interface IEspressoTEEVerifier {
         view
         returns (bool);
 
+    /**
+     * @notice This function retrieves whether an enclave hash is registered or not
+     * @param enclaveHash The hash of the enclave
+     * @param teeType The type of TEE
+     * @param serviceType The service type (BatchPoster or CaffNode)
+     * @return bool True if the enclave hash is registered, false otherwise
+     */
     function registeredEnclaveHashes(bytes32 enclaveHash, TeeType teeType, ServiceType serviceType)
         external
         view
         returns (bool);
+
+    /**
+     * @notice This function retrieves the list of signers registered for a given enclave hash
+     * @param enclaveHash The hash of the enclave
+     * @param teeType The type of TEE
+     * @param serviceType The service type (BatchPoster or CaffNode)
+     * @return address[] The list of signers registered for the given enclave hash
+     *
+     */
+    function enclaveHashSigners(bytes32 enclaveHash, TeeType teeType, ServiceType serviceType)
+        external
+        view
+        returns (address[] memory);
 
     // Function to set the EspressoSGXTEEVerifier
     function setEspressoSGXTEEVerifier(IEspressoSGXTEEVerifier _espressoSGXTEEVerifier) external;
