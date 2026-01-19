@@ -2,7 +2,6 @@
 pragma solidity 0.8.25;
 
 import {Script} from "forge-std/Script.sol";
-import {console2} from "forge-std/console2.sol";
 
 import {Ownable2Step} from "@openzeppelin/contracts/access/Ownable2Step.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
@@ -70,8 +69,6 @@ contract MultiSigTransfer is Script {
         bytes32 stackHash = keccak256(bytes(stack));
         // try to parse owner address based on stack and chain ID
         if (stackHash == NitroStack) {
-            console2.logAddress(NitroMultiSigWallets[block.chainid]);
-            console2.logUint(block.chainid);
             newOwner = NitroMultiSigWallets[block.chainid];
         } else if (stackHash == OptimismStack){
             newOwner = OptimismMultiSigWallets[block.chainid];
