@@ -20,7 +20,7 @@ contract EspressoTEEVerifierMock {
         CaffNode
     }
 
-    mapping(address => bool) public registeredServicesMap;
+    mapping(address => bool) public registeredSignersMap;
 
     constructor() {}
 
@@ -43,14 +43,14 @@ contract EspressoTEEVerifierMock {
         require(data.length == 20, "Invalid data length");
 
         address signer = address(uint160(bytes20(data[:20])));
-        registeredServicesMap[signer] = true;
+        registeredSignersMap[signer] = true;
     }
 
-    function registeredServices(address signer, TeeType teeType, ServiceType service)
+    function registeredSigners(address signer, TeeType teeType, ServiceType service)
         external
         view
         returns (bool)
     {
-        return registeredServicesMap[signer];
+        return registeredSignersMap[signer];
     }
 }

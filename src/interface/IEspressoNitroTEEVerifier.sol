@@ -5,67 +5,27 @@ import {
     VerificationResult
 } from "aws-nitro-enclave-attestation/interfaces/INitroEnclaveVerifier.sol";
 import {ServiceType} from "../types/Types.sol";
+import "./ITEEVerifier.sol";
 
-interface IEspressoNitroTEEVerifier {
-    // This error is thrown when the PCR0 values don't match
-    error InvalidAWSEnclaveHash();
+interface IEspressoNitroTEEVerifier is ITEEVerifier {
     // This error is thrown when the ZK proof verification fails
     error VerificationFailed(VerificationResult result);
     // This error is thrown when the NitroEnclaveVerifier address is invalid
     error InvalidNitroEnclaveVerifierAddress();
-
-    event AWSServiceEnclaveHashSet(
-        bytes32 indexed enclaveHash,
-        bool indexed valid,
-        ServiceType indexed service
-    );
-    event AWSNitroServiceRegistered(
-        address indexed signer,
-        bytes32 indexed enclaveHash,
-        ServiceType indexed service
-    );
-    event DeletedAWSRegisteredService(
-        address indexed signer,
-        ServiceType indexed service
-    );
     event NitroEnclaveVerifierSet(address nitroEnclaveVerifierAddress);
 
     /*
-     * @notice This function is for registering AWS Nitro TEE Caff Nodes and is a helper function for the EspressoTEEVerifier
+     * @notice This function registers a new Service by verifying an attestation from the AWS Nitro Enclave (TEE)
+     * The signer is not the caller of the function but the address which was generated inside the TEE.
+     * @param output The public output of the ZK proof
+     * @param proofBytes The cryptographic proof bytes over attestation
+     * @param service The service type (BatchPoster or CaffNode)
      */
-    function registerCaffNode(
-        bytes calldata output,
-        bytes calldata proofBytes
-    ) external;
+    function registerService(bytes calldata output, bytes calldata proofBytes, ServiceType service)
+        external;
 
-    /*
-     * @notice This function is for registering AWS Nitro Batch Posters and is a helper function for the EspressoTEEVerifier
-     */
-    function registerBatchPoster(
-        bytes calldata output,
-        bytes calldata proofBytes
-    ) external;
-
-    /*
-     * @notice This function is responsible for setting valid enclave hashes for AWS Nitro TEE services
-     */
-    function setEnclaveHash(
-        bytes32 enclaveHash,
-        bool valid,
-        ServiceType service
-    ) external;
-    /*
-     * @notice This function is responsible for removing registered addresses from the list of valid Caff Nodes
-     */
-    function deleteRegisteredCaffNodes(address[] memory signers) external;
-    /*
-     * @notice This function is responsible for removing registered addresses from the list of valid Batch Posters
-     */
-    function deleteRegisteredBatchPosters(address[] memory signers) external;
     /*
      * @notice This function sets the NitroEnclaveVerifier contract address
      */
-    function setNitroEnclaveVerifier(
-        address nitroEnclaveVerifierAddress
-    ) external;
+    function setNitroEnclaveVerifier(address nitroEnclaveVerifierAddress) external;
 }
