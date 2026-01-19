@@ -6,7 +6,7 @@ import "@openzeppelin/contracts/access/Ownable2Step.sol";
 import {IEspressoSGXTEEVerifier} from "./interface/IEspressoSGXTEEVerifier.sol";
 import {IEspressoNitroTEEVerifier} from "./interface/IEspressoNitroTEEVerifier.sol";
 import {IEspressoTEEVerifier} from "./interface/IEspressoTEEVerifier.sol";
-import {ServiceType, Unimplemented, UnsupportedServiceType} from "./types/Types.sol";
+import {ServiceType, UnsupportedServiceType} from "./types/Types.sol";
 
 /**
  * @title EspressoTEEVerifier
@@ -28,7 +28,7 @@ contract EspressoTEEVerifier is Ownable2Step, IEspressoTEEVerifier {
 
     // Checks if the service type is supported
     modifier onlySupportedServiceType(ServiceType service) {
-        if (uint8(service) > uint8(ServiceType.CaffNode)) {
+        if (uint8(service) > uint8(type(ServiceType).max)) {
             revert UnsupportedServiceType();
         }
         _;
@@ -36,7 +36,7 @@ contract EspressoTEEVerifier is Ownable2Step, IEspressoTEEVerifier {
 
     modifier onlySupportedTEE(TeeType teeType) {
         if (uint8(teeType) > uint8(TeeType.NITRO)) {
-            revert UnsupportedServiceType();
+            revert UnsupportedTeeType();
         }
         _;
     }
@@ -56,17 +56,22 @@ contract EspressoTEEVerifier is Ownable2Step, IEspressoTEEVerifier {
     ) external view onlySupportedTEE(teeType) onlySupportedServiceType(service) returns (bool) {
         address signer = ECDSA.recover(userDataHash, signature);
         if (teeType == TeeType.SGX) {
-            return espressoSGXTEEVerifier.registeredSigner(signer, service);
+            if (!espressoSGXTEEVerifier.registeredService(signer, service)) {
+                revert IEspressoTEEVerifier.InvalidSignature();
+            }
         } else {
-            return espressoNitroTEEVerifier.registeredSigner(signer, service);
+            if (!espressoNitroTEEVerifier.registeredService(signer, service)) {
+                revert IEspressoTEEVerifier.InvalidSignature();
+            }
         }
+        return true;
     }
 
     /**
      *     @notice Register a new signer by verifying a quote from the TEE
      *     @param verificationData The data produced by the TEE for verifying it's authenticity.
      *     @param data when registering a signer, data can be passed for each TEE type
-     *     which can be any additiona data that is required for registering a signer with
+     *     which can be any additional data that is required for registering a signer with
      *     that particular tee type
      *     @param teeType The type of TEE
      *     @param service The type of service being registered potentially affects the behavior of registration.
@@ -91,7 +96,7 @@ contract EspressoTEEVerifier is Ownable2Step, IEspressoTEEVerifier {
      *     @param signer The address of the signer
      *     @param teeType The type of TEE
      */
-    function registeredSigner(address signer, TeeType teeType, ServiceType service)
+    function registeredService(address signer, TeeType teeType, ServiceType service)
         external
         view
         onlySupportedTEE(teeType)
@@ -99,9 +104,9 @@ contract EspressoTEEVerifier is Ownable2Step, IEspressoTEEVerifier {
         returns (bool)
     {
         if (teeType == TeeType.SGX) {
-            return espressoSGXTEEVerifier.registeredSigner(signer, service);
+            return espressoSGXTEEVerifier.registeredService(signer, service);
         } else {
-            return espressoNitroTEEVerifier.registeredSigner(signer, service);
+            return espressoNitroTEEVerifier.registeredService(signer, service);
         }
     }
 

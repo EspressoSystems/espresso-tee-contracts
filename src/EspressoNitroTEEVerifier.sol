@@ -75,8 +75,8 @@ contract EspressoNitroTEEVerifier is IEspressoNitroTEEVerifier, TEEHelper {
         address enclaveAddress = address(uint160(uint256(publicKeyHash)));
 
         // Mark the signer as registered
-        if (!registeredSigners[service][enclaveAddress]) {
-            registeredSigners[service][enclaveAddress] = true;
+        if (!registeredServices[service][enclaveAddress]) {
+            registeredServices[service][enclaveAddress] = true;
             // slither-disable-next-line unused-return
             enclaveHashToSigner[service][pcr0Hash].add(enclaveAddress);
             emit ServiceRegistered(enclaveAddress, pcr0Hash, service);

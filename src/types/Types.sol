@@ -11,8 +11,5 @@ enum ServiceType {
     CaffNode
 }
 
-// Error types used across any Espresso(*)TEEVerifier contracts
-error Unimplemented();
-
 //Error representing an unsupported value being provided for a ServiceType parameter
 error UnsupportedServiceType();

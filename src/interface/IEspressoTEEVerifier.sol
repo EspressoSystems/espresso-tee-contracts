@@ -45,7 +45,7 @@ interface IEspressoTEEVerifier {
     ) external;
 
     // Function to retrieve whether a service is registered or not
-    function registeredSigner(address signer, TeeType teeType, ServiceType serviceType)
+    function registeredService(address signer, TeeType teeType, ServiceType serviceType)
         external
         view
         returns (bool);

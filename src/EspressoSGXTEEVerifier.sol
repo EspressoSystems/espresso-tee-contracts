@@ -120,8 +120,8 @@ contract EspressoSGXTEEVerifier is IEspressoSGXTEEVerifier, Ownable2Step, TEEHel
             revert InvalidSignerAddress(); // Custom revert if the address is invalid
         }
         // Mark the signer as registered
-        if (!registeredSigners[service][signer]) {
-            registeredSigners[service][signer] = true;
+        if (!registeredServices[service][signer]) {
+            registeredServices[service][signer] = true;
             // slither-disable-next-line unused-return
             enclaveHashToSigner[service][localReport.mrEnclave].add(signer);
             emit ServiceRegistered(signer, localReport.mrEnclave, service);

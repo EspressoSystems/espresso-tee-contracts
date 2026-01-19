@@ -180,7 +180,7 @@ contract EspressoNitroTEEVerifierTest is Test {
         espressoNitroTEEVerifier.registerService(output, proofBytes, ServiceType.BatchPoster);
 
         address signer = 0xF8463E0aF00C1910402D2A51B3a8CecD0dC1c3fE;
-        assertEq(espressoNitroTEEVerifier.registeredSigner(signer, ServiceType.BatchPoster), true);
+        assertEq(espressoNitroTEEVerifier.registeredService(signer, ServiceType.BatchPoster), true);
 
         // start with incorrect admin address
         vm.stopPrank();
@@ -198,7 +198,7 @@ contract EspressoNitroTEEVerifierTest is Test {
 
         // delete and verify signer address is gone
         espressoNitroTEEVerifier.deleteEnclaveHashes(enclaveHashes, ServiceType.BatchPoster);
-        assertEq(espressoNitroTEEVerifier.registeredSigner(signer, ServiceType.BatchPoster), false);
+        assertEq(espressoNitroTEEVerifier.registeredService(signer, ServiceType.BatchPoster), false);
         assertEq(
             espressoNitroTEEVerifier.registeredEnclaveHashes(ServiceType.BatchPoster, pcr0Hash),
             false
@@ -222,13 +222,13 @@ contract EspressoNitroTEEVerifierTest is Test {
         espressoNitroTEEVerifier.registerService(journal, onchain, ServiceType.CaffNode);
 
         address signer = 0xF8463E0aF00C1910402D2A51B3a8CecD0dC1c3fE;
-        assertEq(espressoNitroTEEVerifier.registeredSigner(signer, ServiceType.CaffNode), true);
+        assertEq(espressoNitroTEEVerifier.registeredService(signer, ServiceType.CaffNode), true);
 
         // delete and verify signer address is gone
         bytes32[] memory enclaveHashes = new bytes32[](1);
         enclaveHashes[0] = pcr0Hash;
         espressoNitroTEEVerifier.deleteEnclaveHashes(enclaveHashes, ServiceType.CaffNode);
-        assertEq(espressoNitroTEEVerifier.registeredSigner(signer, ServiceType.CaffNode), false);
+        assertEq(espressoNitroTEEVerifier.registeredService(signer, ServiceType.CaffNode), false);
         assertEq(
             espressoNitroTEEVerifier.registeredEnclaveHashes(ServiceType.CaffNode, pcr0Hash), false
         );
@@ -258,7 +258,7 @@ contract EspressoNitroTEEVerifierTest is Test {
             espressoNitroTEEVerifier.registeredEnclaveHashes(ServiceType.BatchPoster, pcr0Hash),
             false
         );
-        assertEq(espressoNitroTEEVerifier.registeredSigner(signer, ServiceType.BatchPoster), false);
+        assertEq(espressoNitroTEEVerifier.registeredService(signer, ServiceType.BatchPoster), false);
         address[] memory signersAfter =
             espressoNitroTEEVerifier.enclaveHashSigners(pcr0Hash, ServiceType.BatchPoster);
         assertEq(signersAfter.length, 0);

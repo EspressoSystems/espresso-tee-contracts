@@ -38,8 +38,7 @@ contract EspressoTEEVerifierTest is Test {
         espressoNitroTEEVerifier = new EspressoNitroTEEVerifier(
             INitroEnclaveVerifier(0x2D7fbBAD6792698Ba92e67b7e180f8010B9Ec788)
         );
-        espressoSGXTEEVerifier.setEnclaveHash(enclaveHash, true, ServiceType.BatchPoster);
-        espressoNitroTEEVerifier.setEnclaveHash(pcr0Hash, true, ServiceType.BatchPoster);
+
         espressoTEEVerifier =
             new EspressoTEEVerifier(espressoSGXTEEVerifier, espressoNitroTEEVerifier);
         // Register enclave hashes used by bundled fixtures
@@ -146,7 +145,7 @@ contract EspressoTEEVerifierTest is Test {
         );
     }
 
-    function testSGXregisteredSigners() public {
+    function testSGXRegisteredSigners() public {
         string memory quotePath = "/test/configs/attestation.bin";
         string memory inputFile = string.concat(vm.projectRoot(), quotePath);
         bytes memory sampleQuote = vm.readFileBinary(inputFile);
@@ -157,7 +156,7 @@ contract EspressoTEEVerifierTest is Test {
         );
 
         assertEq(
-            espressoTEEVerifier.registeredSigner(
+            espressoTEEVerifier.registeredService(
                 batchPosterAddress, IEspressoTEEVerifier.TeeType.SGX, ServiceType.BatchPoster
             ),
             true
@@ -166,7 +165,7 @@ contract EspressoTEEVerifierTest is Test {
         // if the registration process differs between the caff node and the batcher in the
         // future, we will need to update this test.
         assertEq(
-            espressoTEEVerifier.registeredSigner(
+            espressoTEEVerifier.registeredService(
                 batchPosterAddress, IEspressoTEEVerifier.TeeType.SGX, ServiceType.CaffNode
             ),
             false
@@ -181,7 +180,7 @@ contract EspressoTEEVerifierTest is Test {
         );
 
         assertEq(
-            espressoTEEVerifier.registeredSigner(
+            espressoTEEVerifier.registeredService(
                 batchPosterAddress, IEspressoTEEVerifier.TeeType.SGX, ServiceType.CaffNode
             ),
             true
@@ -203,7 +202,7 @@ contract EspressoTEEVerifierTest is Test {
         );
 
         assertEq(
-            espressoTEEVerifier.registeredSigner(
+            espressoTEEVerifier.registeredService(
                 signerAddr, IEspressoTEEVerifier.TeeType.NITRO, ServiceType.BatchPoster
             ),
             true
@@ -212,7 +211,7 @@ contract EspressoTEEVerifierTest is Test {
         // if the registration process differs between the caff node and the batcher in the
         // future, we will need to update this test.
         assertEq(
-            espressoTEEVerifier.registeredSigner(
+            espressoTEEVerifier.registeredService(
                 signerAddr, IEspressoTEEVerifier.TeeType.NITRO, ServiceType.CaffNode
             ),
             false
@@ -227,7 +226,7 @@ contract EspressoTEEVerifierTest is Test {
         );
 
         assertEq(
-            espressoTEEVerifier.registeredSigner(
+            espressoTEEVerifier.registeredService(
                 signerAddr, IEspressoTEEVerifier.TeeType.NITRO, ServiceType.CaffNode
             ),
             true
@@ -294,7 +293,7 @@ contract EspressoTEEVerifierTest is Test {
             false
         );
         assertEq(
-            espressoTEEVerifier.registeredSigner(
+            espressoTEEVerifier.registeredService(
                 batchPosterAddress, IEspressoTEEVerifier.TeeType.SGX, ServiceType.BatchPoster
             ),
             false
@@ -336,7 +335,7 @@ contract EspressoTEEVerifierTest is Test {
             false
         );
         assertEq(
-            espressoTEEVerifier.registeredSigner(
+            espressoTEEVerifier.registeredService(
                 signer, IEspressoTEEVerifier.TeeType.NITRO, ServiceType.BatchPoster
             ),
             false

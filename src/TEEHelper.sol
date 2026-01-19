@@ -12,13 +12,13 @@ abstract contract TEEHelper is ITEEHelper, Ownable2Step {
     mapping(ServiceType => mapping(bytes32 enclaveHash => bool valid)) public
         registeredEnclaveHashes;
 
-    mapping(ServiceType => mapping(address signer => bool valid)) public registeredSigners;
+    mapping(ServiceType => mapping(address signer => bool valid)) public registeredServices;
     mapping(ServiceType => mapping(bytes32 enclaveHash => EnumerableSet.AddressSet signers))
         enclaveHashToSigner;
 
     // Checks if the service type is supported
     modifier onlySupportedServiceType(ServiceType service) {
-        if (uint8(service) > uint8(ServiceType.CaffNode)) {
+        if (uint8(service) > uint8(type(ServiceType).max)) {
             revert UnsupportedServiceType();
         }
         _;
@@ -39,6 +39,7 @@ abstract contract TEEHelper is ITEEHelper, Ownable2Step {
      */
     function setEnclaveHash(bytes32 enclaveHash, bool valid, ServiceType service)
         external
+        virtual
         onlyOwner
         onlySupportedServiceType(service)
     {
@@ -52,13 +53,14 @@ abstract contract TEEHelper is ITEEHelper, Ownable2Step {
      * @param service The service type (BatchPoster or CaffNode)
      * @return bool True if the signer is registered, false otherwise
      */
-    function registeredSigner(address signer, ServiceType service)
+    function registeredService(address signer, ServiceType service)
         external
         view
+        virtual
         onlySupportedServiceType(service)
         returns (bool)
     {
-        return registeredSigners[service][signer];
+        return registeredServices[service][signer];
     }
 
     /**
@@ -70,6 +72,7 @@ abstract contract TEEHelper is ITEEHelper, Ownable2Step {
     function registeredEnclaveHash(bytes32 enclaveHash, ServiceType service)
         external
         view
+        virtual
         onlySupportedServiceType(service)
         returns (bool)
     {
@@ -85,15 +88,12 @@ abstract contract TEEHelper is ITEEHelper, Ownable2Step {
     function enclaveHashSigners(bytes32 enclaveHash, ServiceType service)
         external
         view
+        virtual
         onlySupportedServiceType(service)
         returns (address[] memory)
     {
         EnumerableSet.AddressSet storage signersSet = enclaveHashToSigner[service][enclaveHash];
-        address[] memory signers = new address[](signersSet.length());
-        for (uint256 i = 0; i < signersSet.length(); i++) {
-            signers[i] = signersSet.at(i);
-        }
-        return signers;
+        return signersSet.values();
     }
 
     /**
@@ -103,6 +103,7 @@ abstract contract TEEHelper is ITEEHelper, Ownable2Step {
      */
     function deleteEnclaveHashes(bytes32[] memory enclaveHashes, ServiceType service)
         external
+        virtual
         onlyOwner
         onlySupportedServiceType(service)
     {
@@ -112,7 +113,7 @@ abstract contract TEEHelper is ITEEHelper, Ownable2Step {
                 enclaveHashToSigner[service][enclaveHashes[i]];
             while (signersSet.length() > 0) {
                 address signer = signersSet.at(0);
-                delete registeredSigners[service][signer];
+                delete registeredServices[service][signer];
                 // slither-disable-next-line unused-return
                 signersSet.remove(signer);
                 emit DeletedRegisteredService(signer, service);

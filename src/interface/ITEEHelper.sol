@@ -5,7 +5,7 @@ import {ServiceType} from "../types/Types.sol";
 
 interface ITEEHelper {
     // Thrown when an unsupported service type is provided
-    // fuction signature: 0x00bf4e89
+    // function signature: 0x00bf4e89
     error UnsupportedServiceType();
     // Thrown when an invalid enclave hash is provided for a service type
     // function signature: 0x94f1e6f9
@@ -58,7 +58,7 @@ interface ITEEHelper {
      * @param service The service type (BatchPoster or CaffNode)
      * @return bool True if the signer is registered, false otherwise
      */
-    function registeredSigner(address signer, ServiceType service) external view returns (bool);
+    function registeredService(address signer, ServiceType service) external view returns (bool);
 
     /*
      * @notice This function retrieves the list of signers registered for a given enclave hash

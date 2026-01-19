@@ -9,8 +9,8 @@ import {ServiceType} from "../types/Types.sol";
  *         but still requires signers to be registered before they can be used.
  */
 contract EspressoNitroTEEVerifierMock {
-    mapping(ServiceType => mapping(bytes32 => bool)) public registeredEnclaveHash;
-    mapping(address => bool) public registeredSigner;
+    mapping(ServiceType => mapping(bytes32 => bool)) public registeredEnclaveHashes;
+    mapping(ServiceType => mapping(address => bool)) public registeredServices;
 
     constructor() {
         // No enclave hash required for mock
@@ -21,7 +21,7 @@ contract EspressoNitroTEEVerifierMock {
      * @param output The public output (ignored in mock, but we extract signer from it)
      * @param proofBytes The proof bytes (ignored in mock)
      */
-    function registerSigner(bytes calldata output, bytes calldata proofBytes, ServiceType service)
+    function registerService(bytes calldata output, bytes calldata proofBytes, ServiceType service)
         external
     {
         // In mock, we expect the signer address to be passed in the output parameter
@@ -31,12 +31,24 @@ contract EspressoNitroTEEVerifierMock {
         address signer = address(uint160(bytes20(output[:20])));
         require(signer != address(0), "Invalid signer address");
 
-        if (!registeredSigner[signer]) {
-            registeredSigner[signer] = true;
+        if (!registeredServices[service][signer]) {
+            registeredServices[service][signer] = true;
         }
     }
 
+    function registeredEnclaveHash(bytes32 enclaveHash, ServiceType service)
+        external
+        view
+        returns (bool)
+    {
+        return registeredEnclaveHashes[service][enclaveHash];
+    }
+
+    function registeredService(address signer, ServiceType service) external view returns (bool) {
+        return registeredServices[service][signer];
+    }
+
     function setEnclaveHash(bytes32 enclaveHash, bool valid, ServiceType service) external {
-        registeredEnclaveHash[service][enclaveHash] = valid;
+        registeredEnclaveHashes[service][enclaveHash] = valid;
     }
 }

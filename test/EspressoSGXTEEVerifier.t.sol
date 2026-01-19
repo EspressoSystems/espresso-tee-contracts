@@ -49,7 +49,7 @@ contract EspressoSGXTEEVerifierTest is Test {
         // Convert the data to bytes32 and pass it to the verify function
         espressoSGXTEEVerifier.registerService(sampleQuote, data, ServiceType.BatchPoster);
         assertTrue(
-            espressoSGXTEEVerifier.registeredSigner(batchPosterAddress, ServiceType.BatchPoster)
+            espressoSGXTEEVerifier.registeredService(batchPosterAddress, ServiceType.BatchPoster)
         );
         vm.stopPrank();
     }
@@ -179,7 +179,7 @@ contract EspressoSGXTEEVerifierTest is Test {
             false
         );
         assertEq(
-            espressoSGXTEEVerifier.registeredSigner(batchPosterAddress, ServiceType.BatchPoster),
+            espressoSGXTEEVerifier.registeredService(batchPosterAddress, ServiceType.BatchPoster),
             false
         );
         address[] memory signersAfter =

@@ -12,7 +12,7 @@ import {ServiceType} from "../types/Types.sol";
  */
 contract EspressoSGXTEEVerifierMock {
     mapping(ServiceType => mapping(bytes32 => bool)) public registeredEnclaveHashes;
-    mapping(ServiceType => mapping(address => bool)) public registeredSigners;
+    mapping(ServiceType => mapping(address => bool)) public registeredServices;
 
     constructor() {
         // No enclave hash or quote verifier required for mock
@@ -23,7 +23,7 @@ contract EspressoSGXTEEVerifierMock {
      * @param attestation The attestation (ignored in mock)
      * @param data The signer address as bytes (20 bytes)
      */
-    function registerSigner(bytes calldata attestation, bytes calldata data, ServiceType service)
+    function registerService(bytes calldata attestation, bytes calldata data, ServiceType service)
         external
     {
         require(data.length == 20, "Invalid data length");
@@ -31,9 +31,21 @@ contract EspressoSGXTEEVerifierMock {
         address signer = address(uint160(bytes20(data[:20])));
         require(signer != address(0), "Invalid signer address");
 
-        if (!registeredSigners[service][signer]) {
-            registeredSigners[service][signer] = true;
+        if (!registeredServices[service][signer]) {
+            registeredServices[service][signer] = true;
         }
+    }
+
+    function registeredEnclaveHash(bytes32 enclaveHash, ServiceType service)
+        external
+        view
+        returns (bool)
+    {
+        return registeredEnclaveHashes[service][enclaveHash];
+    }
+
+    function registeredService(address signer, ServiceType service) external view returns (bool) {
+        return registeredServices[service][signer];
     }
 
     function setEnclaveHash(bytes32 enclaveHash, bool valid, ServiceType service) external {
