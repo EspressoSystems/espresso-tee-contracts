@@ -7,7 +7,6 @@ import {console2} from "forge-std/console2.sol";
 import {Ownable2Step} from "@openzeppelin/contracts/access/Ownable2Step.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {Safe} from "safe-utils/Safe.sol";
-import {Enum} from "safe-smart-account/common/Enum.sol";
 
 import {IEspressoTEEVerifier} from "../src/interface/IEspressoTEEVerifier.sol";
 import {IEspressoNitroTEEVerifier} from "../src/interface/IEspressoNitroTEEVerifier.sol";
@@ -18,6 +17,18 @@ contract MultiSigTransfer is Script {
 
     Safe.Client safe;
 
+    bytes32 constant NitroStack = keccak256(bytes("Nitro"));
+    bytes32 constant OptimismStack = keccak256(bytes("Optimism"));
+
+    error UnknownStack();
+    error InvalidTargetChainForStack(uint256 chainID);
+    
+    // This is a mapping of chainID to address that represents the cannonical Espresso multi sig wallet addresses
+    // for the Nitro integration.
+    mapping (uint256 => address) NitroMultiSigWallets;
+    // Similarly this is to record cannonical Espresso Multi-Sig wallets for the Optimism integration
+    mapping (uint256 => address) OptimismMultiSigWallets;
+    
     address[] internal batchTargets;
     bytes[] internal batchData;
 
@@ -47,16 +58,54 @@ contract MultiSigTransfer is Script {
         address teeVerifier, address nitroVerifier, address sgxVerifier
     );
 
+    function setUpNitroMultiSigAddresses() internal{
+        NitroMultiSigWallets[1] = address(0x6Dc61D9E366697979f69D89a154f2F8cd2F11dA5); // Eth Mainnet
+        NitroMultiSigWallets[11155111] = address(0x6Dc61D9E366697979f69D89a154f2F8cd2F11dA5); // Eth Sepolia
+        NitroMultiSigWallets[42161] = address(0x6Dc61D9E366697979f69D89a154f2F8cd2F11dA5); // Arb One
+        // This is the result of narrow support across Safe wallet UI providers. None of them currently (20/01/2026) support Arb sepolia, so we have a different address here
+        // NitroMultiSigWallets[421614] = address(0x054E02d743A68dC62076E816fc1f44d57fB4e3ce); // Arb Sepolia. Uncomment this when the underlying library supports arb sepolia multi-sigs
+    }
+
+    function parseMultiSigAddressFromStack(string memory stack) internal{
+        bytes32 stackHash = keccak256(bytes(stack));
+        // try to parse owner address based on stack and chain ID
+        if (stackHash == NitroStack) {
+            console2.logAddress(NitroMultiSigWallets[block.chainid]);
+            console2.logUint(block.chainid);
+            newOwner = NitroMultiSigWallets[block.chainid];
+        } else if (stackHash == OptimismStack){
+            newOwner = OptimismMultiSigWallets[block.chainid];
+        } else {
+            // Revert if the stack is unknown to the script.
+            revert UnknownStack();
+        }
+        // if the address hasn't been initialized (meaning we don't have a multi-sig wallet on this chain for this stack), do not execute the transaction.
+        if (newOwner == address(0)){
+            revert InvalidTargetChainForStack(block.chainid);
+        }
+
+    }
+
     // This function is executed by the forge VM whenever the script is executed using forge script.
     function setUp() public {
-        //Get transfer initiation env vars
-        newOwner = vm.envAddress("MULTISIG_CONTRACT_ADDRESS");
+        setUpNitroMultiSigAddresses();
+        // Get operation mode env var
+        bool isSafeMode = vm.envBool("SAFE_MODE");
+        // Get transfer initiation env vars
         teeVerifierAddress = vm.envAddress("TEE_VERIFIER_ADDRESS");
         originalOwnerPrivateKey = vm.envUint("PRIVATE_KEY");
-        //Get transfer acceptance env vars
+        // Get transfer acceptance env vars
         derivationPath = vm.envString("LEDGER_DERIVATION_PATH");
         proposerAddress = vm.envAddress("PROPOSER_ADDRESS");
-        //initialize the safe API client
+
+        if (isSafeMode) {
+            string memory stackString = vm.envString("INTEGRATION_STACK");
+            //This function internally initializes newOwner.
+            parseMultiSigAddressFromStack(stackString);
+        } else {
+            newOwner = vm.envAddress("MULTISIG_CONTRACT_ADDRESS");
+        }
+        // Initialize the safe API client
         safe.initialize(newOwner);
 
         setUpContractVars();
@@ -65,6 +114,7 @@ contract MultiSigTransfer is Script {
     // testSetUp is a helper function to handle the parts of the setUp() function related to the unit tests.
     // setUp() won't be called for this contract when run in a unit test context, so it's useful to have this to enable testing.
     function testSetUp() internal {
+        setUpNitroMultiSigAddresses();
         newOwner = vm.envAddress("MULTISIG_CONTRACT_ADDRESS");
         teeVerifierAddress = vm.envAddress("TEE_VERIFIER_ADDRESS");
 
