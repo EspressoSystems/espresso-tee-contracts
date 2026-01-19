@@ -113,6 +113,7 @@ abstract contract TEEHelper is ITEEHelper, Ownable2Step {
             while (signersSet.length() > 0) {
                 address signer = signersSet.at(0);
                 delete registeredSigners[service][signer];
+                // slither-disable-next-line unused-return
                 signersSet.remove(signer);
                 emit DeletedRegisteredService(signer, service);
             }
