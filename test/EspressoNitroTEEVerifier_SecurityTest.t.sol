@@ -25,7 +25,7 @@ contract EspressoNitroTEEVerifierSecurityTest is Test {
             "https://rpc.ankr.com/eth_sepolia/10a56026b3c20655c1dab931446156dea4d63d87d1261934c82a1b8045885923"
         );
         vm.startPrank(adminTEE);
-        
+
         // Deploy with the real Sepolia Nitro Enclave Verifier
         espressoNitroTEEVerifier = new EspressoNitroTEEVerifier(
             INitroEnclaveVerifier(0x2D7fbBAD6792698Ba92e67b7e180f8010B9Ec788)
@@ -41,12 +41,12 @@ contract EspressoNitroTEEVerifierSecurityTest is Test {
         // The contract should have cached the verifier ID and ZK verifier address
         bytes32 expectedVerifierId = espressoNitroTEEVerifier.expectedVerifierId();
         address expectedZkVerifier = espressoNitroTEEVerifier.expectedZkVerifier();
-        
+
         console.log("Expected Verifier ID:");
         console.logBytes32(expectedVerifierId);
         console.log("Expected ZK Verifier:");
         console.log(expectedZkVerifier);
-        
+
         // These should not be zero
         assertNotEq(expectedVerifierId, bytes32(0), "Verifier ID should be set");
         assertNotEq(expectedZkVerifier, address(0), "ZK Verifier should be set");
@@ -58,7 +58,7 @@ contract EspressoNitroTEEVerifierSecurityTest is Test {
     function testRegisterServiceWorksWithUnchangedConfiguration() public {
         vm.startPrank(adminTEE);
         vm.warp(1_764_889_188);
-        
+
         string memory proofPath = "/test/configs/proof.json";
         string memory inputFile = string.concat(vm.projectRoot(), proofPath);
         string memory json = vm.readFile(inputFile);
@@ -77,10 +77,11 @@ contract EspressoNitroTEEVerifierSecurityTest is Test {
      */
     function testDetectsConfigurationChangeWhenSwitchingVerifier() public {
         vm.startPrank(adminTEE);
-        
+
         // Deploy a mock verifier with different configuration
-        MockNitroVerifierWithDifferentConfig mockVerifier = new MockNitroVerifierWithDifferentConfig();
-        
+        MockNitroVerifierWithDifferentConfig mockVerifier =
+            new MockNitroVerifierWithDifferentConfig();
+
         // Try to switch to the mock verifier - this should FAIL because config is different
         vm.expectRevert(
             abi.encodeWithSelector(
@@ -89,7 +90,7 @@ contract EspressoNitroTEEVerifierSecurityTest is Test {
             )
         );
         espressoNitroTEEVerifier.setNitroEnclaveVerifier(address(mockVerifier));
-        
+
         vm.stopPrank();
     }
 
@@ -98,27 +99,25 @@ contract EspressoNitroTEEVerifierSecurityTest is Test {
      */
     function testAllowsVerifierChangeOnlyWithMatchingConfiguration() public {
         vm.startPrank(adminTEE);
-        
+
         // Get the current expected configuration
         bytes32 currentVerifierId = espressoNitroTEEVerifier.expectedVerifierId();
         address currentZkVerifier = espressoNitroTEEVerifier.expectedZkVerifier();
-        
+
         // Deploy a mock verifier with SAME configuration
-        MockNitroVerifierWithSameConfig mockVerifier = new MockNitroVerifierWithSameConfig(
-            currentVerifierId,
-            currentZkVerifier
-        );
-        
+        MockNitroVerifierWithSameConfig mockVerifier =
+            new MockNitroVerifierWithSameConfig(currentVerifierId, currentZkVerifier);
+
         // This should succeed - configuration matches
         espressoNitroTEEVerifier.setNitroEnclaveVerifier(address(mockVerifier));
-        
+
         // Verify the verifier was changed
         assertEq(
             address(espressoNitroTEEVerifier._nitroEnclaveVerifier()),
             address(mockVerifier),
             "Verifier should be updated"
         );
-        
+
         vm.stopPrank();
     }
 }
@@ -158,4 +157,3 @@ contract MockNitroVerifierWithSameConfig {
         });
     }
 }
-

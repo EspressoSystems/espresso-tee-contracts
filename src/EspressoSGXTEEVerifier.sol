@@ -1,9 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {
-    V3QuoteVerifier
-} from "@automata-network/dcap-attestation/contracts/verifiers/V3QuoteVerifier.sol";
+import {V3QuoteVerifier} from
+    "@automata-network/dcap-attestation/contracts/verifiers/V3QuoteVerifier.sol";
 import {BELE} from "@automata-network/dcap-attestation/contracts/utils/BELE.sol";
 import {Header} from "@automata-network/dcap-attestation/contracts/types/CommonStruct.sol";
 import {
@@ -24,7 +23,6 @@ import {TEEHelper} from "./TEEHelper.sol";
  * @notice Contains the logic to verify a quote from the TEE and attest on-chain. It uses the V3QuoteVerifier contract
  *         from automata to verify the quote. Along with some additional verification logic.
  */
-
 contract EspressoSGXTEEVerifier is IEspressoSGXTEEVerifier, Ownable2Step, TEEHelper {
     using BytesUtils for bytes;
     using EnumerableSet for EnumerableSet.AddressSet;

@@ -1,9 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {
-    VerificationResult
-} from "aws-nitro-enclave-attestation/interfaces/INitroEnclaveVerifier.sol";
+import {VerificationResult} from
+    "aws-nitro-enclave-attestation/interfaces/INitroEnclaveVerifier.sol";
 import {ServiceType} from "../types/Types.sol";
 import "./ITEEHelper.sol";
 
@@ -14,6 +13,7 @@ interface IEspressoNitroTEEVerifier is ITEEHelper {
     error InvalidNitroEnclaveVerifierAddress();
     // This error is thrown when the external verifier configuration has been changed
     error VerifierConfigurationChanged(string reason);
+
     event NitroEnclaveVerifierSet(address nitroEnclaveVerifierAddress);
 
     /*

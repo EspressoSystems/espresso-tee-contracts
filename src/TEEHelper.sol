@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
+
 import {ServiceType} from "./types/Types.sol";
 import "@openzeppelin/contracts/access/Ownable2Step.sol";
 
@@ -9,6 +10,7 @@ import "./interface/ITEEHelper.sol";
 abstract contract TEEHelper is ITEEHelper, Ownable2Step {
     using EnumerableSet for EnumerableSet.AddressSet;
     // Mappings
+
     mapping(ServiceType => mapping(bytes32 enclaveHash => bool valid)) public
         registeredEnclaveHashes;
 

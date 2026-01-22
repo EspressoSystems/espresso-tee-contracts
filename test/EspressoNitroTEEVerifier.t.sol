@@ -5,9 +5,8 @@ import "forge-std/Test.sol";
 import {EspressoNitroTEEVerifier} from "../src/EspressoNitroTEEVerifier.sol";
 import {ITEEHelper} from "../src/interface/ITEEHelper.sol";
 import {ServiceType} from "../src/types/Types.sol";
-import {
-    INitroEnclaveVerifier
-} from "aws-nitro-enclave-attestation/interfaces/INitroEnclaveVerifier.sol";
+import {INitroEnclaveVerifier} from
+    "aws-nitro-enclave-attestation/interfaces/INitroEnclaveVerifier.sol";
 
 contract EspressoNitroTEEVerifierTest is Test {
     address proxyAdmin = address(140);
@@ -267,18 +266,18 @@ contract EspressoNitroTEEVerifierTest is Test {
     // Test setting Nitro Enclave Verifier address for owner and non-owner
     function testSetNitroEnclaveVerifierAddress() public {
         vm.startPrank(adminTEE);
-        
+
         // Test 1: Setting to random address should fail due to security validation
         address randomAddress = 0x1234567890123456789012345678901234567890;
-        vm.expectRevert();  // Will revert because random address doesn't have matching ZK config
+        vm.expectRevert(); // Will revert because random address doesn't have matching ZK config
         espressoNitroTEEVerifier.setNitroEnclaveVerifier(randomAddress);
-        
+
         // Test 2: Setting to same verifier should work (same config)
         address currentVerifier = address(espressoNitroTEEVerifier._nitroEnclaveVerifier());
         espressoNitroTEEVerifier.setNitroEnclaveVerifier(currentVerifier);
-        
+
         vm.stopPrank();
-        
+
         // Test 3: Check that only owner can set the address
         vm.startPrank(fakeAddress);
         vm.expectRevert("Ownable: caller is not the owner");

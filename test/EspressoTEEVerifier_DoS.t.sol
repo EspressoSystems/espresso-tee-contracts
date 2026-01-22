@@ -18,16 +18,16 @@ contract EspressoTEEVerifierDoSTest is Test {
 
     function setUp() public {
         vm.startPrank(owner);
-        
+
         // Deploy with mock verifiers
         MockSGXVerifier sgxVerifier = new MockSGXVerifier();
         MockNitroVerifier nitroVerifier = new MockNitroVerifier();
-        
+
         teeVerifier = new EspressoTEEVerifier(
             IEspressoSGXTEEVerifier(address(sgxVerifier)),
             IEspressoNitroTEEVerifier(address(nitroVerifier))
         );
-        
+
         vm.stopPrank();
     }
 
@@ -36,23 +36,27 @@ contract EspressoTEEVerifierDoSTest is Test {
      */
     function testDoS_ZeroAddressVerifier() public {
         vm.startPrank(owner);
-        
+
         // Owner accidentally or maliciously sets SGX verifier to zero
         teeVerifier.setEspressoSGXTEEVerifier(IEspressoSGXTEEVerifier(address(0)));
-        
+
         vm.stopPrank();
         vm.startPrank(user);
-        
+
         // Now all SGX operations fail
         bytes memory data = hex"1234";
-        
+
         // This will revert with a low-level error when trying to call address(0)
         vm.expectRevert();
-        teeVerifier.registerService(data, data, IEspressoTEEVerifier.TeeType.SGX, ServiceType.BatchPoster);
-        
+        teeVerifier.registerService(
+            data, data, IEspressoTEEVerifier.TeeType.SGX, ServiceType.BatchPoster
+        );
+
         vm.expectRevert();
-        teeVerifier.verify(data, bytes32(0), IEspressoTEEVerifier.TeeType.SGX, ServiceType.BatchPoster);
-        
+        teeVerifier.verify(
+            data, bytes32(0), IEspressoTEEVerifier.TeeType.SGX, ServiceType.BatchPoster
+        );
+
         vm.stopPrank();
     }
 
@@ -61,23 +65,25 @@ contract EspressoTEEVerifierDoSTest is Test {
      */
     function testDoS_RevertingVerifier() public {
         vm.startPrank(owner);
-        
+
         // Deploy a malicious verifier that always reverts
         DoSVerifier dosVerifier = new DoSVerifier();
         teeVerifier.setEspressoNitroTEEVerifier(IEspressoNitroTEEVerifier(address(dosVerifier)));
-        
+
         vm.stopPrank();
         vm.startPrank(user);
-        
+
         bytes memory data = hex"1234";
-        
+
         // All Nitro operations now fail
         vm.expectRevert("DoS attack");
-        teeVerifier.registerService(data, data, IEspressoTEEVerifier.TeeType.NITRO, ServiceType.BatchPoster);
-        
+        teeVerifier.registerService(
+            data, data, IEspressoTEEVerifier.TeeType.NITRO, ServiceType.BatchPoster
+        );
+
         // Note: verify() calls ECDSA.recover first, so it fails with ECDSA error before reaching the DoS verifier
         // Testing registerService is sufficient to demonstrate the DoS vulnerability
-        
+
         vm.stopPrank();
     }
 
@@ -86,24 +92,21 @@ contract EspressoTEEVerifierDoSTest is Test {
      */
     function testDoS_GasExhaustionVerifier() public {
         vm.startPrank(owner);
-        
+
         GasExhaustionVerifier gasVerifier = new GasExhaustionVerifier();
         teeVerifier.setEspressoSGXTEEVerifier(IEspressoSGXTEEVerifier(address(gasVerifier)));
-        
+
         vm.stopPrank();
         vm.startPrank(user);
-        
+
         bytes memory data = hex"1234";
-        
+
         // This will run out of gas
         vm.expectRevert(); // Out of gas revert
-        teeVerifier.registerService{gas: 1000000}(
-            data, 
-            data, 
-            IEspressoTEEVerifier.TeeType.SGX, 
-            ServiceType.BatchPoster
+        teeVerifier.registerService{gas: 1_000_000}(
+            data, data, IEspressoTEEVerifier.TeeType.SGX, ServiceType.BatchPoster
         );
-        
+
         vm.stopPrank();
     }
 
@@ -112,23 +115,23 @@ contract EspressoTEEVerifierDoSTest is Test {
      */
     function testDoS_NoRecoveryMechanism() public {
         vm.startPrank(owner);
-        
+
         // Set to broken verifier
         DoSVerifier dosVerifier = new DoSVerifier();
         teeVerifier.setEspressoSGXTEEVerifier(IEspressoSGXTEEVerifier(address(dosVerifier)));
-        
+
         vm.stopPrank();
-        
+
         // Non-owner cannot fix it
         vm.startPrank(user);
-        
+
         MockSGXVerifier goodVerifier = new MockSGXVerifier();
-        
+
         vm.expectRevert("Ownable: caller is not the owner");
         teeVerifier.setEspressoSGXTEEVerifier(IEspressoSGXTEEVerifier(address(goodVerifier)));
-        
+
         vm.stopPrank();
-        
+
         // System remains DoS'd until owner acts
         // If owner key is lost/compromised, system is permanently DoS'd
     }
@@ -139,19 +142,19 @@ contract EspressoTEEVerifierDoSTest is Test {
  */
 contract MockSGXVerifier {
     mapping(address => mapping(ServiceType => bool)) public services;
-    
+
     function registerService(bytes calldata, bytes calldata, ServiceType service) external {
         services[msg.sender][service] = true;
     }
-    
+
     function registeredService(address signer, ServiceType service) external view returns (bool) {
         return services[signer][service];
     }
-    
+
     function registeredEnclaveHash(bytes32, ServiceType) external pure returns (bool) {
         return true;
     }
-    
+
     function enclaveHashSigners(bytes32, ServiceType) external pure returns (address[] memory) {
         address[] memory signers = new address[](0);
         return signers;
@@ -160,19 +163,19 @@ contract MockSGXVerifier {
 
 contract MockNitroVerifier {
     mapping(address => mapping(ServiceType => bool)) public services;
-    
+
     function registerService(bytes calldata, bytes calldata, ServiceType service) external {
         services[msg.sender][service] = true;
     }
-    
+
     function registeredService(address signer, ServiceType service) external view returns (bool) {
         return services[signer][service];
     }
-    
+
     function registeredEnclaveHash(bytes32, ServiceType) external pure returns (bool) {
         return true;
     }
-    
+
     function enclaveHashSigners(bytes32, ServiceType) external pure returns (address[] memory) {
         address[] memory signers = new address[](0);
         return signers;
@@ -186,15 +189,15 @@ contract DoSVerifier {
     function registerService(bytes calldata, bytes calldata, ServiceType) external pure {
         revert("DoS attack");
     }
-    
+
     function registeredService(address, ServiceType) external pure returns (bool) {
         revert("DoS attack");
     }
-    
+
     function registeredEnclaveHash(bytes32, ServiceType) external pure returns (bool) {
         revert("DoS attack");
     }
-    
+
     function enclaveHashSigners(bytes32, ServiceType) external pure returns (address[] memory) {
         revert("DoS attack");
     }
@@ -206,23 +209,22 @@ contract DoSVerifier {
 contract GasExhaustionVerifier {
     function registerService(bytes calldata, bytes calldata, ServiceType) external pure {
         // Infinite loop to exhaust gas
-        uint i = 0;
+        uint256 i = 0;
         while (i < type(uint256).max) {
             i++;
         }
     }
-    
+
     function registeredService(address, ServiceType) external pure returns (bool) {
         return false;
     }
-    
+
     function registeredEnclaveHash(bytes32, ServiceType) external pure returns (bool) {
         return false;
     }
-    
+
     function enclaveHashSigners(bytes32, ServiceType) external pure returns (address[] memory) {
         address[] memory signers = new address[](0);
         return signers;
     }
 }
-

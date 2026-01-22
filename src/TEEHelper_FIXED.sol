@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
+
 import {ServiceType} from "./types/Types.sol";
 import "@openzeppelin/contracts/access/Ownable2Step.sol";
 
@@ -16,13 +17,13 @@ import "./interface/ITEEHelper.sol";
  */
 abstract contract TEEHelper is ITEEHelper, Ownable2Step {
     using EnumerableSet for EnumerableSet.AddressSet;
-    
+
     /// @notice Maximum number of signers allowed per enclave hash to prevent DoS
     uint256 public constant MAX_SIGNERS_PER_HASH = 1000;
-    
+
     /// @notice Maximum number of signers to delete in a single transaction
     uint256 public constant MAX_BATCH_DELETE_SIZE = 100;
-    
+
     // Mappings
     mapping(ServiceType => mapping(bytes32 enclaveHash => bool valid)) public
         registeredEnclaveHashes;
@@ -33,7 +34,9 @@ abstract contract TEEHelper is ITEEHelper, Ownable2Step {
 
     // Events for new functionality
     event EnclaveHashDisabled(bytes32 indexed enclaveHash, ServiceType indexed service);
-    event SignerCountLimitReached(bytes32 indexed enclaveHash, ServiceType indexed service, uint256 count);
+    event SignerCountLimitReached(
+        bytes32 indexed enclaveHash, ServiceType indexed service, uint256 count
+    );
 
     constructor() Ownable2Step() {
         _transferOwnership(msg.sender);
@@ -125,7 +128,7 @@ abstract contract TEEHelper is ITEEHelper, Ownable2Step {
      */
     function _checkSignerLimit(bytes32 enclaveHash, ServiceType service) internal {
         uint256 currentCount = enclaveHashToSigner[service][enclaveHash].length();
-        
+
         if (currentCount >= MAX_SIGNERS_PER_HASH) {
             emit SignerCountLimitReached(enclaveHash, service, currentCount);
             revert("Maximum signers for this enclave hash reached");
@@ -140,21 +143,21 @@ abstract contract TEEHelper is ITEEHelper, Ownable2Step {
      * @param maxIterations Maximum number of signers to delete (0 = use default)
      * @return remaining Number of signers still remaining after this batch
      */
-    function deleteEnclaveHashBatch(
-        bytes32 enclaveHash,
-        ServiceType service,
-        uint256 maxIterations
-    ) public onlyOwner returns (uint256 remaining) {
+    function deleteEnclaveHashBatch(bytes32 enclaveHash, ServiceType service, uint256 maxIterations)
+        public
+        onlyOwner
+        returns (uint256 remaining)
+    {
         // Use default if maxIterations is 0
         if (maxIterations == 0) {
             maxIterations = MAX_BATCH_DELETE_SIZE;
         }
-        
+
         // Cap at safe maximum to prevent accidental gas exhaustion
         require(maxIterations <= MAX_BATCH_DELETE_SIZE, "Batch size too large");
-        
+
         EnumerableSet.AddressSet storage signersSet = enclaveHashToSigner[service][enclaveHash];
-        
+
         uint256 iterations = 0;
         while (signersSet.length() > 0 && iterations < maxIterations) {
             address signer = signersSet.at(0);
@@ -164,15 +167,15 @@ abstract contract TEEHelper is ITEEHelper, Ownable2Step {
             emit DeletedRegisteredService(signer, service);
             iterations++;
         }
-        
+
         remaining = signersSet.length();
-        
+
         // Only delete the hash registration if all signers are removed
         if (remaining == 0) {
             delete registeredEnclaveHashes[service][enclaveHash];
             emit DeletedEnclaveHash(enclaveHash, service);
         }
-        
+
         return remaining;
     }
 
@@ -182,10 +185,7 @@ abstract contract TEEHelper is ITEEHelper, Ownable2Step {
      * @param enclaveHash The hash to disable
      * @param service The service type
      */
-    function disableEnclaveHash(bytes32 enclaveHash, ServiceType service)
-        external
-        onlyOwner
-    {
+    function disableEnclaveHash(bytes32 enclaveHash, ServiceType service) external onlyOwner {
         registeredEnclaveHashes[service][enclaveHash] = false;
         emit EnclaveHashDisabled(enclaveHash, service);
     }
@@ -207,7 +207,7 @@ abstract contract TEEHelper is ITEEHelper, Ownable2Step {
             !registeredEnclaveHashes[service][enclaveHash],
             "Hash must be disabled first via disableEnclaveHash()"
         );
-        
+
         return deleteEnclaveHashBatch(enclaveHash, service, maxIterations);
     }
 
@@ -226,15 +226,15 @@ abstract contract TEEHelper is ITEEHelper, Ownable2Step {
         for (uint256 i = 0; i < enclaveHashes.length; i++) {
             EnumerableSet.AddressSet storage signersSet =
                 enclaveHashToSigner[service][enclaveHashes[i]];
-            
+
             uint256 signerCount = signersSet.length();
-            
+
             // Prevent unbounded loop DoS
             require(
                 signerCount <= MAX_BATCH_DELETE_SIZE,
                 "Too many signers. Use deleteEnclaveHashBatch() or disableEnclaveHash() first"
             );
-            
+
             // Safe to delete in one transaction
             while (signersSet.length() > 0) {
                 address signer = signersSet.at(0);
@@ -264,4 +264,3 @@ abstract contract TEEHelper is ITEEHelper, Ownable2Step {
         canDelete = signerCount <= MAX_BATCH_DELETE_SIZE;
     }
 }
-
