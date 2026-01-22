@@ -16,5 +16,8 @@
   },
   "lib/openzeppelin-contracts-upgradeable": {
     "rev": "dd89bed956f7ca2f72f51b62bd926f3955695fee"
+  },
+  "lib/safe-utils": {
+    "rev": "506cf9f38efa42a76c9b56dba5cc446adb2582ca"
   }
 }

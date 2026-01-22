@@ -12,6 +12,8 @@ interface IEspressoNitroTEEVerifier is ITEEHelper {
     error VerificationFailed(VerificationResult result);
     // This error is thrown when the NitroEnclaveVerifier address is invalid
     error InvalidNitroEnclaveVerifierAddress();
+    // This error is thrown when the external verifier configuration has been changed
+    error VerifierConfigurationChanged(string reason);
     event NitroEnclaveVerifierSet(address nitroEnclaveVerifierAddress);
 
     /*

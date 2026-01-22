@@ -11,7 +11,8 @@ import {
     INitroEnclaveVerifier,
     VerifierJournal,
     ZkCoProcessorType,
-    VerificationResult
+    VerificationResult,
+    ZkCoProcessorConfig
 } from "aws-nitro-enclave-attestation/interfaces/INitroEnclaveVerifier.sol";
 import {TEEHelper} from "./TEEHelper.sol";
 
@@ -23,10 +24,22 @@ import {TEEHelper} from "./TEEHelper.sol";
 contract EspressoNitroTEEVerifier is IEspressoNitroTEEVerifier, TEEHelper {
     using EnumerableSet for EnumerableSet.AddressSet;
     INitroEnclaveVerifier public _nitroEnclaveVerifier;
+    
+    // Expected ZK verifier configuration - immutable to prevent tampering
+    bytes32 public immutable expectedVerifierId;
+    address public immutable expectedZkVerifier;
 
     constructor(INitroEnclaveVerifier nitroEnclaveVerifier) TEEHelper() {
         require(address(nitroEnclaveVerifier) != address(0), "NitroEnclaveVerifier cannot be zero");
         _nitroEnclaveVerifier = nitroEnclaveVerifier;
+        
+        // Cache the expected ZK configuration at deployment to detect tampering
+        ZkCoProcessorConfig memory config = nitroEnclaveVerifier.getZkConfig(ZkCoProcessorType.Succinct);
+        require(config.verifierId != bytes32(0), "Verifier ID not configured");
+        require(config.zkVerifier != address(0), "ZK Verifier not configured");
+        
+        expectedVerifierId = config.verifierId;
+        expectedZkVerifier = config.zkVerifier;
     }
 
     /**
@@ -39,6 +52,9 @@ contract EspressoNitroTEEVerifier is IEspressoNitroTEEVerifier, TEEHelper {
     function registerService(bytes calldata output, bytes calldata proofBytes, ServiceType service)
         external
     {
+        // SECURITY: Verify that the external contract hasn't changed its ZK configuration
+        _validateZkConfiguration();
+        
         VerifierJournal memory journal = _nitroEnclaveVerifier.verify(
             output,
             // Currently only Succinct ZK coprocessor is supported
@@ -82,15 +98,45 @@ contract EspressoNitroTEEVerifier is IEspressoNitroTEEVerifier, TEEHelper {
         }
     }
 
+    /**
+     * @notice Internal function to validate that the external verifier configuration hasn't been tampered with
+     * @dev Reverts if the verifier ID or ZK verifier address has changed from the expected values
+     */
+    function _validateZkConfiguration() internal view {
+        ZkCoProcessorConfig memory currentConfig = _nitroEnclaveVerifier.getZkConfig(ZkCoProcessorType.Succinct);
+        
+        if (currentConfig.verifierId != expectedVerifierId) {
+            revert VerifierConfigurationChanged("Verifier ID changed");
+        }
+        
+        if (currentConfig.zkVerifier != expectedZkVerifier) {
+            revert VerifierConfigurationChanged("ZK Verifier address changed");
+        }
+    }
+
     /*
      * @notice This function sets the NitroEnclaveVerifier contract address
      * @param nitroEnclaveVerifier The address of the NitroEnclaveVerifier contract
+     * @dev The new verifier MUST have the same ZK configuration as the original to prevent security bypass
      */
     function setNitroEnclaveVerifier(address nitroEnclaveVerifier) external onlyOwner {
         if (nitroEnclaveVerifier == address(0)) {
             revert InvalidNitroEnclaveVerifierAddress();
         }
-        _nitroEnclaveVerifier = INitroEnclaveVerifier(nitroEnclaveVerifier);
+        
+        // SECURITY: Verify that the new verifier has the same ZK configuration
+        INitroEnclaveVerifier newVerifier = INitroEnclaveVerifier(nitroEnclaveVerifier);
+        ZkCoProcessorConfig memory newConfig = newVerifier.getZkConfig(ZkCoProcessorType.Succinct);
+        
+        if (newConfig.verifierId != expectedVerifierId) {
+            revert VerifierConfigurationChanged("New verifier has different verifier ID");
+        }
+        
+        if (newConfig.zkVerifier != expectedZkVerifier) {
+            revert VerifierConfigurationChanged("New verifier has different ZK verifier address");
+        }
+        
+        _nitroEnclaveVerifier = newVerifier;
         emit NitroEnclaveVerifierSet(nitroEnclaveVerifier);
     }
 }
