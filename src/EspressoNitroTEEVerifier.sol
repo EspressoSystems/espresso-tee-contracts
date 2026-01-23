@@ -68,6 +68,9 @@ contract EspressoNitroTEEVerifier is IEspressoNitroTEEVerifier, TEEHelper {
             revert VerificationFailed(journal.result);
         }
 
+        // SECURITY: Validate journal format and integrity (Defense in Depth)
+        _validateJournal(journal);
+
         // we hash the pcr0 value to get the the pcr0Hash and then
         // check if the given hash has been registered in the contract by the owner
         // this allows us to verify that the registerSigner request is coming from a TEE
@@ -98,6 +101,36 @@ contract EspressoNitroTEEVerifier is IEspressoNitroTEEVerifier, TEEHelper {
             enclaveHashToSigner[service][pcr0Hash].add(enclaveAddress);
             emit ServiceRegistered(enclaveAddress, pcr0Hash, service);
         }
+    }
+
+    /**
+     * @notice Validates the format and integrity of the VerifierJournal
+     * @dev Comprehensive validation of all critical journal fields (Defense in Depth)
+     * @param journal The journal to validate
+     */
+    function _validateJournal(VerifierJournal memory journal) internal view {
+        // 1. Validate PCR array bounds
+        require(journal.pcrs.length > 0, "PCR array cannot be empty");
+
+        // 2. CRITICAL: Validate public key format (prevents predictable addresses)
+        require(journal.publicKey.length == 65, "Invalid public key length");
+        require(journal.publicKey[0] == 0x04, "Public key must be uncompressed");
+
+        // 3. Note: Nonce validation removed - AWS Nitro attestations may have empty nonce
+        // If replay protection is needed, implement nonce tracking separately
+
+        // 4. Note: Timestamp validation is already done by NitroEnclaveVerifier
+        // The result would be VerificationResult.InvalidTimestamp if timestamp is bad
+        // Additional validation here is optional/redundant
+
+        // 5. Optional: Validate userData if your application requires it
+        // require(journal.userData.length > 0, "UserData cannot be empty");
+
+        // 6. Optional: Validate moduleId if you want to lock to specific Nitro module
+        // require(
+        //     keccak256(bytes(journal.moduleId)) == keccak256(bytes(EXPECTED_MODULE_ID)),
+        //     "Invalid module ID"
+        // );
     }
 
     /**

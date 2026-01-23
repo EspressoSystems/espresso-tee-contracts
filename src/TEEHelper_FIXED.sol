@@ -264,3 +264,4 @@ abstract contract TEEHelper is ITEEHelper, Ownable2Step {
         canDelete = signerCount <= MAX_BATCH_DELETE_SIZE;
     }
 }
+

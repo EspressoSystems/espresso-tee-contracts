@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {V3QuoteVerifier} from
-    "@automata-network/dcap-attestation/contracts/verifiers/V3QuoteVerifier.sol";
+import {
+    V3QuoteVerifier
+} from "@automata-network/dcap-attestation/contracts/verifiers/V3QuoteVerifier.sol";
 import {BELE} from "@automata-network/dcap-attestation/contracts/utils/BELE.sol";
 import {Header} from "@automata-network/dcap-attestation/contracts/types/CommonStruct.sol";
 import {

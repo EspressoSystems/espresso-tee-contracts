@@ -10,8 +10,9 @@ import {ITEEHelper} from "../src/interface/ITEEHelper.sol";
 import {IEspressoSGXTEEVerifier} from "../src/interface/IEspressoSGXTEEVerifier.sol";
 import {IEspressoNitroTEEVerifier} from "../src/interface/IEspressoNitroTEEVerifier.sol";
 import {ServiceType} from "../src/types/Types.sol";
-import {INitroEnclaveVerifier} from
-    "aws-nitro-enclave-attestation/interfaces/INitroEnclaveVerifier.sol";
+import {
+    INitroEnclaveVerifier
+} from "aws-nitro-enclave-attestation/interfaces/INitroEnclaveVerifier.sol";
 
 contract EspressoTEEVerifierTest is Test {
     address adminTEE = address(141);

@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {VerificationResult} from
-    "aws-nitro-enclave-attestation/interfaces/INitroEnclaveVerifier.sol";
+import {
+    VerificationResult
+} from "aws-nitro-enclave-attestation/interfaces/INitroEnclaveVerifier.sol";
 import {ServiceType} from "../types/Types.sol";
 import "./ITEEHelper.sol";
 

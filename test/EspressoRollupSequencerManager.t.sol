@@ -3,7 +3,9 @@ pragma solidity ^0.8.0;
 
 import "forge-std/Test.sol";
 import {EspressoRollupSequencerManager} from "../src/EspressoRollupSequencerManager.sol";
-import {IEspressoRollupSequencerManager} from "../src/interface/IEspressoRollupSequencerManager.sol";
+import {
+    IEspressoRollupSequencerManager
+} from "../src/interface/IEspressoRollupSequencerManager.sol";
 
 contract EspressoRollupSequencerManagerTest is Test {
     EspressoRollupSequencerManager public rollupSequencerManager;
