@@ -72,10 +72,7 @@ contract JournalValidationTest is Test {
         // Should revert due to old timestamp (validated by NitroEnclaveVerifier)
         // VerificationResult.InvalidTimestamp = 3
         vm.expectRevert(
-            abi.encodeWithSelector(
-                bytes4(keccak256("VerificationFailed(uint8)")),
-                uint8(3)
-            )
+            abi.encodeWithSelector(bytes4(keccak256("VerificationFailed(uint8)")), uint8(3))
         );
         espressoNitroTEEVerifier.registerService(output, proofBytes, ServiceType.BatchPoster);
 
@@ -100,10 +97,7 @@ contract JournalValidationTest is Test {
         // Should revert due to future timestamp (validated by NitroEnclaveVerifier)
         // VerificationResult.InvalidTimestamp = 3
         vm.expectRevert(
-            abi.encodeWithSelector(
-                bytes4(keccak256("VerificationFailed(uint8)")),
-                uint8(3)
-            )
+            abi.encodeWithSelector(bytes4(keccak256("VerificationFailed(uint8)")), uint8(3))
         );
         espressoNitroTEEVerifier.registerService(output, proofBytes, ServiceType.BatchPoster);
 
