@@ -10,7 +10,8 @@ pragma solidity ^0.8.0;
 contract EspressoTEEVerifierMock {
     enum TeeType {
         SGX,
-        NITRO
+        NITRO,
+        TESTS
     }
 
     mapping(address => bool) public registeredSigner;
