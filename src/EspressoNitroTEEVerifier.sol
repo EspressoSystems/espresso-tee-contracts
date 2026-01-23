@@ -112,7 +112,10 @@ contract EspressoNitroTEEVerifier is IEspressoNitroTEEVerifier, TEEHelper {
         // 1. Validate PCR array bounds
         require(journal.pcrs.length > 0, "PCR array cannot be empty");
 
-        // 2. CRITICAL: Validate public key format (prevents predictable addresses)
+        // 2. CRITICAL: Validate PCR index (prevents validating wrong PCR!)
+        require(journal.pcrs[0].index == 0, "First PCR must be PCR0");
+
+        // 3. CRITICAL: Validate public key format (prevents predictable addresses)
         require(journal.publicKey.length == 65, "Invalid public key length");
         require(journal.publicKey[0] == 0x04, "Public key must be uncompressed");
 
