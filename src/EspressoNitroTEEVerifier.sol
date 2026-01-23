@@ -1,10 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "@openzeppelin/contracts/access/Ownable2Step.sol";
-import "@openzeppelin/contracts/utils/Strings.sol";
-import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
-
 import {IEspressoNitroTEEVerifier} from "./interface/IEspressoNitroTEEVerifier.sol";
 import {ServiceType} from "./types/Types.sol";
 import {
@@ -13,6 +9,7 @@ import {
     ZkCoProcessorType,
     VerificationResult
 } from "aws-nitro-enclave-attestation/interfaces/INitroEnclaveVerifier.sol";
+import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import {TEEHelper} from "./TEEHelper.sol";
 
 /**
@@ -22,11 +19,19 @@ import {TEEHelper} from "./TEEHelper.sol";
  */
 contract EspressoNitroTEEVerifier is IEspressoNitroTEEVerifier, TEEHelper {
     using EnumerableSet for EnumerableSet.AddressSet;
+
     INitroEnclaveVerifier public _nitroEnclaveVerifier;
 
-    constructor(INitroEnclaveVerifier nitroEnclaveVerifier) TEEHelper() {
-        require(address(nitroEnclaveVerifier) != address(0), "NitroEnclaveVerifier cannot be zero");
-        _nitroEnclaveVerifier = nitroEnclaveVerifier;
+    constructor() {
+        _disableInitializers();
+    }
+
+    function initialize(address teeVerifier_, INitroEnclaveVerifier nitroEnclaveVerifier)
+        external
+        initializer
+    {
+        __TEEHelper_init(teeVerifier_);
+        _setNitroEnclaveVerifier(address(nitroEnclaveVerifier));
     }
 
     /**
@@ -51,13 +56,13 @@ contract EspressoNitroTEEVerifier is IEspressoNitroTEEVerifier, TEEHelper {
         }
 
         // we hash the pcr0 value to get the the pcr0Hash and then
-        // check if the given hash has been registered in the contract by the owner
+        // check if the given hash has been registered in the contract by the tee verifier
         // this allows us to verify that the registerSigner request is coming from a TEE
         // which is trusted
         bytes32 pcr0Hash =
             keccak256(abi.encodePacked(journal.pcrs[0].value.first, journal.pcrs[0].value.second));
 
-        if (!registeredEnclaveHashes[service][pcr0Hash]) {
+        if (!_layout().registeredEnclaveHashes[service][pcr0Hash]) {
             revert InvalidEnclaveHash(pcr0Hash, service);
         }
 
@@ -74,10 +79,10 @@ contract EspressoNitroTEEVerifier is IEspressoNitroTEEVerifier, TEEHelper {
         address enclaveAddress = address(uint160(uint256(publicKeyHash)));
 
         // Mark the signer as registered
-        if (!registeredServices[service][enclaveAddress]) {
-            registeredServices[service][enclaveAddress] = true;
-            // slither-disable-next-line unused-return
-            enclaveHashToSigner[service][pcr0Hash].add(enclaveAddress);
+        if (!_layout().registeredServices[service][enclaveAddress]) {
+            TEEHelperStorage storage $ = _layout();
+            $.registeredServices[service][enclaveAddress] = true;
+            $.enclaveHashToSigner[service][pcr0Hash].add(enclaveAddress);
             emit ServiceRegistered(enclaveAddress, pcr0Hash, service);
         }
     }
@@ -86,7 +91,11 @@ contract EspressoNitroTEEVerifier is IEspressoNitroTEEVerifier, TEEHelper {
      * @notice This function sets the NitroEnclaveVerifier contract address
      * @param nitroEnclaveVerifier The address of the NitroEnclaveVerifier contract
      */
-    function setNitroEnclaveVerifier(address nitroEnclaveVerifier) external onlyOwner {
+    function setNitroEnclaveVerifier(address nitroEnclaveVerifier) external onlyTEEVerifier {
+        _setNitroEnclaveVerifier(nitroEnclaveVerifier);
+    }
+
+    function _setNitroEnclaveVerifier(address nitroEnclaveVerifier) internal {
         if (nitroEnclaveVerifier == address(0)) {
             revert InvalidNitroEnclaveVerifierAddress();
         }

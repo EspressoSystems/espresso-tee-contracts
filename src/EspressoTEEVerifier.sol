@@ -2,7 +2,7 @@
 pragma solidity ^0.8.0;
 
 import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
-import "@openzeppelin/contracts/access/Ownable2Step.sol";
+import "@openzeppelin/contracts-upgradeable/access/Ownable2StepUpgradeable.sol";
 import {IEspressoSGXTEEVerifier} from "./interface/IEspressoSGXTEEVerifier.sol";
 import {IEspressoNitroTEEVerifier} from "./interface/IEspressoNitroTEEVerifier.sol";
 import {IEspressoTEEVerifier} from "./interface/IEspressoTEEVerifier.sol";
@@ -13,17 +13,23 @@ import {ServiceType} from "./types/Types.sol";
  *     @author Espresso Systems (https://espresso.systems)
  *     @notice This contract is used to resgister a signer which has been attested by the TEE
  */
-contract EspressoTEEVerifier is Ownable2Step, IEspressoTEEVerifier {
+contract EspressoTEEVerifier is Ownable2StepUpgradeable, IEspressoTEEVerifier {
     IEspressoSGXTEEVerifier public espressoSGXTEEVerifier;
     IEspressoNitroTEEVerifier public espressoNitroTEEVerifier;
 
-    constructor(
+    constructor() {
+        _disableInitializers();
+    }
+
+    function initialize(
+        address _owner,
         IEspressoSGXTEEVerifier _espressoSGXTEEVerifier,
         IEspressoNitroTEEVerifier _espressoNitroTEEVerifier
-    ) Ownable() {
+    ) public initializer {
         espressoSGXTEEVerifier = _espressoSGXTEEVerifier;
         espressoNitroTEEVerifier = _espressoNitroTEEVerifier;
-        _transferOwnership(msg.sender);
+        __Ownable2Step_init();
+        _transferOwnership(_owner);
     }
 
     /**
@@ -129,25 +135,85 @@ contract EspressoTEEVerifier is Ownable2Step, IEspressoTEEVerifier {
         }
     }
 
-    /*
-        @notice Set the EspressoSGXTEEVerifier
-        @param _espressoSGXTEEVerifier The address of the EspressoSGXTEEVerifier
+    /**
+     *     @notice Set the EspressoSGXTEEVerifier
+     *     @param _espressoSGXTEEVerifier The address of the EspressoSGXTEEVerifier
      */
     function setEspressoSGXTEEVerifier(IEspressoSGXTEEVerifier _espressoSGXTEEVerifier)
         public
         onlyOwner
     {
+        if (address(_espressoSGXTEEVerifier) == address(0)) {
+            revert InvalidVerifierAddress();
+        }
+
         espressoSGXTEEVerifier = _espressoSGXTEEVerifier;
     }
 
     /**
-     *     @notice Set the EspressoNitroTEEVerifier
-     *     @param _espressoNitroTEEVerifier The address of the EspressoNitroTEEVerifier
+     * @notice Set the EspressoNitroTEEVerifier
+     * @param _espressoNitroTEEVerifier The address of the EspressoNitroTEEVerifier
      */
     function setEspressoNitroTEEVerifier(IEspressoNitroTEEVerifier _espressoNitroTEEVerifier)
         public
         onlyOwner
     {
+        if (address(_espressoNitroTEEVerifier) == address(0)) {
+            revert InvalidVerifierAddress();
+        }
+
         espressoNitroTEEVerifier = _espressoNitroTEEVerifier;
+    }
+
+    /**
+     * @notice Allows the owner to set enclave hashes
+     * @param enclaveHash The enclave hash to set
+     * @param valid Whether the enclave hash is valid or not
+     * @param teeType The type of TEE
+     * @param service The service type (BatchPoster or CaffNode)
+     */
+    function setEnclaveHash(bytes32 enclaveHash, bool valid, TeeType teeType, ServiceType service)
+        external
+        onlyOwner
+    {
+        if (teeType == TeeType.SGX) {
+            espressoSGXTEEVerifier.setEnclaveHash(enclaveHash, valid, service);
+        } else {
+            espressoNitroTEEVerifier.setEnclaveHash(enclaveHash, valid, service);
+        }
+    }
+
+    /**
+     * @notice Allows the owner to delete enclave hashes
+     * @param enclaveHashes The list of enclave hashes to delete
+     * @param teeType The type of TEE
+     * @param service The service type (BatchPoster or CaffNode)
+     */
+    function deleteEnclaveHashes(
+        bytes32[] memory enclaveHashes,
+        TeeType teeType,
+        ServiceType service
+    ) external onlyOwner {
+        if (teeType == TeeType.SGX) {
+            espressoSGXTEEVerifier.deleteEnclaveHashes(enclaveHashes, service);
+        } else {
+            espressoNitroTEEVerifier.deleteEnclaveHashes(enclaveHashes, service);
+        }
+    }
+
+    /**
+     * @notice Set the quote verifier for SGX TEEs
+     * @param quoteVerifier The address of the quote verifier
+     */
+    function setQuoteVerifier(address quoteVerifier) external onlyOwner {
+        espressoSGXTEEVerifier.setQuoteVerifier(quoteVerifier);
+    }
+
+    /**
+     * @notice Set the nitro enclave verifier for Nitro TEEs
+     * @param nitroVerifier The address of the nitro enclave verifier
+     */
+    function setNitroEnclaveVerifier(address nitroVerifier) external onlyOwner {
+        espressoNitroTEEVerifier.setNitroEnclaveVerifier(nitroVerifier);
     }
 }

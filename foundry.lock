@@ -15,6 +15,12 @@
     "rev": "49c0e4370d0cc50ea6090709e3835a3091e33ee2"
   },
   "lib/openzeppelin-contracts-upgradeable": {
-    "rev": "dd89bed956f7ca2f72f51b62bd926f3955695fee"
+    "tag": {
+      "name": "v5.5.0",
+      "rev": "aa677e9d28ed78fc427ec47ba2baef2030c58e7c"
+    }
+  },
+  "lib/safe-utils": {
+    "rev": "506cf9f38efa42a76c9b56dba5cc446adb2582ca"
   }
 }

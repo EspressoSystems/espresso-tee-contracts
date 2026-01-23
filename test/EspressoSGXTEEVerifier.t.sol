@@ -2,8 +2,17 @@
 pragma solidity ^0.8.20;
 
 import "forge-std/Test.sol";
+import {
+    TransparentUpgradeableProxy
+} from "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
+import {
+    OwnableUpgradeable
+} from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import {EspressoSGXTEEVerifier} from "../src/EspressoSGXTEEVerifier.sol";
+import {EspressoTEEVerifier} from "../src/EspressoTEEVerifier.sol";
 import {IEspressoSGXTEEVerifier} from "../src/interface/IEspressoSGXTEEVerifier.sol";
+import {IEspressoNitroTEEVerifier} from "../src/interface/IEspressoNitroTEEVerifier.sol";
+import {IEspressoTEEVerifier} from "../src/interface/IEspressoTEEVerifier.sol";
 import {ITEEHelper} from "../src/interface/ITEEHelper.sol";
 import {ServiceType} from "../src/types/Types.sol";
 
@@ -12,6 +21,7 @@ contract EspressoSGXTEEVerifierTest is Test {
     address adminTEE = address(141);
     address fakeAddress = address(145);
 
+    EspressoTEEVerifier espressoTEEVerifier;
     EspressoSGXTEEVerifier espressoSGXTEEVerifier;
     bytes32 reportDataHash =
         bytes32(0x38f8abca50cdede6a00d405856857bc3d81135624ee0e287640956d11cc22d5e);
@@ -25,12 +35,47 @@ contract EspressoSGXTEEVerifierTest is Test {
         vm.createSelectFork(
             "https://rpc.ankr.com/eth_sepolia/10a56026b3c20655c1dab931446156dea4d63d87d1261934c82a1b8045885923"
         );
+        espressoTEEVerifier = _deployTEEVerifierWithPlaceholders();
         // Get the instance of the DCAP Attestation QuoteVerifier on the Arbitrum Sepolia Rollup
+        espressoSGXTEEVerifier = _deploySGX(address(espressoTEEVerifier));
         vm.startPrank(adminTEE);
-        espressoSGXTEEVerifier = new EspressoSGXTEEVerifier(v3QuoteVerifier);
-        espressoSGXTEEVerifier.setEnclaveHash(enclaveHash, true, ServiceType.BatchPoster);
-        espressoSGXTEEVerifier.setEnclaveHash(enclaveHash, true, ServiceType.CaffNode);
+        espressoTEEVerifier.setEspressoSGXTEEVerifier(
+            IEspressoSGXTEEVerifier(address(espressoSGXTEEVerifier))
+        );
+        espressoTEEVerifier.setEnclaveHash(
+            enclaveHash, true, IEspressoTEEVerifier.TeeType.SGX, ServiceType.BatchPoster
+        );
+        espressoTEEVerifier.setEnclaveHash(
+            enclaveHash, true, IEspressoTEEVerifier.TeeType.SGX, ServiceType.CaffNode
+        );
         vm.stopPrank();
+    }
+
+    function _deployTEEVerifierWithPlaceholders() internal returns (EspressoTEEVerifier) {
+        EspressoTEEVerifier impl = new EspressoTEEVerifier();
+        TransparentUpgradeableProxy proxy = new TransparentUpgradeableProxy(
+            address(impl),
+            proxyAdmin,
+            abi.encodeCall(
+                EspressoTEEVerifier.initialize,
+                (
+                    adminTEE,
+                    IEspressoSGXTEEVerifier(address(0xDEAD)),
+                    IEspressoNitroTEEVerifier(address(0xBEEF))
+                )
+            )
+        );
+        return EspressoTEEVerifier(address(proxy));
+    }
+
+    function _deploySGX(address teeVerifier) internal returns (EspressoSGXTEEVerifier) {
+        EspressoSGXTEEVerifier impl = new EspressoSGXTEEVerifier();
+        TransparentUpgradeableProxy proxy =
+            new TransparentUpgradeableProxy(address(impl), proxyAdmin, "");
+        EspressoSGXTEEVerifier proxied = EspressoSGXTEEVerifier(address(proxy));
+        vm.prank(teeVerifier);
+        proxied.initialize(teeVerifier, v3QuoteVerifier);
+        return proxied;
     }
 
     function testRegisterBatchPoster() public {
@@ -173,9 +218,11 @@ contract EspressoSGXTEEVerifierTest is Test {
 
         bytes32[] memory enclaveHashes = new bytes32[](1);
         enclaveHashes[0] = enclaveHash;
-        espressoSGXTEEVerifier.deleteEnclaveHashes(enclaveHashes, ServiceType.BatchPoster);
+        espressoTEEVerifier.deleteEnclaveHashes(
+            enclaveHashes, IEspressoTEEVerifier.TeeType.SGX, ServiceType.BatchPoster
+        );
         assertEq(
-            espressoSGXTEEVerifier.registeredEnclaveHashes(ServiceType.BatchPoster, enclaveHash),
+            espressoSGXTEEVerifier.registeredEnclaveHash(enclaveHash, ServiceType.BatchPoster),
             false
         );
         assertEq(
@@ -265,81 +312,98 @@ contract EspressoSGXTEEVerifierTest is Test {
      */
 
     function testIncorrectMrEnclave() public {
-        vm.startPrank(adminTEE);
         string memory quotePath = "/test/configs/attestation.bin";
         string memory inputFile = string.concat(vm.projectRoot(), quotePath);
         bytes memory sampleQuote = vm.readFileBinary(inputFile);
-        espressoSGXTEEVerifier = new EspressoSGXTEEVerifier(v3QuoteVerifier);
+        EspressoSGXTEEVerifier localVerifier = _deploySGX(adminTEE);
+        vm.prank(adminTEE);
+        bytes32[] memory hashes = new bytes32[](1);
+        hashes[0] = enclaveHash;
+        espressoTEEVerifier.deleteEnclaveHashes(
+            hashes, IEspressoTEEVerifier.TeeType.SGX, ServiceType.BatchPoster
+        );
         vm.expectRevert(
             abi.encodeWithSelector(
                 ITEEHelper.InvalidEnclaveHash.selector, enclaveHash, ServiceType.BatchPoster
             )
         );
         address batchPosterAddress = address(0xe2148eE53c0755215Df69b2616E552154EdC584f);
-        espressoSGXTEEVerifier.registerService(
-            sampleQuote, abi.encodePacked(batchPosterAddress), ServiceType.BatchPoster
+        espressoTEEVerifier.registerService(
+            sampleQuote,
+            abi.encodePacked(batchPosterAddress),
+            IEspressoTEEVerifier.TeeType.SGX,
+            ServiceType.BatchPoster
         );
     }
 
     function testSetEnclaveHash() public {
         vm.startPrank(adminTEE);
         bytes32 newMrEnclave = bytes32(hex"01");
-        espressoSGXTEEVerifier.setEnclaveHash(newMrEnclave, true, ServiceType.BatchPoster);
+        espressoTEEVerifier.setEnclaveHash(
+            newMrEnclave, true, IEspressoTEEVerifier.TeeType.SGX, ServiceType.BatchPoster
+        );
         assertEq(
-            espressoSGXTEEVerifier.registeredEnclaveHashes(ServiceType.BatchPoster, newMrEnclave),
+            espressoSGXTEEVerifier.registeredEnclaveHash(newMrEnclave, ServiceType.BatchPoster),
             true
         );
-        espressoSGXTEEVerifier.setEnclaveHash(newMrEnclave, false, ServiceType.BatchPoster);
+        espressoTEEVerifier.setEnclaveHash(
+            newMrEnclave, false, IEspressoTEEVerifier.TeeType.SGX, ServiceType.BatchPoster
+        );
         assertEq(
-            espressoSGXTEEVerifier.registeredEnclaveHashes(ServiceType.BatchPoster, newMrEnclave),
+            espressoSGXTEEVerifier.registeredEnclaveHash(newMrEnclave, ServiceType.BatchPoster),
             false
         );
         vm.stopPrank();
-        // Check that only owner can set the hash
+        // Check that only tee verifier can set the hash
         vm.startPrank(fakeAddress);
-        vm.expectRevert("Ownable: caller is not the owner");
+        vm.expectRevert(
+            abi.encodeWithSelector(ITEEHelper.UnauthorizedTEEVerifier.selector, fakeAddress)
+        );
         espressoSGXTEEVerifier.setEnclaveHash(newMrEnclave, true, ServiceType.BatchPoster);
         vm.stopPrank();
 
         vm.startPrank(adminTEE);
-        espressoSGXTEEVerifier.setEnclaveHash(newMrEnclave, true, ServiceType.CaffNode);
-        assertEq(
-            espressoSGXTEEVerifier.registeredEnclaveHashes(ServiceType.CaffNode, newMrEnclave), true
+        espressoTEEVerifier.setEnclaveHash(
+            newMrEnclave, true, IEspressoTEEVerifier.TeeType.SGX, ServiceType.CaffNode
         );
-        espressoSGXTEEVerifier.setEnclaveHash(newMrEnclave, false, ServiceType.CaffNode);
         assertEq(
-            espressoSGXTEEVerifier.registeredEnclaveHashes(ServiceType.CaffNode, newMrEnclave),
-            false
+            espressoSGXTEEVerifier.registeredEnclaveHash(newMrEnclave, ServiceType.CaffNode), true
+        );
+        espressoTEEVerifier.setEnclaveHash(
+            newMrEnclave, false, IEspressoTEEVerifier.TeeType.SGX, ServiceType.CaffNode
+        );
+        assertEq(
+            espressoSGXTEEVerifier.registeredEnclaveHash(newMrEnclave, ServiceType.CaffNode), false
         );
         vm.stopPrank();
-        // Check that only owner can set the hash
+        // Check that only tee verifier can set the hash
         vm.startPrank(fakeAddress);
-        vm.expectRevert("Ownable: caller is not the owner");
+        vm.expectRevert(
+            abi.encodeWithSelector(ITEEHelper.UnauthorizedTEEVerifier.selector, fakeAddress)
+        );
         espressoSGXTEEVerifier.setEnclaveHash(newMrEnclave, true, ServiceType.CaffNode);
-        vm.stopPrank();
-    }
-
-    // Test Ownership transfer using Ownable2Step contract
-    function testOwnershipTransfer() public {
-        vm.startPrank(adminTEE);
-        assertEq(address(espressoSGXTEEVerifier.owner()), adminTEE);
-        espressoSGXTEEVerifier.transferOwnership(fakeAddress);
-        vm.stopPrank();
-        vm.startPrank(fakeAddress);
-        espressoSGXTEEVerifier.acceptOwnership();
-        assertEq(address(espressoSGXTEEVerifier.owner()), fakeAddress);
         vm.stopPrank();
     }
 
     function testSetQuoteVerifier() public {
         vm.startPrank(adminTEE);
 
-        espressoSGXTEEVerifier.setQuoteVerifier(address(espressoSGXTEEVerifier));
+        espressoTEEVerifier.setQuoteVerifier(address(espressoSGXTEEVerifier));
         assertEq(address(espressoSGXTEEVerifier.quoteVerifier()), address(espressoSGXTEEVerifier));
         vm.stopPrank();
         vm.startPrank(fakeAddress);
-        vm.expectRevert("Ownable: caller is not the owner");
-        espressoSGXTEEVerifier.setQuoteVerifier(address(espressoSGXTEEVerifier));
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                OwnableUpgradeable.OwnableUnauthorizedAccount.selector, fakeAddress
+            )
+        );
+        espressoTEEVerifier.setQuoteVerifier(address(espressoSGXTEEVerifier));
         vm.stopPrank();
+    }
+
+    function testInitializeCannotRunTwice() public {
+        vm.prank(adminTEE);
+        vm.expectRevert(bytes("Initializable: contract is already initialized"));
+        espressoSGXTEEVerifier.initialize(adminTEE, v3QuoteVerifier);
     }
 }

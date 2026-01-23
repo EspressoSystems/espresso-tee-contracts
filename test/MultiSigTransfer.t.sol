@@ -5,7 +5,13 @@ import "forge-std/Test.sol";
 import {console2} from "forge-std/console2.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {Ownable2Step} from "@openzeppelin/contracts/access/Ownable2Step.sol";
+import {
+    OwnableUpgradeable
+} from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
+import {
+    TransparentUpgradeableProxy
+} from "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
 import {
     INitroEnclaveVerifier
 } from "aws-nitro-enclave-attestation/interfaces/INitroEnclaveVerifier.sol";
@@ -13,18 +19,19 @@ import {
 import {EspressoTEEVerifier} from "../src/EspressoTEEVerifier.sol";
 import {EspressoSGXTEEVerifier} from "../src/EspressoSGXTEEVerifier.sol";
 import {EspressoNitroTEEVerifier} from "../src/EspressoNitroTEEVerifier.sol";
+import {IEspressoSGXTEEVerifier} from "../src/interface/IEspressoSGXTEEVerifier.sol";
+import {IEspressoNitroTEEVerifier} from "../src/interface/IEspressoNitroTEEVerifier.sol";
 
 import {MultiSigTransfer} from "../scripts/MultiSigTransfer.s.sol";
 
 contract MultiSigTransferTest is Test {
-    bytes constant revertReason = bytes("Ownable2Step: caller is not the new owner");
     // declare addresses for the test
-    address originalOwner = address(141); // address value: 0x000000000000000000000000000000000000008c
+    address originalOwner = address(999); // address value: 0x00000000000000000000000000000000000003e7
     address newOwner = address(145); // address value: 0x0000000000000000000000000000000000000091
     address badNewOwner = address(146); // address value: 0x0000000000000000000000000000000000000092
 
     // string representations of addresses for vm.setEnv.
-    string originalOwnerString = "0x000000000000000000000000000000000000008c";
+    string originalOwnerString = "0x00000000000000000000000000000000000003e7";
     string newOwnerString = "0x0000000000000000000000000000000000000091";
     string badNewOwnerString = "0x0000000000000000000000000000000000000092";
 
@@ -46,22 +53,29 @@ contract MultiSigTransferTest is Test {
     //  Address of the automata V3QuoteVerifier deployed on sepolia
     address v3QuoteVerifier = address(0x6E64769A13617f528a2135692484B681Ee1a7169);
     bytes32 pcr0Hash = bytes32(0x555797ae2413bb1e4c352434a901032b16d7ac9090322532a3fccb9947977e8b);
+    // Admin must differ from the owner so it can forward calls to the implementation during tests.
+    address proxyAdmin = address(1000);
 
     MultiSigTransfer multiSigTransfer;
 
     function setUp() public {
+        vm.stopPrank();
         // fork an eth sepolia network to populate the quote verifier contract code.
         vm.createSelectFork(
             "https://rpc.ankr.com/eth_sepolia/10a56026b3c20655c1dab931446156dea4d63d87d1261934c82a1b8045885923"
         );
 
+        espressoTEEVerifier = _deployTEEVerifierWithPlaceholders();
+        espressoSGXTEEVerifier = _deploySGX(address(espressoTEEVerifier));
+        espressoNitroTEEVerifier = _deployNitro(address(espressoTEEVerifier));
         vm.startPrank(originalOwner);
-        espressoSGXTEEVerifier = new EspressoSGXTEEVerifier(v3QuoteVerifier);
-        espressoNitroTEEVerifier = new EspressoNitroTEEVerifier(
-            INitroEnclaveVerifier(0x2D7fbBAD6792698Ba92e67b7e180f8010B9Ec788)
+        espressoTEEVerifier.setEspressoSGXTEEVerifier(
+            IEspressoSGXTEEVerifier(address(espressoSGXTEEVerifier))
         );
-        espressoTEEVerifier =
-            new EspressoTEEVerifier(espressoSGXTEEVerifier, espressoNitroTEEVerifier);
+        espressoTEEVerifier.setEspressoNitroTEEVerifier(
+            IEspressoNitroTEEVerifier(address(espressoNitroTEEVerifier))
+        );
+        vm.stopPrank();
 
         teeVerifierAddress = Strings.toHexString(address(espressoTEEVerifier));
 
@@ -69,7 +83,46 @@ contract MultiSigTransferTest is Test {
         vm.setEnv(teeVerifierEnv, teeVerifierAddress);
 
         multiSigTransfer = new MultiSigTransfer();
-        vm.stopPrank();
+    }
+
+    function _deploySGX(address teeVerifier) internal returns (EspressoSGXTEEVerifier) {
+        EspressoSGXTEEVerifier impl = new EspressoSGXTEEVerifier();
+        TransparentUpgradeableProxy proxy = new TransparentUpgradeableProxy(
+            address(impl),
+            proxyAdmin,
+            abi.encodeCall(EspressoSGXTEEVerifier.initialize, (teeVerifier, v3QuoteVerifier))
+        );
+        return EspressoSGXTEEVerifier(address(proxy));
+    }
+
+    function _deployNitro(address teeVerifier) internal returns (EspressoNitroTEEVerifier) {
+        EspressoNitroTEEVerifier impl = new EspressoNitroTEEVerifier();
+        TransparentUpgradeableProxy proxy = new TransparentUpgradeableProxy(
+            address(impl),
+            proxyAdmin,
+            abi.encodeCall(
+                EspressoNitroTEEVerifier.initialize,
+                (teeVerifier, INitroEnclaveVerifier(0x2D7fbBAD6792698Ba92e67b7e180f8010B9Ec788))
+            )
+        );
+        return EspressoNitroTEEVerifier(address(proxy));
+    }
+
+    function _deployTEEVerifierWithPlaceholders() internal returns (EspressoTEEVerifier) {
+        EspressoTEEVerifier impl = new EspressoTEEVerifier();
+        TransparentUpgradeableProxy proxy = new TransparentUpgradeableProxy(
+            address(impl),
+            proxyAdmin,
+            abi.encodeCall(
+                EspressoTEEVerifier.initialize,
+                (
+                    originalOwner,
+                    IEspressoSGXTEEVerifier(address(0xDEAD)),
+                    IEspressoNitroTEEVerifier(address(0xBEEF))
+                )
+            )
+        );
+        return EspressoTEEVerifier(address(proxy));
     }
 
     // testValidTransfer tests accepting transfers to a valid address by attempting to accept ownership with the new owner address
@@ -91,12 +144,6 @@ contract MultiSigTransferTest is Test {
         console2.log("pending owner:", Ownable2Step(address(espressoTEEVerifier)).pendingOwner());
         espressoTEEVerifier.acceptOwnership();
         assertEq(Ownable(address(espressoTEEVerifier)).owner(), newOwner);
-
-        espressoNitroTEEVerifier.acceptOwnership();
-        assertEq(Ownable(address(espressoNitroTEEVerifier)).owner(), newOwner);
-
-        espressoSGXTEEVerifier.acceptOwnership();
-        assertEq(Ownable(address(espressoSGXTEEVerifier)).owner(), newOwner);
 
         vm.stopPrank();
     }
@@ -120,14 +167,12 @@ contract MultiSigTransferTest is Test {
         vm.startPrank(badNewOwner);
         console2.log("bad new owner:", badNewOwner);
         console2.log("pending owner:", Ownable2Step(address(espressoTEEVerifier)).pendingOwner());
-        vm.expectRevert(revertReason);
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                OwnableUpgradeable.OwnableUnauthorizedAccount.selector, badNewOwner
+            )
+        );
         espressoTEEVerifier.acceptOwnership();
-
-        vm.expectRevert(revertReason);
-        espressoNitroTEEVerifier.acceptOwnership();
-
-        vm.expectRevert(revertReason);
-        espressoSGXTEEVerifier.acceptOwnership();
 
         vm.stopPrank();
     }

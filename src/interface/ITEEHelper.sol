@@ -4,6 +4,10 @@ pragma solidity ^0.8.0;
 import {ServiceType} from "../types/Types.sol";
 
 interface ITEEHelper {
+    // Thrown when a caller is not the tee verifier
+    error UnauthorizedTEEVerifier(address caller);
+    // Thrown when a zero tee verifier address is provided
+    error InvalidTEEVerifierAddress();
     // Thrown when an invalid enclave hash is provided for a service type
     // function signature: 0x94f1e6f9
     error InvalidEnclaveHash(bytes32 enclaveHash, ServiceType service);
@@ -22,13 +26,16 @@ interface ITEEHelper {
         address indexed signer, bytes32 indexed enclaveHash, ServiceType indexed service
     );
 
+    // Emitted when the tee verifier is set
+    event TeeVerifierSet(address indexed teeVerifier);
+
     // Emitted when an enclave hash is set
     event EnclaveHashSet(
         bytes32 indexed enclaveHash, bool indexed valid, ServiceType indexed service
     );
 
     /**
-     * @notice This function allows the owner to set the enclave hash, setting valid to true will allow any enclave
+     * @notice Allows the tee verifier to set the enclave hash, setting valid to true will allow any enclave
      * with a valid pcr0 hash to register a signer (address which was generated inside the TEE). Setting valid to false
      * will further remove the enclave hash from the registered enclave hash list thus preventing any enclave with the given
      * hash from registering a signer.
@@ -37,6 +44,11 @@ interface ITEEHelper {
      * @param service The service type (BatchPoster or CaffNode)
      */
     function setEnclaveHash(bytes32 enclaveHash, bool valid, ServiceType service) external;
+
+    /*
+     * @notice Returns the tee verifier allowed to administer helpers
+     */
+    function teeVerifier() external view returns (address);
 
     /*
      * @notice This function retrieves whether an enclave hash is registered or not
@@ -69,7 +81,7 @@ interface ITEEHelper {
         returns (address[] memory);
 
     /*
-     * @notice This function allows the owner to delete registered enclave hashes from the list of valid enclave hashes
+     * @notice Allows the tee verifier to delete registered enclave hashes from the list of valid enclave hashes
      * @param enclaveHashes The array of enclave hashes to delete
      * @param service The service type (BatchPoster or CaffNode)
      */

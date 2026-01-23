@@ -6,6 +6,8 @@ import {IEspressoNitroTEEVerifier} from "./IEspressoNitroTEEVerifier.sol";
 import {ServiceType} from "../types/Types.sol";
 
 interface IEspressoTEEVerifier {
+    error InvalidVerifierAddress();
+
     /**
      * @notice This enum is used to specify the type of TEE
      */
@@ -77,4 +79,18 @@ interface IEspressoTEEVerifier {
     // Function to set the EspressoNitroTEEVerifier
     function setEspressoNitroTEEVerifier(IEspressoNitroTEEVerifier _espressoNitroTEEVerifier)
         external;
+
+    // Admin functions routed through the tee verifier
+    function setEnclaveHash(bytes32 enclaveHash, bool valid, TeeType teeType, ServiceType service)
+        external;
+
+    function deleteEnclaveHashes(
+        bytes32[] memory enclaveHashes,
+        TeeType teeType,
+        ServiceType service
+    ) external;
+
+    function setQuoteVerifier(address quoteVerifier) external;
+
+    function setNitroEnclaveVerifier(address nitroVerifier) external;
 }
