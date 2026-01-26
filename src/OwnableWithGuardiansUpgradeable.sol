@@ -1,8 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {Ownable2StepUpgradeable} from "@openzeppelin/contracts-upgradeable/access/Ownable2StepUpgradeable.sol";
-import {AccessControlEnumerableUpgradeable} from "@openzeppelin/contracts-upgradeable/access/extensions/AccessControlEnumerableUpgradeable.sol";
+import {Ownable2StepUpgradeable} from
+    "@openzeppelin/contracts-upgradeable/access/Ownable2StepUpgradeable.sol";
+import {AccessControlEnumerableUpgradeable} from
+    "@openzeppelin/contracts-upgradeable/access/extensions/AccessControlEnumerableUpgradeable.sol";
 import {UUPSUpgradeable} from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 
@@ -49,9 +51,7 @@ abstract contract OwnableWithGuardiansUpgradeable is
      * @dev Initializes the contract with an initial owner.
      * @param initialOwner The address that will be set as the initial owner and admin
      */
-    function __OwnableWithGuardians_init(
-        address initialOwner
-    ) internal onlyInitializing {
+    function __OwnableWithGuardians_init(address initialOwner) internal onlyInitializing {
         __Ownable_init(initialOwner);
         __AccessControl_init();
         __AccessControlEnumerable_init();
@@ -59,9 +59,10 @@ abstract contract OwnableWithGuardiansUpgradeable is
         __OwnableWithGuardians_init_unchained(initialOwner);
     }
 
-    function __OwnableWithGuardians_init_unchained(
-        address initialOwner
-    ) internal onlyInitializing {
+    function __OwnableWithGuardians_init_unchained(address initialOwner)
+        internal
+        onlyInitializing
+    {
         // Grant the initial owner the default admin role for managing guardians
         _grantRole(DEFAULT_ADMIN_ROLE, initialOwner);
 
@@ -171,7 +172,5 @@ abstract contract OwnableWithGuardiansUpgradeable is
      *
      * By default, only the owner can authorize upgrades. Override this function to customize authorization.
      */
-    function _authorizeUpgrade(
-        address newImplementation
-    ) internal virtual override onlyOwner {}
+    function _authorizeUpgrade(address newImplementation) internal virtual override onlyOwner {}
 }

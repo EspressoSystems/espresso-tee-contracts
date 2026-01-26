@@ -82,28 +82,17 @@ contract OwnableWithGuardiansUpgradeableTest is Test {
 
     event GuardianAdded(address indexed guardian);
     event GuardianRemoved(address indexed guardian);
-    event OwnershipTransferStarted(
-        address indexed previousOwner,
-        address indexed newOwner
-    );
-    event OwnershipTransferred(
-        address indexed previousOwner,
-        address indexed newOwner
-    );
+    event OwnershipTransferStarted(address indexed previousOwner, address indexed newOwner);
+    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
 
     function setUp() public {
         // Deploy implementation
         implementation = new MockGuardedContract();
 
         // Deploy proxy and initialize
-        bytes memory initData = abi.encodeWithSelector(
-            MockGuardedContract.initialize.selector,
-            owner
-        );
-        ERC1967Proxy proxyContract = new ERC1967Proxy(
-            address(implementation),
-            initData
-        );
+        bytes memory initData =
+            abi.encodeWithSelector(MockGuardedContract.initialize.selector, owner);
+        ERC1967Proxy proxyContract = new ERC1967Proxy(address(implementation), initData);
         proxy = MockGuardedContract(address(proxyContract));
     }
 
@@ -173,12 +162,7 @@ contract OwnableWithGuardiansUpgradeableTest is Test {
 
     function testOnlyOwnerCanAddGuardian() public {
         vm.prank(user);
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                Ownable.OwnableUnauthorizedAccount.selector,
-                user
-            )
-        );
+        vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, user));
         proxy.addGuardian(guardian1);
     }
 
@@ -187,12 +171,7 @@ contract OwnableWithGuardiansUpgradeableTest is Test {
         proxy.addGuardian(guardian1);
 
         vm.prank(user);
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                Ownable.OwnableUnauthorizedAccount.selector,
-                user
-            )
-        );
+        vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, user));
         proxy.removeGuardian(guardian1);
     }
 
@@ -202,10 +181,7 @@ contract OwnableWithGuardiansUpgradeableTest is Test {
 
         vm.prank(guardian1);
         vm.expectRevert(
-            abi.encodeWithSelector(
-                Ownable.OwnableUnauthorizedAccount.selector,
-                guardian1
-            )
+            abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, guardian1)
         );
         proxy.addGuardian(guardian2);
     }
@@ -220,12 +196,7 @@ contract OwnableWithGuardiansUpgradeableTest is Test {
 
     function testOwnerOnlyFunctionRevertsForNonOwner() public {
         vm.prank(user);
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                Ownable.OwnableUnauthorizedAccount.selector,
-                user
-            )
-        );
+        vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, user));
         proxy.ownerOnlyFunction();
     }
 
@@ -235,10 +206,7 @@ contract OwnableWithGuardiansUpgradeableTest is Test {
 
         vm.prank(guardian1);
         vm.expectRevert(
-            abi.encodeWithSelector(
-                Ownable.OwnableUnauthorizedAccount.selector,
-                guardian1
-            )
+            abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, guardian1)
         );
         proxy.ownerOnlyFunction();
     }
@@ -255,10 +223,7 @@ contract OwnableWithGuardiansUpgradeableTest is Test {
     function testGuardianOnlyFunctionRevertsForNonGuardian() public {
         vm.prank(user);
         vm.expectRevert(
-            abi.encodeWithSelector(
-                OwnableWithGuardiansUpgradeable.NotGuardian.selector,
-                user
-            )
+            abi.encodeWithSelector(OwnableWithGuardiansUpgradeable.NotGuardian.selector, user)
         );
         proxy.guardianOnlyFunction();
     }
@@ -266,10 +231,7 @@ contract OwnableWithGuardiansUpgradeableTest is Test {
     function testGuardianOnlyFunctionRevertsForOwner() public {
         vm.prank(owner);
         vm.expectRevert(
-            abi.encodeWithSelector(
-                OwnableWithGuardiansUpgradeable.NotGuardian.selector,
-                owner
-            )
+            abi.encodeWithSelector(OwnableWithGuardiansUpgradeable.NotGuardian.selector, owner)
         );
         proxy.guardianOnlyFunction();
     }
@@ -293,8 +255,7 @@ contract OwnableWithGuardiansUpgradeableTest is Test {
         vm.prank(user);
         vm.expectRevert(
             abi.encodeWithSelector(
-                OwnableWithGuardiansUpgradeable.NotGuardianOrOwner.selector,
-                user
+                OwnableWithGuardiansUpgradeable.NotGuardianOrOwner.selector, user
             )
         );
         proxy.guardianOrOwnerFunction();
@@ -353,12 +314,7 @@ contract OwnableWithGuardiansUpgradeableTest is Test {
 
         // Old owner should not be able to add guardians
         vm.prank(owner);
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                Ownable.OwnableUnauthorizedAccount.selector,
-                owner
-            )
-        );
+        vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, owner));
         proxy.addGuardian(guardian1);
     }
 
@@ -379,9 +335,7 @@ contract OwnableWithGuardiansUpgradeableTest is Test {
         proxy.upgradeToAndCall(address(newImplementation), "");
 
         // Test that upgrade worked
-        MockGuardedContractV2 upgradedProxy = MockGuardedContractV2(
-            address(proxy)
-        );
+        MockGuardedContractV2 upgradedProxy = MockGuardedContractV2(address(proxy));
         upgradedProxy.newFunction();
         assertEq(upgradedProxy.newValue(), 999);
 
@@ -393,12 +347,7 @@ contract OwnableWithGuardiansUpgradeableTest is Test {
         MockGuardedContractV2 newImplementation = new MockGuardedContractV2();
 
         vm.prank(user);
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                Ownable.OwnableUnauthorizedAccount.selector,
-                user
-            )
-        );
+        vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, user));
         proxy.upgradeToAndCall(address(newImplementation), "");
     }
 
@@ -410,10 +359,7 @@ contract OwnableWithGuardiansUpgradeableTest is Test {
 
         vm.prank(guardian1);
         vm.expectRevert(
-            abi.encodeWithSelector(
-                Ownable.OwnableUnauthorizedAccount.selector,
-                guardian1
-            )
+            abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, guardian1)
         );
         proxy.upgradeToAndCall(address(newImplementation), "");
     }
@@ -431,9 +377,7 @@ contract OwnableWithGuardiansUpgradeableTest is Test {
         proxy.upgradeToAndCall(address(newImplementation), "");
 
         // Check guardians are preserved
-        MockGuardedContractV2 upgradedProxy = MockGuardedContractV2(
-            address(proxy)
-        );
+        MockGuardedContractV2 upgradedProxy = MockGuardedContractV2(address(proxy));
         assertEq(upgradedProxy.guardianCount(), 2);
         assertTrue(upgradedProxy.isGuardian(guardian1));
         assertTrue(upgradedProxy.isGuardian(guardian2));
@@ -472,9 +416,7 @@ contract OwnableWithGuardiansUpgradeableTest is Test {
 
     function testAddZeroAddressAsGuardian() public {
         vm.prank(owner);
-        vm.expectRevert(
-            OwnableWithGuardiansUpgradeable.InvalidGuardianAddress.selector
-        );
+        vm.expectRevert(OwnableWithGuardiansUpgradeable.InvalidGuardianAddress.selector);
         proxy.addGuardian(address(0));
     }
 
@@ -504,12 +446,7 @@ contract OwnableWithGuardiansUpgradeableTest is Test {
         vm.stopPrank();
 
         // No owner, so can't add/remove guardians
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                Ownable.OwnableUnauthorizedAccount.selector,
-                owner
-            )
-        );
+        vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, owner));
         vm.prank(owner);
         proxy.addGuardian(guardian2);
     }
@@ -562,11 +499,7 @@ contract OwnableWithGuardiansUpgradeableTest is Test {
         vm.prank(user);
         vm.expectRevert(
             abi.encodeWithSelector(
-                bytes4(
-                    keccak256(
-                        "AccessControlUnauthorizedAccount(address,bytes32)"
-                    )
-                ),
+                bytes4(keccak256("AccessControlUnauthorizedAccount(address,bytes32)")),
                 user,
                 adminRole
             )
@@ -613,9 +546,7 @@ contract OwnableWithGuardiansUpgradeableTest is Test {
         assertEq(proxy.value(), 200);
     }
 
-    function testFuzz_NonGuardianCannotCallGuardianFunction(
-        address notGuardian
-    ) public {
+    function testFuzz_NonGuardianCannotCallGuardianFunction(address notGuardian) public {
         vm.assume(notGuardian != address(0));
         vm.assume(notGuardian != owner);
 
@@ -627,8 +558,7 @@ contract OwnableWithGuardiansUpgradeableTest is Test {
         vm.prank(notGuardian);
         vm.expectRevert(
             abi.encodeWithSelector(
-                OwnableWithGuardiansUpgradeable.NotGuardian.selector,
-                notGuardian
+                OwnableWithGuardiansUpgradeable.NotGuardian.selector, notGuardian
             )
         );
         proxy.guardianOnlyFunction();
