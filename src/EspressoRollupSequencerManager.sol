@@ -27,7 +27,7 @@ contract EspressoRollupSequencerManager is Ownable2Step, IEspressoRollupSequence
         _;
     }
 
-    constructor(address[] memory initialSequencers) Ownable() {
+    constructor(address[] memory initialSequencers) Ownable(msg.sender) {
         for (uint256 i = 0; i < initialSequencers.length; i++) {
             insertSequencer(initialSequencers[i]);
         }

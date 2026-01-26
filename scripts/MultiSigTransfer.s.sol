@@ -130,7 +130,7 @@ contract MultiSigTransfer is Script {
         address contractAddress,
         address originalOwner,
         address targetOwner
-    ) internal {
+    ) internal view {
         require(
             Ownable(contractAddress).owner() == originalOwner,
             "Current owner of contract is not the original owner"
