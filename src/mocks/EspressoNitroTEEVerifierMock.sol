@@ -3,7 +3,7 @@ pragma solidity ^0.8.0;
 
 import {IEspressoNitroTEEVerifier} from "../interface/IEspressoNitroTEEVerifier.sol";
 import {
-    VerificationResult
+    VerifierJournal
 } from "aws-nitro-enclave-attestation/interfaces/INitroEnclaveVerifier.sol";
 
 /**
@@ -25,16 +25,22 @@ contract EspressoNitroTEEVerifierMock is IEspressoNitroTEEVerifier {
      * @param proofBytes The proof bytes (ignored in mock)
      */
     function registerSigner(bytes calldata output, bytes calldata proofBytes) external {
-        // In mock, we expect the signer address to be passed in the output parameter
-        // as the first 20 bytes for simplicity
-        require(output.length >= 20, "Output must contain signer address");
+        VerifierJournal memory journal = abi.decode(output, (VerifierJournal));
 
-        address signer = address(uint160(bytes20(output[:20])));
-        require(signer != address(0), "Invalid signer address");
+        // The publicKey's first byte 0x04 byte followed which only determine if the public key is compressed or not.
+        // so we ignore the first byte.
+        bytes memory publicKeyWithoutPrefix = new bytes(journal.publicKey.length - 1);
+        for (uint256 i = 1; i < journal.publicKey.length; i++) {
+            publicKeyWithoutPrefix[i - 1] = journal.publicKey[i];
+        }
 
-        if (!registeredSigners[signer]) {
-            registeredSigners[signer] = true;
-            emit AWSSignerRegistered(signer, bytes32(0));
+        bytes32 publicKeyHash = keccak256(publicKeyWithoutPrefix);
+        // Note: We take the keccak hash first to derive the address.
+        // This is the same which the go ethereum crypto library is doing for PubkeyToAddress()
+        address enclaveAddress = address(uint160(uint256(publicKeyHash)));
+        // Mark the signer as registered
+        if (!registeredSigners[enclaveAddress]) {
+            registeredSigners[enclaveAddress] = true;
         }
     }
 
