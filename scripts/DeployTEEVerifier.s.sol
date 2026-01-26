@@ -3,12 +3,9 @@ pragma solidity 0.8.25;
 import {Script} from "forge-std/Script.sol";
 import {console2} from "forge-std/console2.sol";
 import {EspressoTEEVerifier} from "src/EspressoTEEVerifier.sol";
-import {
-    IEspressoSGXTEEVerifier
-} from "../src/interface/IEspressoSGXTEEVerifier.sol";
-import {
-    IEspressoNitroTEEVerifier
-} from "../src/interface/IEspressoNitroTEEVerifier.sol";
+import {IEspressoSGXTEEVerifier} from "../src/interface/IEspressoSGXTEEVerifier.sol";
+import {IEspressoNitroTEEVerifier} from "../src/interface/IEspressoNitroTEEVerifier.sol";
+import {ERC1967Proxy} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 
 contract DeployTEEVerifier is Script {
     function run() external {
@@ -32,19 +29,53 @@ contract DeployTEEVerifier is Script {
         IEspressoNitroTEEVerifier nitroVerifier = IEspressoNitroTEEVerifier(
             nitroVerifierAddr
         );
-        EspressoTEEVerifier verifier = new EspressoTEEVerifier(
+
+        // Get the deployer address (msg.sender) to use as initial owner
+        address initialOwner = msg.sender;
+        console2.log("Deploying with initial owner:", initialOwner);
+
+        // Deploy implementation contract
+        EspressoTEEVerifier implementation = new EspressoTEEVerifier();
+        console2.log("Implementation deployed at:", address(implementation));
+
+        // Prepare initialization data
+        bytes memory initData = abi.encodeWithSelector(
+            EspressoTEEVerifier.initialize.selector,
             sgxVerifier,
-            nitroVerifier
+            nitroVerifier,
+            initialOwner
         );
-        console2.log("TEEVerifier deployed at:", address(verifier));
+
+        // Deploy proxy and initialize
+        ERC1967Proxy proxy = new ERC1967Proxy(
+            address(implementation),
+            initData
+        );
+        EspressoTEEVerifier verifier = EspressoTEEVerifier(address(proxy));
+        console2.log("Proxy (TEEVerifier) deployed at:", address(proxy));
+        console2.log("Owner:", verifier.owner());
 
         // Save deployment artifacts
         string memory chainId = vm.toString(block.chainid);
         string memory dir = string.concat(vm.projectRoot(), "/deployments");
 
-        // Write Espresso address
+        // Write both implementation and proxy addresses
+        string memory json = "";
+        json = vm.serializeAddress(
+            "",
+            "Implementation",
+            address(implementation)
+        );
+        json = vm.serializeAddress("", "Proxy", address(proxy));
+        json = vm.serializeAddress(
+            "",
+            "EspressoTEEVerifier",
+            address(verifier)
+        );
+        json = vm.serializeAddress("", "Owner", initialOwner);
+
         vm.writeJson(
-            vm.serializeAddress("", "EspressoTEEVerifier", address(verifier)),
+            json,
             string.concat(dir, "/", chainId, "-espresso-tee-verifier.json")
         );
 
