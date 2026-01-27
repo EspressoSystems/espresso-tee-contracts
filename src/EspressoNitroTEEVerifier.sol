@@ -20,18 +20,31 @@ import {TEEHelper} from "./TEEHelper.sol";
 contract EspressoNitroTEEVerifier is IEspressoNitroTEEVerifier, TEEHelper {
     using EnumerableSet for EnumerableSet.AddressSet;
 
-    INitroEnclaveVerifier public _nitroEnclaveVerifier;
+    /// @custom:storage-location erc7201:espresso.storage.EspressoNitroTEEVerifier
+    struct EspressoNitroTEEVerifierStorage {
+        INitroEnclaveVerifier nitroEnclaveVerifier;
+    }
+
+    // keccak256(abi.encode(uint256(keccak256("espresso.storage.EspressoNitroTEEVerifier")) - 1)) & ~bytes32(uint256(0xff))
+    bytes32 private constant ESPRESSO_NITRO_TEE_VERIFIER_STORAGE_SLOT =
+        0x719e73d7233ff4744eafaba0d5366ca21ea408c038f043b446a24c6ec313a800;
+
+    function _nitroLayout() private pure returns (EspressoNitroTEEVerifierStorage storage $) {
+        assembly {
+            $.slot := ESPRESSO_NITRO_TEE_VERIFIER_STORAGE_SLOT
+        }
+    }
 
     constructor() {
         _disableInitializers();
     }
 
-    function initialize(address teeVerifier_, INitroEnclaveVerifier nitroEnclaveVerifier)
+    function initialize(address teeVerifier_, INitroEnclaveVerifier nitroEnclaveVerifier_)
         external
         initializer
     {
         __TEEHelper_init(teeVerifier_);
-        _setNitroEnclaveVerifier(address(nitroEnclaveVerifier));
+        _setNitroEnclaveVerifier(address(nitroEnclaveVerifier_));
     }
 
     /**
@@ -44,12 +57,13 @@ contract EspressoNitroTEEVerifier is IEspressoNitroTEEVerifier, TEEHelper {
     function registerService(bytes calldata output, bytes calldata proofBytes, ServiceType service)
         external
     {
-        VerifierJournal memory journal = _nitroEnclaveVerifier.verify(
-            output,
-            // Currently only Succinct ZK coprocessor is supported
-            ZkCoProcessorType.Succinct,
-            proofBytes
-        );
+        VerifierJournal memory journal = _nitroLayout().nitroEnclaveVerifier
+            .verify(
+                output,
+                // Currently only Succinct ZK coprocessor is supported
+                ZkCoProcessorType.Succinct,
+                proofBytes
+            );
 
         if (journal.result != VerificationResult.Success) {
             revert VerificationFailed(journal.result);
@@ -91,15 +105,23 @@ contract EspressoNitroTEEVerifier is IEspressoNitroTEEVerifier, TEEHelper {
      * @notice This function sets the NitroEnclaveVerifier contract address
      * @param nitroEnclaveVerifier The address of the NitroEnclaveVerifier contract
      */
-    function setNitroEnclaveVerifier(address nitroEnclaveVerifier) external onlyTEEVerifier {
-        _setNitroEnclaveVerifier(nitroEnclaveVerifier);
+    function setNitroEnclaveVerifier(address nitroEnclaveVerifier_) external onlyTEEVerifier {
+        _setNitroEnclaveVerifier(nitroEnclaveVerifier_);
     }
 
-    function _setNitroEnclaveVerifier(address nitroEnclaveVerifier) internal {
-        if (nitroEnclaveVerifier == address(0)) {
+    function _setNitroEnclaveVerifier(address nitroEnclaveVerifier_) internal {
+        if (nitroEnclaveVerifier_ == address(0)) {
             revert InvalidNitroEnclaveVerifierAddress();
         }
-        _nitroEnclaveVerifier = INitroEnclaveVerifier(nitroEnclaveVerifier);
-        emit NitroEnclaveVerifierSet(nitroEnclaveVerifier);
+        _nitroLayout().nitroEnclaveVerifier = INitroEnclaveVerifier(nitroEnclaveVerifier_);
+        emit NitroEnclaveVerifierSet(nitroEnclaveVerifier_);
+    }
+
+    /**
+     * @notice Get the NitroEnclaveVerifier address
+     * @return The NitroEnclaveVerifier interface
+     */
+    function nitroEnclaveVerifier() external view returns (INitroEnclaveVerifier) {
+        return _nitroLayout().nitroEnclaveVerifier;
     }
 }

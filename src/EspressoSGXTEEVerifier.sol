@@ -28,8 +28,21 @@ contract EspressoSGXTEEVerifier is IEspressoSGXTEEVerifier, TEEHelper {
     using BytesUtils for bytes;
     using EnumerableSet for EnumerableSet.AddressSet;
 
-    // V3QuoteVerififer contract from automata to verify the quote
-    V3QuoteVerifier public quoteVerifier;
+    /// @custom:storage-location erc7201:espresso.storage.EspressoSGXTEEVerifier
+    struct EspressoSGXTEEVerifierStorage {
+        // V3QuoteVerifier contract from automata to verify the quote
+        V3QuoteVerifier quoteVerifier;
+    }
+
+    // keccak256(abi.encode(uint256(keccak256("espresso.storage.EspressoSGXTEEVerifier")) - 1)) & ~bytes32(uint256(0xff))
+    bytes32 private constant ESPRESSO_SGX_TEE_VERIFIER_STORAGE_SLOT =
+        0xc4a43faa4788bd802027338f4f89780ffdcf150d97a5f330b9d959407fde9600;
+
+    function _sgxLayout() private pure returns (EspressoSGXTEEVerifierStorage storage $) {
+        assembly {
+            $.slot := ESPRESSO_SGX_TEE_VERIFIER_STORAGE_SLOT
+        }
+    }
 
     constructor() {
         _disableInitializers();
@@ -62,7 +75,7 @@ contract EspressoSGXTEEVerifier is IEspressoSGXTEEVerifier, TEEHelper {
 
         // Verify the quote
         //slither-disable-next-line unused-return
-        (bool success,) = quoteVerifier.verifyQuote(header, rawQuote);
+        (bool success,) = _sgxLayout().quoteVerifier.verifyQuote(header, rawQuote);
         if (!success) {
             revert InvalidQuote();
         }
@@ -188,7 +201,15 @@ contract EspressoSGXTEEVerifier is IEspressoSGXTEEVerifier, TEEHelper {
         if (_quoteVerifier == address(0) || _quoteVerifier.code.length <= 0) {
             revert InvalidQuoteVerifierAddress();
         }
-        quoteVerifier = V3QuoteVerifier(_quoteVerifier);
+        _sgxLayout().quoteVerifier = V3QuoteVerifier(_quoteVerifier);
         emit QuoteVerifierSet(_quoteVerifier);
+    }
+
+    /**
+     * @notice Get the V3QuoteVerifier address
+     * @return The V3QuoteVerifier contract
+     */
+    function quoteVerifier() external view returns (V3QuoteVerifier) {
+        return _sgxLayout().quoteVerifier;
     }
 }

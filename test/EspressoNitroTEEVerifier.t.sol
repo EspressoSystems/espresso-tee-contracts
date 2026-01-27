@@ -20,7 +20,8 @@ import {
 } from "aws-nitro-enclave-attestation/interfaces/INitroEnclaveVerifier.sol";
 
 contract EspressoNitroTEEVerifierTest is Test {
-    address proxyAdmin = address(140);
+    // Owner of the ProxyAdmin contracts that get auto-created by TransparentUpgradeableProxy
+    address proxyAdminOwner = address(140);
     address adminTEE = address(141);
     address fakeAddress = address(145);
 
@@ -51,7 +52,7 @@ contract EspressoNitroTEEVerifierTest is Test {
         EspressoTEEVerifier impl = new EspressoTEEVerifier();
         TransparentUpgradeableProxy proxy = new TransparentUpgradeableProxy(
             address(impl),
-            proxyAdmin,
+            proxyAdminOwner,
             abi.encodeCall(
                 EspressoTEEVerifier.initialize,
                 (
@@ -67,7 +68,7 @@ contract EspressoNitroTEEVerifierTest is Test {
     function _deployNitro(address teeVerifier) internal returns (EspressoNitroTEEVerifier) {
         EspressoNitroTEEVerifier impl = new EspressoNitroTEEVerifier();
         TransparentUpgradeableProxy proxy =
-            new TransparentUpgradeableProxy(address(impl), proxyAdmin, "");
+            new TransparentUpgradeableProxy(address(impl), proxyAdminOwner, "");
         EspressoNitroTEEVerifier proxied = EspressoNitroTEEVerifier(address(proxy));
         vm.prank(teeVerifier);
         proxied.initialize(

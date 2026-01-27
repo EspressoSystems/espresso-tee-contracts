@@ -23,7 +23,8 @@ import {
 contract EspressoTEEVerifierTest is Test {
     address adminTEE = address(141);
     address fakeAddress = address(145);
-    address proxyAdmin = address(140);
+    // Owner of the ProxyAdmin contracts that get auto-created by TransparentUpgradeableProxy
+    address proxyAdminOwner = address(140);
 
     EspressoTEEVerifier espressoTEEVerifier;
     EspressoSGXTEEVerifier espressoSGXTEEVerifier;
@@ -38,7 +39,7 @@ contract EspressoTEEVerifierTest is Test {
         EspressoSGXTEEVerifier impl = new EspressoSGXTEEVerifier();
         TransparentUpgradeableProxy proxy = new TransparentUpgradeableProxy(
             address(impl),
-            proxyAdmin,
+            proxyAdminOwner,
             abi.encodeCall(EspressoSGXTEEVerifier.initialize, (teeVerifier, v3QuoteVerifier))
         );
         return EspressoSGXTEEVerifier(address(proxy));
@@ -48,7 +49,7 @@ contract EspressoTEEVerifierTest is Test {
         EspressoNitroTEEVerifier impl = new EspressoNitroTEEVerifier();
         TransparentUpgradeableProxy proxy = new TransparentUpgradeableProxy(
             address(impl),
-            proxyAdmin,
+            proxyAdminOwner,
             abi.encodeCall(
                 EspressoNitroTEEVerifier.initialize,
                 (teeVerifier, INitroEnclaveVerifier(0x2D7fbBAD6792698Ba92e67b7e180f8010B9Ec788))
@@ -61,7 +62,7 @@ contract EspressoTEEVerifierTest is Test {
         EspressoTEEVerifier impl = new EspressoTEEVerifier();
         TransparentUpgradeableProxy proxy = new TransparentUpgradeableProxy(
             address(impl),
-            proxyAdmin,
+            proxyAdminOwner,
             abi.encodeCall(
                 EspressoTEEVerifier.initialize,
                 (
@@ -550,7 +551,7 @@ contract EspressoTEEVerifierTest is Test {
         vm.prank(adminTEE);
         espressoTEEVerifier.setNitroEnclaveVerifier(address(espressoNitroTEEVerifier));
         assertEq(
-            address(espressoNitroTEEVerifier._nitroEnclaveVerifier()),
+            address(espressoNitroTEEVerifier.nitroEnclaveVerifier()),
             address(espressoNitroTEEVerifier)
         );
     }

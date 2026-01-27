@@ -3,6 +3,9 @@ pragma solidity ^0.8.0;
 
 import {Header} from "@automata-network/dcap-attestation/contracts/types/CommonStruct.sol";
 import {EnclaveReport} from "@automata-network/dcap-attestation/contracts/types/V3Structs.sol";
+import {
+    V3QuoteVerifier
+} from "@automata-network/dcap-attestation/contracts/verifiers/V3QuoteVerifier.sol";
 import "../types/Types.sol";
 import "./ITEEHelper.sol";
 
@@ -34,4 +37,10 @@ interface IEspressoSGXTEEVerifier is ITEEHelper {
      * @notice This function sets the QuoteVerifier contract address
      */
     function setQuoteVerifier(address quoteVerifierAddress) external;
+
+    /*
+     * @notice Get the V3QuoteVerifier contract address
+     * @return The V3QuoteVerifier contract
+     */
+    function quoteVerifier() external view returns (V3QuoteVerifier);
 }

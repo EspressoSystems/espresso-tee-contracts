@@ -17,7 +17,8 @@ import {ITEEHelper} from "../src/interface/ITEEHelper.sol";
 import {ServiceType} from "../src/types/Types.sol";
 
 contract EspressoSGXTEEVerifierTest is Test {
-    address proxyAdmin = address(140);
+    // Owner of the ProxyAdmin contracts that get auto-created by TransparentUpgradeableProxy
+    address proxyAdminOwner = address(140);
     address adminTEE = address(141);
     address fakeAddress = address(145);
 
@@ -55,7 +56,7 @@ contract EspressoSGXTEEVerifierTest is Test {
         EspressoTEEVerifier impl = new EspressoTEEVerifier();
         TransparentUpgradeableProxy proxy = new TransparentUpgradeableProxy(
             address(impl),
-            proxyAdmin,
+            proxyAdminOwner,
             abi.encodeCall(
                 EspressoTEEVerifier.initialize,
                 (
@@ -71,7 +72,7 @@ contract EspressoSGXTEEVerifierTest is Test {
     function _deploySGX(address teeVerifier) internal returns (EspressoSGXTEEVerifier) {
         EspressoSGXTEEVerifier impl = new EspressoSGXTEEVerifier();
         TransparentUpgradeableProxy proxy =
-            new TransparentUpgradeableProxy(address(impl), proxyAdmin, "");
+            new TransparentUpgradeableProxy(address(impl), proxyAdminOwner, "");
         EspressoSGXTEEVerifier proxied = EspressoSGXTEEVerifier(address(proxy));
         vm.prank(teeVerifier);
         proxied.initialize(teeVerifier, v3QuoteVerifier);

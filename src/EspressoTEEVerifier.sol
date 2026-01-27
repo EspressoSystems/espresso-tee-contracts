@@ -14,8 +14,21 @@ import {ServiceType} from "./types/Types.sol";
  *     @notice This contract is used to resgister a signer which has been attested by the TEE
  */
 contract EspressoTEEVerifier is Ownable2StepUpgradeable, IEspressoTEEVerifier {
-    IEspressoSGXTEEVerifier public espressoSGXTEEVerifier;
-    IEspressoNitroTEEVerifier public espressoNitroTEEVerifier;
+    /// @custom:storage-location erc7201:espresso.storage.EspressoTEEVerifier
+    struct EspressoTEEVerifierStorage {
+        IEspressoSGXTEEVerifier espressoSGXTEEVerifier;
+        IEspressoNitroTEEVerifier espressoNitroTEEVerifier;
+    }
+
+    // keccak256(abi.encode(uint256(keccak256("espresso.storage.EspressoTEEVerifier")) - 1)) & ~bytes32(uint256(0xff))
+    bytes32 private constant ESPRESSO_TEE_VERIFIER_STORAGE_SLOT =
+        0x89639f446056f5d7661bbd94e8ab0617a80058ed7b072845818d4b93332e4800;
+
+    function _layout() private pure returns (EspressoTEEVerifierStorage storage $) {
+        assembly {
+            $.slot := ESPRESSO_TEE_VERIFIER_STORAGE_SLOT
+        }
+    }
 
     constructor() {
         _disableInitializers();
@@ -26,8 +39,9 @@ contract EspressoTEEVerifier is Ownable2StepUpgradeable, IEspressoTEEVerifier {
         IEspressoSGXTEEVerifier _espressoSGXTEEVerifier,
         IEspressoNitroTEEVerifier _espressoNitroTEEVerifier
     ) public initializer {
-        espressoSGXTEEVerifier = _espressoSGXTEEVerifier;
-        espressoNitroTEEVerifier = _espressoNitroTEEVerifier;
+        EspressoTEEVerifierStorage storage $ = _layout();
+        $.espressoSGXTEEVerifier = _espressoSGXTEEVerifier;
+        $.espressoNitroTEEVerifier = _espressoNitroTEEVerifier;
         __Ownable2Step_init();
         _transferOwnership(_owner);
     }
@@ -45,13 +59,14 @@ contract EspressoTEEVerifier is Ownable2StepUpgradeable, IEspressoTEEVerifier {
         TeeType teeType,
         ServiceType service
     ) external view returns (bool) {
+        EspressoTEEVerifierStorage storage $ = _layout();
         address signer = ECDSA.recover(userDataHash, signature);
         if (teeType == TeeType.SGX) {
-            if (!espressoSGXTEEVerifier.registeredService(signer, service)) {
+            if (!$.espressoSGXTEEVerifier.registeredService(signer, service)) {
                 revert InvalidSignature();
             }
         } else {
-            if (!espressoNitroTEEVerifier.registeredService(signer, service)) {
+            if (!$.espressoNitroTEEVerifier.registeredService(signer, service)) {
                 revert InvalidSignature();
             }
         }
@@ -73,11 +88,12 @@ contract EspressoTEEVerifier is Ownable2StepUpgradeable, IEspressoTEEVerifier {
         TeeType teeType,
         ServiceType service
     ) external {
+        EspressoTEEVerifierStorage storage $ = _layout();
         if (teeType == TeeType.SGX) {
-            espressoSGXTEEVerifier.registerService(verificationData, data, service);
+            $.espressoSGXTEEVerifier.registerService(verificationData, data, service);
             return;
         } else {
-            espressoNitroTEEVerifier.registerService(verificationData, data, service);
+            $.espressoNitroTEEVerifier.registerService(verificationData, data, service);
             return;
         }
     }
@@ -92,10 +108,11 @@ contract EspressoTEEVerifier is Ownable2StepUpgradeable, IEspressoTEEVerifier {
         view
         returns (bool)
     {
+        EspressoTEEVerifierStorage storage $ = _layout();
         if (teeType == TeeType.SGX) {
-            return espressoSGXTEEVerifier.registeredService(signer, service);
+            return $.espressoSGXTEEVerifier.registeredService(signer, service);
         } else {
-            return espressoNitroTEEVerifier.registeredService(signer, service);
+            return $.espressoNitroTEEVerifier.registeredService(signer, service);
         }
     }
 
@@ -109,10 +126,11 @@ contract EspressoTEEVerifier is Ownable2StepUpgradeable, IEspressoTEEVerifier {
         view
         returns (bool)
     {
+        EspressoTEEVerifierStorage storage $ = _layout();
         if (teeType == TeeType.SGX) {
-            return espressoSGXTEEVerifier.registeredEnclaveHash(enclaveHash, service);
+            return $.espressoSGXTEEVerifier.registeredEnclaveHash(enclaveHash, service);
         } else {
-            return espressoNitroTEEVerifier.registeredEnclaveHash(enclaveHash, service);
+            return $.espressoNitroTEEVerifier.registeredEnclaveHash(enclaveHash, service);
         }
     }
 
@@ -128,10 +146,11 @@ contract EspressoTEEVerifier is Ownable2StepUpgradeable, IEspressoTEEVerifier {
         view
         returns (address[] memory)
     {
+        EspressoTEEVerifierStorage storage $ = _layout();
         if (teeType == TeeType.SGX) {
-            return espressoSGXTEEVerifier.enclaveHashSigners(enclaveHash, service);
+            return $.espressoSGXTEEVerifier.enclaveHashSigners(enclaveHash, service);
         } else {
-            return espressoNitroTEEVerifier.enclaveHashSigners(enclaveHash, service);
+            return $.espressoNitroTEEVerifier.enclaveHashSigners(enclaveHash, service);
         }
     }
 
@@ -147,7 +166,7 @@ contract EspressoTEEVerifier is Ownable2StepUpgradeable, IEspressoTEEVerifier {
             revert InvalidVerifierAddress();
         }
 
-        espressoSGXTEEVerifier = _espressoSGXTEEVerifier;
+        _layout().espressoSGXTEEVerifier = _espressoSGXTEEVerifier;
     }
 
     /**
@@ -162,7 +181,7 @@ contract EspressoTEEVerifier is Ownable2StepUpgradeable, IEspressoTEEVerifier {
             revert InvalidVerifierAddress();
         }
 
-        espressoNitroTEEVerifier = _espressoNitroTEEVerifier;
+        _layout().espressoNitroTEEVerifier = _espressoNitroTEEVerifier;
     }
 
     /**
@@ -176,10 +195,11 @@ contract EspressoTEEVerifier is Ownable2StepUpgradeable, IEspressoTEEVerifier {
         external
         onlyOwner
     {
+        EspressoTEEVerifierStorage storage $ = _layout();
         if (teeType == TeeType.SGX) {
-            espressoSGXTEEVerifier.setEnclaveHash(enclaveHash, valid, service);
+            $.espressoSGXTEEVerifier.setEnclaveHash(enclaveHash, valid, service);
         } else {
-            espressoNitroTEEVerifier.setEnclaveHash(enclaveHash, valid, service);
+            $.espressoNitroTEEVerifier.setEnclaveHash(enclaveHash, valid, service);
         }
     }
 
@@ -194,10 +214,11 @@ contract EspressoTEEVerifier is Ownable2StepUpgradeable, IEspressoTEEVerifier {
         TeeType teeType,
         ServiceType service
     ) external onlyOwner {
+        EspressoTEEVerifierStorage storage $ = _layout();
         if (teeType == TeeType.SGX) {
-            espressoSGXTEEVerifier.deleteEnclaveHashes(enclaveHashes, service);
+            $.espressoSGXTEEVerifier.deleteEnclaveHashes(enclaveHashes, service);
         } else {
-            espressoNitroTEEVerifier.deleteEnclaveHashes(enclaveHashes, service);
+            $.espressoNitroTEEVerifier.deleteEnclaveHashes(enclaveHashes, service);
         }
     }
 
@@ -206,7 +227,7 @@ contract EspressoTEEVerifier is Ownable2StepUpgradeable, IEspressoTEEVerifier {
      * @param quoteVerifier The address of the quote verifier
      */
     function setQuoteVerifier(address quoteVerifier) external onlyOwner {
-        espressoSGXTEEVerifier.setQuoteVerifier(quoteVerifier);
+        _layout().espressoSGXTEEVerifier.setQuoteVerifier(quoteVerifier);
     }
 
     /**
@@ -214,6 +235,22 @@ contract EspressoTEEVerifier is Ownable2StepUpgradeable, IEspressoTEEVerifier {
      * @param nitroVerifier The address of the nitro enclave verifier
      */
     function setNitroEnclaveVerifier(address nitroVerifier) external onlyOwner {
-        espressoNitroTEEVerifier.setNitroEnclaveVerifier(nitroVerifier);
+        _layout().espressoNitroTEEVerifier.setNitroEnclaveVerifier(nitroVerifier);
+    }
+
+    /**
+     * @notice Get the EspressoSGXTEEVerifier address
+     * @return The EspressoSGXTEEVerifier interface
+     */
+    function espressoSGXTEEVerifier() external view returns (IEspressoSGXTEEVerifier) {
+        return _layout().espressoSGXTEEVerifier;
+    }
+
+    /**
+     * @notice Get the EspressoNitroTEEVerifier address
+     * @return The EspressoNitroTEEVerifier interface
+     */
+    function espressoNitroTEEVerifier() external view returns (IEspressoNitroTEEVerifier) {
+        return _layout().espressoNitroTEEVerifier;
     }
 }

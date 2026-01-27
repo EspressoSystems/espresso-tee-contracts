@@ -18,14 +18,15 @@ contract TEEHelperImplementation is TEEHelper {
 contract TEEHelperTest is Test {
     address initialTEEVerifier = address(0xBEEF);
     address rando = address(0xBAD);
-    address proxyAdmin = address(0xAAA);
+    // Owner of the ProxyAdmin contracts that get auto-created by TransparentUpgradeableProxy
+    address proxyAdminOwner = address(0xAAA);
 
     TEEHelperImplementation helper;
 
     function setUp() public {
         TEEHelperImplementation impl = new TEEHelperImplementation();
         TransparentUpgradeableProxy proxy =
-            new TransparentUpgradeableProxy(address(impl), proxyAdmin, "");
+            new TransparentUpgradeableProxy(address(impl), proxyAdminOwner, "");
         helper = TEEHelperImplementation(address(proxy));
         vm.prank(initialTEEVerifier);
         helper.initialize(initialTEEVerifier);
@@ -49,7 +50,7 @@ contract TEEHelperTest is Test {
     function testInitializeZeroAddressReverts() public {
         TEEHelperImplementation impl = new TEEHelperImplementation();
         TransparentUpgradeableProxy proxy =
-            new TransparentUpgradeableProxy(address(impl), proxyAdmin, "");
+            new TransparentUpgradeableProxy(address(impl), proxyAdminOwner, "");
         TEEHelperImplementation localHelper = TEEHelperImplementation(address(proxy));
         vm.prank(initialTEEVerifier);
         vm.expectRevert(ITEEHelper.InvalidTEEVerifierAddress.selector);

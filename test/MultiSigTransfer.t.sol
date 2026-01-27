@@ -53,8 +53,9 @@ contract MultiSigTransferTest is Test {
     //  Address of the automata V3QuoteVerifier deployed on sepolia
     address v3QuoteVerifier = address(0x6E64769A13617f528a2135692484B681Ee1a7169);
     bytes32 pcr0Hash = bytes32(0x555797ae2413bb1e4c352434a901032b16d7ac9090322532a3fccb9947977e8b);
-    // Admin must differ from the owner so it can forward calls to the implementation during tests.
-    address proxyAdmin = address(1000);
+    // Owner of the ProxyAdmin contracts that get auto-created by TransparentUpgradeableProxy.
+    // Must differ from the contract owner so it can forward calls to the implementation during tests.
+    address proxyAdminOwner = address(1000);
 
     MultiSigTransfer multiSigTransfer;
 
@@ -89,7 +90,7 @@ contract MultiSigTransferTest is Test {
         EspressoSGXTEEVerifier impl = new EspressoSGXTEEVerifier();
         TransparentUpgradeableProxy proxy = new TransparentUpgradeableProxy(
             address(impl),
-            proxyAdmin,
+            proxyAdminOwner,
             abi.encodeCall(EspressoSGXTEEVerifier.initialize, (teeVerifier, v3QuoteVerifier))
         );
         return EspressoSGXTEEVerifier(address(proxy));
@@ -99,7 +100,7 @@ contract MultiSigTransferTest is Test {
         EspressoNitroTEEVerifier impl = new EspressoNitroTEEVerifier();
         TransparentUpgradeableProxy proxy = new TransparentUpgradeableProxy(
             address(impl),
-            proxyAdmin,
+            proxyAdminOwner,
             abi.encodeCall(
                 EspressoNitroTEEVerifier.initialize,
                 (teeVerifier, INitroEnclaveVerifier(0x2D7fbBAD6792698Ba92e67b7e180f8010B9Ec788))
@@ -112,7 +113,7 @@ contract MultiSigTransferTest is Test {
         EspressoTEEVerifier impl = new EspressoTEEVerifier();
         TransparentUpgradeableProxy proxy = new TransparentUpgradeableProxy(
             address(impl),
-            proxyAdmin,
+            proxyAdminOwner,
             abi.encodeCall(
                 EspressoTEEVerifier.initialize,
                 (

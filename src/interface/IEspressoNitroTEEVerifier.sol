@@ -2,6 +2,7 @@
 pragma solidity ^0.8.0;
 
 import {
+    INitroEnclaveVerifier,
     VerificationResult
 } from "aws-nitro-enclave-attestation/interfaces/INitroEnclaveVerifier.sol";
 import {ServiceType} from "../types/Types.sol";
@@ -28,4 +29,10 @@ interface IEspressoNitroTEEVerifier is ITEEHelper {
      * @notice This function sets the NitroEnclaveVerifier contract address
      */
     function setNitroEnclaveVerifier(address nitroEnclaveVerifierAddress) external;
+
+    /*
+     * @notice Get the NitroEnclaveVerifier contract address
+     * @return The NitroEnclaveVerifier interface
+     */
+    function nitroEnclaveVerifier() external view returns (INitroEnclaveVerifier);
 }
