@@ -7,3 +7,4 @@ forge-std/=lib/forge-std/src/
 solady/=lib/automata-dcap-attestation/lib/automata-on-chain-pccs/lib/solady/src
 aws-nitro-enclave-attestation/=lib/aws-nitro-enclave-attestation/contracts/src/
 safe-smart-account/=lib/safe-utils/lib/safe-smart-account/contracts/
+@openzeppelin/contracts-upgradeable/=lib/openzeppelin-contracts-upgradeable/contracts/

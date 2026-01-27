@@ -12,7 +12,6 @@ import {
 } from "@automata-network/dcap-attestation/contracts/types/Constants.sol";
 import {EnclaveReport} from "@automata-network/dcap-attestation/contracts/types/V3Structs.sol";
 import {BytesUtils} from "@automata-network/dcap-attestation/contracts/utils/BytesUtils.sol";
-import "@openzeppelin/contracts/access/Ownable2Step.sol";
 import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import {IEspressoSGXTEEVerifier} from "./interface/IEspressoSGXTEEVerifier.sol";
 import {ServiceType} from "./types/Types.sol";
@@ -25,19 +24,33 @@ import {TEEHelper} from "./TEEHelper.sol";
  *         from automata to verify the quote. Along with some additional verification logic.
  */
 
-contract EspressoSGXTEEVerifier is IEspressoSGXTEEVerifier, Ownable2Step, TEEHelper {
+contract EspressoSGXTEEVerifier is IEspressoSGXTEEVerifier, TEEHelper {
     using BytesUtils for bytes;
     using EnumerableSet for EnumerableSet.AddressSet;
 
-    // V3QuoteVerififer contract from automata to verify the quote
-    V3QuoteVerifier public quoteVerifier;
+    /// @custom:storage-location erc7201:espresso.storage.EspressoSGXTEEVerifier
+    struct EspressoSGXTEEVerifierStorage {
+        // V3QuoteVerifier contract from automata to verify the quote
+        V3QuoteVerifier quoteVerifier;
+    }
 
-    constructor(address _quoteVerifier) TEEHelper() {
-        if (_quoteVerifier == address(0) || _quoteVerifier.code.length <= 0) {
-            revert InvalidQuoteVerifierAddress();
+    // keccak256(abi.encode(uint256(keccak256("espresso.storage.EspressoSGXTEEVerifier")) - 1)) & ~bytes32(uint256(0xff))
+    bytes32 private constant ESPRESSO_SGX_TEE_VERIFIER_STORAGE_SLOT =
+        0xc4a43faa4788bd802027338f4f89780ffdcf150d97a5f330b9d959407fde9600;
+
+    function _sgxLayout() private pure returns (EspressoSGXTEEVerifierStorage storage $) {
+        assembly {
+            $.slot := ESPRESSO_SGX_TEE_VERIFIER_STORAGE_SLOT
         }
-        quoteVerifier = V3QuoteVerifier(_quoteVerifier);
-        _transferOwnership(msg.sender);
+    }
+
+    constructor() {
+        _disableInitializers();
+    }
+
+    function initialize(address teeVerifier_, address quoteVerifier_) external initializer {
+        __TEEHelper_init(teeVerifier_);
+        _setQuoteVerifier(quoteVerifier_);
     }
 
     /*
@@ -62,7 +75,7 @@ contract EspressoSGXTEEVerifier is IEspressoSGXTEEVerifier, Ownable2Step, TEEHel
 
         // Verify the quote
         //slither-disable-next-line unused-return
-        (bool success,) = quoteVerifier.verifyQuote(header, rawQuote);
+        (bool success,) = _sgxLayout().quoteVerifier.verifyQuote(header, rawQuote);
         if (!success) {
             revert InvalidQuote();
         }
@@ -76,7 +89,7 @@ contract EspressoSGXTEEVerifier is IEspressoSGXTEEVerifier, Ownable2Step, TEEHel
         }
 
         // Check that mrEnclave match
-        if (!registeredEnclaveHashes[service][localReport.mrEnclave]) {
+        if (!_layout().registeredEnclaveHashes[service][localReport.mrEnclave]) {
             revert InvalidEnclaveHash(localReport.mrEnclave, service);
         }
 
@@ -118,10 +131,10 @@ contract EspressoSGXTEEVerifier is IEspressoSGXTEEVerifier, Ownable2Step, TEEHel
             revert InvalidSignerAddress(); // Custom revert if the address is invalid
         }
         // Mark the signer as registered
-        if (!registeredServices[service][signer]) {
-            registeredServices[service][signer] = true;
-            // slither-disable-next-line unused-return
-            enclaveHashToSigner[service][localReport.mrEnclave].add(signer);
+        TEEHelperStorage storage $ = _layout();
+        if (!$.registeredServices[service][signer]) {
+            $.registeredServices[service][signer] = true;
+            $.enclaveHashToSigner[service][localReport.mrEnclave].add(signer);
             emit ServiceRegistered(signer, localReport.mrEnclave, service);
         }
     }
@@ -177,14 +190,26 @@ contract EspressoSGXTEEVerifier is IEspressoSGXTEEVerifier, Ownable2Step, TEEHel
     }
 
     /*
-     * @notice This function allows the owner to set the V3QuoteVerifier contract address
+     * @notice This function allows the tee verifier to set the V3QuoteVerifier contract address
      * @param _quoteVerifier The address of the V3QuoteVerifier contract
      */
-    function setQuoteVerifier(address _quoteVerifier) external onlyOwner {
+    function setQuoteVerifier(address _quoteVerifier) external onlyTEEVerifier {
+        _setQuoteVerifier(_quoteVerifier);
+    }
+
+    function _setQuoteVerifier(address _quoteVerifier) internal {
         if (_quoteVerifier == address(0) || _quoteVerifier.code.length <= 0) {
             revert InvalidQuoteVerifierAddress();
         }
-        quoteVerifier = V3QuoteVerifier(_quoteVerifier);
+        _sgxLayout().quoteVerifier = V3QuoteVerifier(_quoteVerifier);
         emit QuoteVerifierSet(_quoteVerifier);
+    }
+
+    /**
+     * @notice Get the V3QuoteVerifier address
+     * @return The V3QuoteVerifier contract
+     */
+    function quoteVerifier() external view returns (V3QuoteVerifier) {
+        return _sgxLayout().quoteVerifier;
     }
 }

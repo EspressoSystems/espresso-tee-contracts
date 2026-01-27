@@ -10,8 +10,9 @@ import {Safe} from "safe-utils/Safe.sol";
 import {Enum} from "safe-smart-account/common/Enum.sol";
 
 import {IEspressoTEEVerifier} from "../src/interface/IEspressoTEEVerifier.sol";
-import {IEspressoNitroTEEVerifier} from "../src/interface/IEspressoNitroTEEVerifier.sol";
-import {IEspressoSGXTEEVerifier} from "../src/interface/IEspressoSGXTEEVerifier.sol";
+import {
+    IEspressoNitroTEEVerifier
+} from "../src/interface/IEspressoNitroTEEVerifier.sol";
 
 contract MultiSigTransfer is Script {
     using Safe for *;
@@ -32,20 +33,8 @@ contract MultiSigTransfer is Script {
     address originalTeeVerifierOwner;
     Ownable2Step ownable2StepTeeVerifier;
 
-    IEspressoNitroTEEVerifier nitroVerifier;
-    Ownable ownableNitroTeeVerifier;
-    address originalNitroTeeVerifierOwner;
-    Ownable2Step ownable2StepNitroTeeVerifier;
-
-    IEspressoSGXTEEVerifier sgxVerifier;
-    Ownable ownableSGXTeeVerifier;
-    address originalSGXTeeVerifierOwner;
-    Ownable2Step ownable2StepSGXTeeVerifier;
-
     // Event signaling that the script has successfully initiated ownership transfers for the given set of TEEVerifier contracts.
-    event AllOwnershipTransfersStarted(
-        address teeVerifier, address nitroVerifier, address sgxVerifier
-    );
+    event AllOwnershipTransfersStarted(address teeVerifier);
 
     // This function is executed by the forge VM whenever the script is executed using forge script.
     function setUp() public {
@@ -77,16 +66,6 @@ contract MultiSigTransfer is Script {
         ownableTeeVerifier = Ownable(address(teeVerifier));
         originalTeeVerifierOwner = ownableTeeVerifier.owner();
         ownable2StepTeeVerifier = Ownable2Step(address(teeVerifier));
-
-        nitroVerifier = teeVerifier.espressoNitroTEEVerifier();
-        ownableNitroTeeVerifier = Ownable(address(nitroVerifier));
-        originalNitroTeeVerifierOwner = ownableNitroTeeVerifier.owner();
-        ownable2StepNitroTeeVerifier = Ownable2Step(address(nitroVerifier));
-
-        sgxVerifier = teeVerifier.espressoSGXTEEVerifier();
-        ownableSGXTeeVerifier = Ownable(address(sgxVerifier));
-        originalSGXTeeVerifierOwner = ownableSGXTeeVerifier.owner();
-        ownable2StepSGXTeeVerifier = Ownable2Step(address(sgxVerifier));
     }
 
     // initiateTransfer() is a helper function for this script that allows the
@@ -97,37 +76,39 @@ contract MultiSigTransfer is Script {
         // After each step, we assert that the owner of the contract is still the original owner, but that the pending owner has updated.
         // If this doesn't hold, the transaction reverts.
 
-        ownable2StepSGXTeeVerifier.transferOwnership(newOwner);
-        assertTransferInitiated(address(sgxVerifier), originalSGXTeeVerifierOwner, newOwner);
-
-        ownable2StepNitroTeeVerifier.transferOwnership(newOwner);
-        assertTransferInitiated(address(nitroVerifier), originalNitroTeeVerifierOwner, newOwner);
-
         ownable2StepTeeVerifier.transferOwnership(newOwner);
-        assertTransferInitiated(address(teeVerifier), originalTeeVerifierOwner, newOwner);
-
-        emit AllOwnershipTransfersStarted(
-            address(teeVerifier), address(nitroVerifier), address(sgxVerifier)
+        assertTransferInitiated(
+            address(teeVerifier),
+            originalTeeVerifierOwner,
+            newOwner
         );
+
+        emit AllOwnershipTransfersStarted(address(teeVerifier));
     }
 
     // proposeOwnershipAcceptaceTransaction is a function that utilizes the safe-utils library and Safe.Client to
     // interact with the safe-transaction-service API to propose a batch transaction for accepting ownership of the TEEVerifier contracts.
     // Return values:
     //              - bytes32 txHash: The transaction hash of the multi-sig transaction that was proposed to the web UI.
-    function proposeOwnershipAcceptanceTransaction() internal returns (bytes32) {
+    function proposeOwnershipAcceptanceTransaction()
+        internal
+        returns (bytes32)
+    {
         // Generate transaction target and data arrays for signing.
-        bytes memory transactionDataSGX =
-            abi.encodeCall(ownable2StepSGXTeeVerifier.acceptOwnership, ());
-        bytes memory transactionDataNitro =
-            abi.encodeCall(ownable2StepNitroTeeVerifier.acceptOwnership, ());
-        bytes memory transactionData = abi.encodeCall(ownable2StepTeeVerifier.acceptOwnership, ());
+        bytes memory transactionData = abi.encodeCall(
+            ownable2StepTeeVerifier.acceptOwnership,
+            ()
+        );
 
-        addToBatch(address(sgxVerifier), transactionDataSGX);
-        addToBatch(address(nitroVerifier), transactionDataNitro);
         addToBatch(address(teeVerifier), transactionData);
 
-        return safe.proposeTransactions(batchTargets, batchData, proposerAddress, derivationPath);
+        return
+            safe.proposeTransactions(
+                batchTargets,
+                batchData,
+                proposerAddress,
+                derivationPath
+            );
     }
 
     // addToBatch is a helper function for appending a transaction to the current batch being built for this ownership transfer.
