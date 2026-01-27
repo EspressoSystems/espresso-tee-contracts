@@ -119,7 +119,7 @@ contract EspressoTEEVerifierTest is Test {
         bytes memory sampleQuote,
         bytes memory data,
         IEspressoTEEVerifier.TeeType tee,
-        bytes4 revertSelector,
+        bytes4, /* revertSelector */
         bytes32 revertHash
     ) internal {
         // Test registering the caff node
@@ -259,7 +259,7 @@ contract EspressoTEEVerifierTest is Test {
         assertTrue(espressoNitroTEEVerifier.isSignerValid(signerAddr, ServiceType.CaffNode));
     }
 
-    function testSGXRegisteredEnclaveHash() public {
+    function testSGXRegisteredEnclaveHash() public view {
         assertEq(
             espressoTEEVerifier.registeredEnclaveHashes(
                 bytes32(0x01f7290cb6bbaa427eca3daeb25eecccb87c4b61259b1ae2125182c4d77169c0),
@@ -279,7 +279,7 @@ contract EspressoTEEVerifierTest is Test {
         );
     }
 
-    function testNitroRegisteredEnclaveHash() public {
+    function testNitroRegisteredEnclaveHash() public view {
         assertEq(
             espressoTEEVerifier.registeredEnclaveHashes(
                 bytes32(0x555797ae2413bb1e4c352434a901032b16d7ac9090322532a3fccb9947977e8b),
