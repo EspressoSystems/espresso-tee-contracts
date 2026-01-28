@@ -4,7 +4,13 @@ pragma solidity ^0.8.20;
 import "forge-std/Test.sol";
 import {OwnableWithGuardiansUpgradeable} from "../src/OwnableWithGuardiansUpgradeable.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
-import {ERC1967Proxy} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
+import {
+    TransparentUpgradeableProxy
+} from "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
+import {ProxyAdmin} from "@openzeppelin/contracts/proxy/transparent/ProxyAdmin.sol";
+import {
+    ITransparentUpgradeableProxy
+} from "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
 
 /**
  * @title MockGuardedContract
@@ -37,7 +43,7 @@ contract MockGuardedContract is OwnableWithGuardiansUpgradeable {
 
 /**
  * @title MockGuardedContractV2
- * @notice Upgraded version for testing UUPS upgradeability
+ * @notice Upgraded version for testing TransparentUpgradeableProxy upgradeability
  */
 contract MockGuardedContractV2 is OwnableWithGuardiansUpgradeable {
     uint256 public value;
@@ -73,12 +79,15 @@ contract MockGuardedContractV2 is OwnableWithGuardiansUpgradeable {
 contract OwnableWithGuardiansUpgradeableTest is Test {
     MockGuardedContract public implementation;
     MockGuardedContract public proxy;
+    ProxyAdmin public proxyAdmin;
+    TransparentUpgradeableProxy public transparentProxy;
 
     address public owner = address(0x1);
     address public guardian1 = address(0x2);
     address public guardian2 = address(0x3);
     address public user = address(0x4);
     address public newOwner = address(0x5);
+    address public proxyAdminOwner = address(0x6);
 
     event GuardianAdded(address indexed guardian);
     event GuardianRemoved(address indexed guardian);
@@ -89,11 +98,16 @@ contract OwnableWithGuardiansUpgradeableTest is Test {
         // Deploy implementation
         implementation = new MockGuardedContract();
 
+        // Deploy ProxyAdmin
+        vm.prank(proxyAdminOwner);
+        proxyAdmin = new ProxyAdmin(proxyAdminOwner);
+
         // Deploy proxy and initialize
         bytes memory initData =
             abi.encodeWithSelector(MockGuardedContract.initialize.selector, owner);
-        ERC1967Proxy proxyContract = new ERC1967Proxy(address(implementation), initData);
-        proxy = MockGuardedContract(address(proxyContract));
+        transparentProxy =
+            new TransparentUpgradeableProxy(address(implementation), address(proxyAdmin), initData);
+        proxy = MockGuardedContract(address(transparentProxy));
     }
 
     // ============ Initialization Tests ============
@@ -331,8 +345,10 @@ contract OwnableWithGuardiansUpgradeableTest is Test {
     function testUpgradeAsOwner() public {
         MockGuardedContractV2 newImplementation = new MockGuardedContractV2();
 
-        vm.prank(owner);
-        proxy.upgradeToAndCall(address(newImplementation), "");
+        vm.prank(proxyAdminOwner);
+        proxyAdmin.upgradeAndCall(
+            ITransparentUpgradeableProxy(address(transparentProxy)), address(newImplementation), ""
+        );
 
         // Test that upgrade worked
         MockGuardedContractV2 upgradedProxy = MockGuardedContractV2(address(proxy));
@@ -348,7 +364,9 @@ contract OwnableWithGuardiansUpgradeableTest is Test {
 
         vm.prank(user);
         vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, user));
-        proxy.upgradeToAndCall(address(newImplementation), "");
+        proxyAdmin.upgradeAndCall(
+            ITransparentUpgradeableProxy(address(transparentProxy)), address(newImplementation), ""
+        );
     }
 
     function testUpgradeRevertsForGuardian() public {
@@ -361,7 +379,9 @@ contract OwnableWithGuardiansUpgradeableTest is Test {
         vm.expectRevert(
             abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, guardian1)
         );
-        proxy.upgradeToAndCall(address(newImplementation), "");
+        proxyAdmin.upgradeAndCall(
+            ITransparentUpgradeableProxy(address(transparentProxy)), address(newImplementation), ""
+        );
     }
 
     function testGuardiansPreservedAfterUpgrade() public {
@@ -373,8 +393,10 @@ contract OwnableWithGuardiansUpgradeableTest is Test {
 
         // Upgrade
         MockGuardedContractV2 newImplementation = new MockGuardedContractV2();
-        vm.prank(owner);
-        proxy.upgradeToAndCall(address(newImplementation), "");
+        vm.prank(proxyAdminOwner);
+        proxyAdmin.upgradeAndCall(
+            ITransparentUpgradeableProxy(address(transparentProxy)), address(newImplementation), ""
+        );
 
         // Check guardians are preserved
         MockGuardedContractV2 upgradedProxy = MockGuardedContractV2(address(proxy));
