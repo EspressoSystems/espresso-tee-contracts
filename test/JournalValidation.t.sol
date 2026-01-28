@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity ^0.8.20;
+pragma solidity ^0.8.0;
 
 import "forge-std/Test.sol";
 import {
@@ -11,8 +11,7 @@ import {
     ZkCoProcessorConfig,
     INitroEnclaveVerifier
 } from "aws-nitro-enclave-attestation/interfaces/INitroEnclaveVerifier.sol";
-import {EspressoNitroTEEVerifier} from "../src/EspressoNitroTEEVerifier.sol";
-import {ServiceType} from "../src/types/Types.sol";
+import {JournalValidation} from "../src/libraries/JournalValidation.sol";
 
 /**
  * @title Journal Validation Tests
@@ -201,13 +200,13 @@ contract JournalValidationTest is Test {
 }
 
 /**
- * @dev Testable version that exposes _validateJournal for testing
- * @notice Inherits from EspressoNitroTEEVerifier to test the ACTUAL validation logic
+ * @dev Testable wrapper that uses the shared JournalValidation library
+ * @notice No code duplication - uses the same library as production code
  */
-contract TestableNitroVerifier is EspressoNitroTEEVerifier {
-    // Expose the internal validation function for direct testing
+contract TestableNitroVerifier {
+    // Expose the library validation function for testing
     function exposed_validateJournal(VerifierJournal memory journal) external pure {
-        _validateJournal(journal);
+        JournalValidation.validateJournal(journal);
     }
 }
 

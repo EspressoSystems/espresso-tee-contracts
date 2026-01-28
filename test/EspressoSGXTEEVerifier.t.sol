@@ -401,7 +401,7 @@ contract EspressoSGXTEEVerifierTest is Test {
 
     function testInitializeCannotRunTwice() public {
         vm.prank(adminTEE);
-        vm.expectRevert(abi.encodeWithSignature("InvalidInitialization()"));
+        vm.expectRevert(bytes("Initializable: contract is already initialized"));
         espressoSGXTEEVerifier.initialize(adminTEE, v3QuoteVerifier);
     }
 }

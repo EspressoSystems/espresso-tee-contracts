@@ -325,7 +325,7 @@ contract EspressoNitroTEEVerifierTest is Test {
 
     function testInitializeCannotRunTwice() public {
         vm.prank(adminTEE);
-        vm.expectRevert(abi.encodeWithSignature("InvalidInitialization()"));
+        vm.expectRevert(bytes("Initializable: contract is already initialized"));
         espressoNitroTEEVerifier.initialize(
             adminTEE, INitroEnclaveVerifier(0x2D7fbBAD6792698Ba92e67b7e180f8010B9Ec788)
         );
