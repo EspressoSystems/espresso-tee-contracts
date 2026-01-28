@@ -74,9 +74,11 @@ Afterwards the bindings should appear in bindings/go/espressogen/espressogen.go 
 
 ## TEE Verifier Deployment
 
+All TEE contracts are deployed using the **OpenZeppelin v5.x Transparent Proxy pattern**. In this pattern, each `TransparentUpgradeableProxy` automatically deploys its own `ProxyAdmin` contract internally. The `ProxyAdmin` owner controls upgrade capabilities.
+
 ### 1. Clean Build Environment
 
-Start with a fresh build to ensure as we need to build contracts with proper profiles for gas optimizations:
+Start with a fresh build to ensure contracts are built with proper profiles for gas optimizations:
 
 ```bash
 forge clean
@@ -97,15 +99,13 @@ CHAIN_ID=<your-chain-id>
 ETHERSCAN_API_KEY=<your-etherscan-v2-api-key>
 
 # Variables for deployment
-NITRO_ENCLAVE_HASH=<aws_nitro_pcr0_hash>
-SGX_ENCLAVE_HASH=<sgx_enclave_measurement>
 SGX_QUOTE_VERIFIER_ADDRESS=<quote_verifier_address_from_automata>  # From: https://github.com/automata-network/automata-dcap-attestation
+NITRO_ENCLAVE_VERIFIER=<nitro_enclave_verifier_address>  # From: https://github.com/automata-network/aws-nitro-enclave-attestation
 
-# To be updated after deployment
+# To be updated after individual deployment (not needed for DeployAllTEEVerifiers)
+TEE_VERIFIER_ADDRESS=""
 NITRO_VERIFIER_ADDRESS=""
 SGX_VERIFIER_ADDRESS=""
-<!-- From https://github.com/automata-network/aws-nitro-enclave-attestation -->
-NITRO_ENCLAVE_VERIFIER=""
 ```
 
 Save the file then source it:
@@ -114,16 +114,65 @@ Save the file then source it:
 source .env
 ```
 
-### 3. **Deployment Process**
+### 3. **Deployment Options**
 
-1. **Deploy Nitro Verifier**
-   Update the `.env` file with the Nitro Enclave Verifier address, which can be obtained from: https://github.com/automata-network/aws-nitro-enclave-attestation
+You can deploy the TEE contracts in two ways:
 
-   ```text
-   NITRO_ENCLAVE_VERIFIER=<address of nitro verifier>
+#### Option A: Deploy All Contracts Together (Recommended)
+
+This deploys all three TEE verifier contracts in a single script, handling the circular dependency automatically:
+
+```bash
+forge script scripts/DeployAllTEEVerifiers.s.sol:DeployAllTEEVerifiers \
+    --rpc-url "$RPC_URL" \
+    --private-key "$PRIVATE_KEY" \
+    --broadcast \
+    --verify --verifier etherscan --chain "$CHAIN_ID"
+```
+
+This script will:
+1. Deploy `EspressoTEEVerifier` proxy (with placeholder SGX/Nitro addresses)
+2. Deploy `EspressoSGXTEEVerifier` proxy (linked to TEEVerifier)
+3. Deploy `EspressoNitroTEEVerifier` proxy (linked to TEEVerifier)
+4. Update `EspressoTEEVerifier` with the actual SGX and Nitro addresses
+
+#### Option B: Deploy Contracts Individually
+
+If you prefer to deploy contracts separately:
+
+1. **Deploy Espresso TEE Verifier First**
+
+   First, deploy the main TEEVerifier with placeholder addresses:
+
+   ```bash
+   # Set placeholder addresses for individual deployment
+   export SGX_VERIFIER_ADDRESS=0x0000000000000000000000000000000000000000
+   export NITRO_VERIFIER_ADDRESS=0x0000000000000000000000000000000000000000
+
+   forge script scripts/DeployTEEVerifier.s.sol:DeployTEEVerifier \
+       --rpc-url "$RPC_URL" \
+       --private-key "$PRIVATE_KEY" \
+       --broadcast \
+       --verify --verifier etherscan --chain "$CHAIN_ID"
    ```
 
-   then execute:
+   Update your `.env` with the deployed TEEVerifier proxy address:
+   ```text
+   TEE_VERIFIER_ADDRESS=<deployed_tee_verifier_proxy>
+   ```
+
+2. **Deploy SGX Verifier**
+
+   ```bash
+   source .env
+   FOUNDRY_PROFILE=sgx forge script scripts/DeploySGXTEEVerifier.s.sol:DeploySGXTEEVerifier \
+       --rpc-url "$RPC_URL" \
+       --private-key "$PRIVATE_KEY" \
+       --broadcast \
+       --verify --verifier etherscan --chain "$CHAIN_ID"
+   ```
+
+3. **Deploy Nitro Verifier**
 
    ```bash
    FOUNDRY_PROFILE=nitro forge script scripts/DeployNitroTEEVerifier.s.sol:DeployNitroTEEVerifier \
@@ -133,38 +182,25 @@ source .env
        --verify --verifier etherscan --chain "$CHAIN_ID"
    ```
 
-2. **Deploy SGX Verifier**
+4. **Update TEEVerifier with actual addresses**
+
+   After deploying SGX and Nitro verifiers, call `setEspressoSGXTEEVerifier` and `setEspressoNitroTEEVerifier` on the TEEVerifier proxy using cast:
 
    ```bash
-   FOUNDRY_PROFILE=sgx forge script scripts/DeploySGXTEEVerifier.s.sol:DeploySGXTEEVerifier \
-       --rpc-url "$RPC_URL" \
-       --private-key "$PRIVATE_KEY" \
-       --broadcast \
-       --verify --verifier etherscan --chain "$CHAIN_ID"
-   ```
+   cast send $TEE_VERIFIER_ADDRESS "setEspressoSGXTEEVerifier(address)" $SGX_VERIFIER_ADDRESS \
+       --rpc-url "$RPC_URL" --private-key "$PRIVATE_KEY"
 
-3. **Update Environment Variables**
-
-   After successful AWS Nitro and SGX deployments update the `.env` file with:
-
-   ```text
-   NITRO_VERIFIER_ADDRESS=<deployed_nitro_address>
-   SGX_VERIFIER_ADDRESS=<deployed_sgx_address>
-   ```
-
-4. **Deploy Espresso TEE Verifier**
-
-   ```bash
-   forge script scripts/DeployTEEVerifier.s.sol:DeployTEEVerifier \
-       --rpc-url "$RPC_URL" \
-       --private-key "$PRIVATE_KEY" \
-       --broadcast \
-       --verify --verifier etherscan --chain "$CHAIN_ID"
+   cast send $TEE_VERIFIER_ADDRESS "setEspressoNitroTEEVerifier(address)" $NITRO_VERIFIER_ADDRESS \
+       --rpc-url "$RPC_URL" --private-key "$PRIVATE_KEY"
    ```
 
 ### 4. Post-Deployment
 
-Verify all contracts on Block Explorer and ensure deployment artifacts are in deployments/<chain_id>/
+- Verify all contracts on Block Explorer
+- Deployment artifacts are saved in `deployments/<chain_id>/`
+- Each deployment JSON contains:
+  - `proxy`: The proxy address (this is what users interact with)
+  - `implementation`: The implementation contract address
 
 
 ### Transferring ownership of the TEEVerifier contracts to a multi-sig wallet

@@ -5,6 +5,7 @@ import "forge-std/Test.sol";
 import {
     TransparentUpgradeableProxy
 } from "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
+import {Initializable} from "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 import {TEEHelper} from "../src/TEEHelper.sol";
 import {ServiceType} from "../src/types/Types.sol";
 import {ITEEHelper} from "../src/interface/ITEEHelper.sol";
@@ -43,7 +44,7 @@ contract TEEHelperTest is Test {
     }
 
     function testInitializeCannotRunTwice() public {
-        vm.expectRevert(bytes("Initializable: contract is already initialized"));
+        vm.expectRevert(Initializable.InvalidInitialization.selector);
         helper.initialize(initialTEEVerifier);
     }
 

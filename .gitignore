@@ -15,7 +15,8 @@ docs/
 .env
 
 .DS_Store
-
+deployments/
 
 # IDEs
 .idea
+
