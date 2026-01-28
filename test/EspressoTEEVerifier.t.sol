@@ -119,7 +119,6 @@ contract EspressoTEEVerifierTest is Test {
         bytes memory sampleQuote,
         bytes memory data,
         IEspressoTEEVerifier.TeeType tee,
-        bytes4, /* revertSelector */
         bytes32 revertHash
     ) internal {
         // Test registering the caff node
@@ -218,11 +217,7 @@ contract EspressoTEEVerifierTest is Test {
         assertFalse(espressoSGXTEEVerifier.isSignerValid(batchPosterAddress, ServiceType.CaffNode));
 
         ensureSeparateCaffNodeOperation(
-            sampleQuote,
-            data,
-            IEspressoTEEVerifier.TeeType.SGX,
-            ITEEHelper.InvalidEnclaveHash.selector,
-            enclaveHash
+            sampleQuote, data, IEspressoTEEVerifier.TeeType.SGX, enclaveHash
         );
 
         assertTrue(espressoSGXTEEVerifier.isSignerValid(batchPosterAddress, ServiceType.CaffNode));
@@ -249,11 +244,7 @@ contract EspressoTEEVerifierTest is Test {
         assertFalse(espressoNitroTEEVerifier.isSignerValid(signerAddr, ServiceType.CaffNode));
 
         ensureSeparateCaffNodeOperation(
-            journal,
-            onchain,
-            IEspressoTEEVerifier.TeeType.NITRO,
-            ITEEHelper.InvalidEnclaveHash.selector,
-            pcr0Hash
+            journal, onchain, IEspressoTEEVerifier.TeeType.NITRO, pcr0Hash
         );
 
         assertTrue(espressoNitroTEEVerifier.isSignerValid(signerAddr, ServiceType.CaffNode));
