@@ -5,6 +5,7 @@ import "forge-std/Test.sol";
 import {
     TransparentUpgradeableProxy
 } from "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
+import {Initializable} from "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 import {
     OwnableUpgradeable
 } from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
@@ -404,7 +405,7 @@ contract EspressoSGXTEEVerifierTest is Test {
 
     function testInitializeCannotRunTwice() public {
         vm.prank(adminTEE);
-        vm.expectRevert(bytes("Initializable: contract is already initialized"));
+        vm.expectRevert(Initializable.InvalidInitialization.selector);
         espressoSGXTEEVerifier.initialize(adminTEE, v3QuoteVerifier);
     }
 }
