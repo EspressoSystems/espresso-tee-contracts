@@ -11,6 +11,7 @@ import {ProxyAdmin} from "@openzeppelin/contracts/proxy/transparent/ProxyAdmin.s
 import {
     ITransparentUpgradeableProxy
 } from "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
+import {ERC1967Utils} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Utils.sol";
 
 /**
  * @title MockGuardedContract
@@ -19,6 +20,10 @@ import {
 contract MockGuardedContract is OwnableWithGuardiansUpgradeable {
     uint256 public value;
     uint256 public emergencyValue;
+
+    constructor() {
+        _disableInitializers();
+    }
 
     function initialize(address initialOwner) public initializer {
         __OwnableWithGuardians_init(initialOwner);
@@ -49,6 +54,10 @@ contract MockGuardedContractV2 is OwnableWithGuardiansUpgradeable {
     uint256 public value;
     uint256 public emergencyValue;
     uint256 public newValue; // New field in V2
+
+    constructor() {
+        _disableInitializers();
+    }
 
     function initialize(address initialOwner) public initializer {
         __OwnableWithGuardians_init(initialOwner);
@@ -98,16 +107,19 @@ contract OwnableWithGuardiansUpgradeableTest is Test {
         // Deploy implementation
         implementation = new MockGuardedContract();
 
-        // Deploy ProxyAdmin
-        vm.prank(proxyAdminOwner);
-        proxyAdmin = new ProxyAdmin(proxyAdminOwner);
-
         // Deploy proxy and initialize
+        // In OZ 5.x, TransparentUpgradeableProxy creates its own internal ProxyAdmin
         bytes memory initData =
             abi.encodeWithSelector(MockGuardedContract.initialize.selector, owner);
         transparentProxy =
-            new TransparentUpgradeableProxy(address(implementation), address(proxyAdmin), initData);
+            new TransparentUpgradeableProxy(address(implementation), proxyAdminOwner, initData);
         proxy = MockGuardedContract(address(transparentProxy));
+
+        // Get the ProxyAdmin address using ERC1967 storage slot
+        // ERC1967 admin slot is: keccak256("eip1967.proxy.admin") - 1
+        bytes32 adminSlot = bytes32(uint256(keccak256("eip1967.proxy.admin")) - 1);
+        address adminAddress = address(uint160(uint256(vm.load(address(transparentProxy), adminSlot))));
+        proxyAdmin = ProxyAdmin(adminAddress);
     }
 
     // ============ Initialization Tests ============

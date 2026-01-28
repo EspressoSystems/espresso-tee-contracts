@@ -8,6 +8,7 @@ import {
 import {
     OwnableUpgradeable
 } from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import {OwnableWithGuardiansUpgradeable} from "../src/OwnableWithGuardiansUpgradeable.sol";
 import {EspressoTEEVerifier} from "../src/EspressoTEEVerifier.sol";
 import {IEspressoTEEVerifier} from "../src/interface/IEspressoTEEVerifier.sol";
 import {EspressoSGXTEEVerifier} from "../src/EspressoSGXTEEVerifier.sol";
@@ -437,7 +438,7 @@ contract EspressoTEEVerifierTest is Test {
         vm.startPrank(fakeAddress);
         vm.expectRevert(
             abi.encodeWithSelector(
-                OwnableUpgradeable.OwnableUnauthorizedAccount.selector, fakeAddress
+                OwnableWithGuardiansUpgradeable.NotGuardianOrOwner.selector, fakeAddress
             )
         );
         espressoTEEVerifier.setEnclaveHash(
@@ -445,7 +446,7 @@ contract EspressoTEEVerifierTest is Test {
         );
         vm.expectRevert(
             abi.encodeWithSelector(
-                OwnableUpgradeable.OwnableUnauthorizedAccount.selector, fakeAddress
+                OwnableWithGuardiansUpgradeable.NotGuardianOrOwner.selector, fakeAddress
             )
         );
         bytes32[] memory hashes = new bytes32[](1);
