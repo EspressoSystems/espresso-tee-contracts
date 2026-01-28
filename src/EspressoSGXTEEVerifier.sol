@@ -135,6 +135,10 @@ contract EspressoSGXTEEVerifier is IEspressoSGXTEEVerifier, TEEHelper {
         if (!$.registeredServices[service][signer]) {
             $.registeredServices[service][signer] = true;
             $.enclaveHashToSigner[service][localReport.mrEnclave].add(signer);
+            
+            // Track which enclave hash this signer belongs to (for automatic revocation)
+            $.signerToEnclaveHash[service][signer] = localReport.mrEnclave;
+
             emit ServiceRegistered(signer, localReport.mrEnclave, service);
         }
     }

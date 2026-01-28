@@ -43,7 +43,7 @@ contract TEEHelperTest is Test {
     }
 
     function testInitializeCannotRunTwice() public {
-        vm.expectRevert(bytes("Initializable: contract is already initialized"));
+        vm.expectRevert(abi.encodeWithSignature("InvalidInitialization()"));
         helper.initialize(initialTEEVerifier);
     }
 

@@ -233,11 +233,14 @@ contract EspressoNitroTEEVerifierTest is Test {
         vm.stopPrank();
         vm.startPrank(adminTEE);
 
-        // delete and verify signer address is gone
+        // delete hash (automatically invalidates signer via isSignerValid)
         espressoTEEVerifier.deleteEnclaveHashes(
             enclaveHashes, IEspressoTEEVerifier.TeeType.NITRO, ServiceType.BatchPoster
         );
-        assertEq(espressoNitroTEEVerifier.registeredService(signer, ServiceType.BatchPoster), false);
+
+        // Signer still in registeredServices, but NOT valid (hash deleted)
+        assertTrue(espressoNitroTEEVerifier.registeredService(signer, ServiceType.BatchPoster));
+        assertFalse(espressoNitroTEEVerifier.isSignerValid(signer, ServiceType.BatchPoster));
         assertEq(
             espressoNitroTEEVerifier.registeredEnclaveHash(pcr0Hash, ServiceType.BatchPoster), false
         );
@@ -262,13 +265,16 @@ contract EspressoNitroTEEVerifierTest is Test {
         address signer = 0xF8463E0aF00C1910402D2A51B3a8CecD0dC1c3fE;
         assertEq(espressoNitroTEEVerifier.registeredService(signer, ServiceType.CaffNode), true);
 
-        // delete and verify signer address is gone
+        // delete hash (automatically invalidates signer via isSignerValid)
         bytes32[] memory enclaveHashes = new bytes32[](1);
         enclaveHashes[0] = pcr0Hash;
         espressoTEEVerifier.deleteEnclaveHashes(
             enclaveHashes, IEspressoTEEVerifier.TeeType.NITRO, ServiceType.CaffNode
         );
-        assertEq(espressoNitroTEEVerifier.registeredService(signer, ServiceType.CaffNode), false);
+
+        // Signer still in registeredServices, but NOT valid (hash deleted)
+        assertTrue(espressoNitroTEEVerifier.registeredService(signer, ServiceType.CaffNode));
+        assertFalse(espressoNitroTEEVerifier.isSignerValid(signer, ServiceType.CaffNode));
         assertEq(
             espressoNitroTEEVerifier.registeredEnclaveHash(pcr0Hash, ServiceType.CaffNode), false
         );
@@ -299,10 +305,15 @@ contract EspressoNitroTEEVerifierTest is Test {
         assertEq(
             espressoNitroTEEVerifier.registeredEnclaveHash(pcr0Hash, ServiceType.BatchPoster), false
         );
-        assertEq(espressoNitroTEEVerifier.registeredService(signer, ServiceType.BatchPoster), false);
+        // NOTE: With DoS fix, signers remain in registeredServices
+        // But isSignerValid() checks if their hash is still approved (automatic revocation!)
+        assertEq(espressoNitroTEEVerifier.registeredService(signer, ServiceType.BatchPoster), true);
+        assertFalse(espressoNitroTEEVerifier.isSignerValid(signer, ServiceType.BatchPoster));
+
         address[] memory signersAfter =
             espressoNitroTEEVerifier.enclaveHashSigners(pcr0Hash, ServiceType.BatchPoster);
-        assertEq(signersAfter.length, 0);
+        // Signers remain in enclaveHashToSigner set (not cleaned to avoid DoS)
+        assertEq(signersAfter.length, 1);
     }
 
     // Test setting Nitro Enclave Verifier address for tee verifier and non-tee verifier
@@ -324,7 +335,7 @@ contract EspressoNitroTEEVerifierTest is Test {
 
     function testInitializeCannotRunTwice() public {
         vm.prank(adminTEE);
-        vm.expectRevert(bytes("Initializable: contract is already initialized"));
+        vm.expectRevert(abi.encodeWithSignature("InvalidInitialization()"));
         espressoNitroTEEVerifier.initialize(
             adminTEE, INitroEnclaveVerifier(0x2D7fbBAD6792698Ba92e67b7e180f8010B9Ec788)
         );

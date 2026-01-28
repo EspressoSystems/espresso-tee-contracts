@@ -62,11 +62,13 @@ contract EspressoTEEVerifier is Ownable2StepUpgradeable, IEspressoTEEVerifier {
         EspressoTEEVerifierStorage storage $ = _layout();
         address signer = ECDSA.recover(userDataHash, signature);
         if (teeType == TeeType.SGX) {
-            if (!$.espressoSGXTEEVerifier.registeredService(signer, service)) {
+            // Use isSignerValid to check both registration AND hash validity
+            if (!$.espressoSGXTEEVerifier.isSignerValid(signer, service)) {
                 revert InvalidSignature();
             }
         } else {
-            if (!$.espressoNitroTEEVerifier.registeredService(signer, service)) {
+            // Use isSignerValid to check both registration AND hash validity
+            if (!$.espressoNitroTEEVerifier.isSignerValid(signer, service)) {
                 revert InvalidSignature();
             }
         }

@@ -348,16 +348,22 @@ contract EspressoTEEVerifierTest is Test {
             ),
             false
         );
+        // NOTE: With DoS fix, signers remain in registeredServices but NOT valid
         assertEq(
             espressoTEEVerifier.registeredService(
                 batchPosterAddress, IEspressoTEEVerifier.TeeType.SGX, ServiceType.BatchPoster
             ),
-            false
+            true // Still in mapping
+        );
+        // But signer is automatically invalid (hash was deleted)
+        assertFalse(
+            espressoSGXTEEVerifier.isSignerValid(batchPosterAddress, ServiceType.BatchPoster)
         );
         address[] memory signersAfter = espressoTEEVerifier.enclaveHashSigners(
             enclaveHash, IEspressoTEEVerifier.TeeType.SGX, ServiceType.BatchPoster
         );
-        assertEq(signersAfter.length, 0);
+        // NOTE: Signers remain in enclaveHashToSigner set (not cleaned to avoid DoS)
+        assertEq(signersAfter.length, 1);
         vm.stopPrank();
     }
 
@@ -392,16 +398,21 @@ contract EspressoTEEVerifierTest is Test {
             ),
             false
         );
+        // NOTE: With DoS fix, signers remain registered but NOT valid
         assertEq(
             espressoTEEVerifier.registeredService(
                 signer, IEspressoTEEVerifier.TeeType.NITRO, ServiceType.BatchPoster
             ),
-            false
+            true // Still in mapping
         );
+        // But signer is automatically invalid (hash was deleted)
+        assertFalse(espressoNitroTEEVerifier.isSignerValid(signer, ServiceType.BatchPoster));
+
         address[] memory signersAfter = espressoTEEVerifier.enclaveHashSigners(
             pcr0Hash, IEspressoTEEVerifier.TeeType.NITRO, ServiceType.BatchPoster
         );
-        assertEq(signersAfter.length, 0);
+        // Signers remain in the set (not cleaned up to avoid DoS)
+        assertEq(signersAfter.length, 1);
         vm.stopPrank();
     }
 

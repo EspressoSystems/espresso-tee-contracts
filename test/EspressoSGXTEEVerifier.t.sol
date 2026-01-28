@@ -226,13 +226,19 @@ contract EspressoSGXTEEVerifierTest is Test {
             espressoSGXTEEVerifier.registeredEnclaveHash(enclaveHash, ServiceType.BatchPoster),
             false
         );
+        // NOTE: With DoS fix, signers remain in registeredServices but NOT valid
         assertEq(
             espressoSGXTEEVerifier.registeredService(batchPosterAddress, ServiceType.BatchPoster),
-            false
+            true // Still in mapping
+        );
+        // But isSignerValid returns false (automatic revocation via hash check)
+        assertFalse(
+            espressoSGXTEEVerifier.isSignerValid(batchPosterAddress, ServiceType.BatchPoster)
         );
         address[] memory signersAfter =
             espressoSGXTEEVerifier.enclaveHashSigners(enclaveHash, ServiceType.BatchPoster);
-        assertEq(signersAfter.length, 0);
+        // Signers remain in enclaveHashToSigner set (not cleaned to avoid DoS)
+        assertEq(signersAfter.length, 1);
         vm.stopPrank();
     }
 
@@ -404,7 +410,7 @@ contract EspressoSGXTEEVerifierTest is Test {
 
     function testInitializeCannotRunTwice() public {
         vm.prank(adminTEE);
-        vm.expectRevert(bytes("Initializable: contract is already initialized"));
+        vm.expectRevert(abi.encodeWithSignature("InvalidInitialization()"));
         espressoSGXTEEVerifier.initialize(adminTEE, v3QuoteVerifier);
     }
 }
