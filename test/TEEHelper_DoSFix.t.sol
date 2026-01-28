@@ -27,15 +27,14 @@ contract TEEHelperDoSFixTest is Test {
             "https://rpc.ankr.com/eth_sepolia/10a56026b3c20655c1dab931446156dea4d63d87d1261934c82a1b8045885923"
         );
         owner = address(this);
-        
+
         EspressoNitroTEEVerifier impl = new EspressoNitroTEEVerifier();
         TransparentUpgradeableProxy proxy =
             new TransparentUpgradeableProxy(address(impl), proxyAdminOwner, "");
         verifier = EspressoNitroTEEVerifier(address(proxy));
-        
+
         verifier.initialize(
-            owner,
-            INitroEnclaveVerifier(0x2D7fbBAD6792698Ba92e67b7e180f8010B9Ec788)
+            owner, INitroEnclaveVerifier(0x2D7fbBAD6792698Ba92e67b7e180f8010B9Ec788)
         );
     }
 

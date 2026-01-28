@@ -99,7 +99,7 @@ contract EspressoNitroTEEVerifier is IEspressoNitroTEEVerifier, TEEHelper {
         TEEHelperStorage storage $ = _layout();
         if (!$.registeredServices[service][enclaveAddress]) {
             $.registeredServices[service][enclaveAddress] = true;
-            
+
             // Track which enclave hash this signer belongs to (for automatic revocation)
             $.signerToEnclaveHash[service][enclaveAddress] = pcr0Hash;
 

@@ -25,18 +25,17 @@ contract SignerValidationTest is Test {
         vm.createSelectFork(
             "https://rpc.ankr.com/eth_sepolia/10a56026b3c20655c1dab931446156dea4d63d87d1261934c82a1b8045885923"
         );
-        
+
         EspressoNitroTEEVerifier impl = new EspressoNitroTEEVerifier();
         TransparentUpgradeableProxy proxy =
             new TransparentUpgradeableProxy(address(impl), proxyAdminOwner, "");
         espressoNitroTEEVerifier = EspressoNitroTEEVerifier(address(proxy));
-        
+
         vm.prank(adminTEE);
         espressoNitroTEEVerifier.initialize(
-            adminTEE,
-            INitroEnclaveVerifier(0x2D7fbBAD6792698Ba92e67b7e180f8010B9Ec788)
+            adminTEE, INitroEnclaveVerifier(0x2D7fbBAD6792698Ba92e67b7e180f8010B9Ec788)
         );
-        
+
         vm.prank(adminTEE);
         espressoNitroTEEVerifier.setEnclaveHash(pcr0Hash, true, ServiceType.BatchPoster);
     }

@@ -75,7 +75,7 @@ abstract contract TEEHelper is ITEEHelper, Initializable {
         returns (bool)
     {
         TEEHelperStorage storage $ = _layout();
-        
+
         // Check if signer is registered
         if (!$.registeredServices[service][signer]) {
             return false;
