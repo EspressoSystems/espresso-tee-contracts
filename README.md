@@ -312,3 +312,141 @@ forge script scripts/MultiSigTransfer.s.sol:MultiSigTransfer --rpc-url "$RPC_URL
   To finish this ownership transfer, you should go to the web UI for your Safe wallet, and note that a new transaction should be present with a signature from your ledger device!
 
   The final step is to gather the other signatures required to reach your wallets threshold, and execute the transaction with the web UI.
+
+
+
+# Security considerations
+
+## Deployment
+
+### Cross-Chain Security
+
+⚠️ **CRITICAL: Each chain MUST have its own separate contract deployments.**
+
+**Required separate deployments per chain:**
+
+1. **`EspressoTEEVerifier`** - Your main TEE verifier contract
+2. **`EspressoNitroTEEVerifier`** - Nitro-specific verifier  
+3. **`EspressoSGXTEEVerifier`** - SGX-specific verifier
+4. **Automata `NitroEnclaveVerifier`** - ⚠️ **MUST be chain-specific!**
+5. **Automata `V3QuoteVerifier`** (for SGX) - ⚠️ **MUST be chain-specific!**
+
+**Why separate deployments are CRITICAL:**
+
+1. **Independent State Management**
+   - Each contract maintains on-chain state (approved enclave hashes, registered signers)
+   - State is NOT synchronized across chains
+   - Revoking a hash on one chain does NOT affect other chains
+
+2. **ZK Configuration Control**
+   - Each Automata contract has its own ZK verifier configuration
+   - You validate against specific verifier IDs per chain
+   - Shared Automata contracts would create single point of failure across all chains
+
+3. **Security Isolation**
+   - Different chains may have different threat models
+   - Security policies can be chain-specific  
+   - Compromise on one chain should NOT affect others
+   - Prevents cross-chain authorization bypass
+
+4. **Governance Independence**
+   - Each chain can have different owners/multisigs
+   - Approval workflows can differ per chain
+   - No single entity controls all chains
+   - Distributed trust model
+
+**⚠️ IMPORTANT: Automata Dependencies Must Be Chain-Specific**
+
+Do NOT use the same Automata contract across multiple chains! Each chain needs:
+
+```
+For Nitro TEE:
+  ✅ Chain A: NitroEnclaveVerifier at 0xAAA...
+  ✅ Chain B: NitroEnclaveVerifier at 0xBBB... (different!)
+  ❌ DO NOT: Use same NitroEnclaveVerifier on both chains
+
+For SGX TEE:
+  ✅ Chain A: V3QuoteVerifier at 0xCCC...
+  ✅ Chain B: V3QuoteVerifier at 0xDDD... (different!)
+  ❌ DO NOT: Use same V3QuoteVerifier on both chains
+```
+
+**Why this matters:**
+- Each Automata contract has mutable ZK configuration
+- Your security validation caches the expected config per deployment
+- Shared Automata = single point of configuration control across chains
+- Separate Automata = isolated security boundaries
+
+**Verify Automata deployments:**
+
+Check Automata's documentation for chain-specific addresses:
+- Nitro: https://github.com/automata-network/aws-nitro-enclave-attestation
+- SGX: https://github.com/automata-network/automata-dcap-attestation
+
+**Example: Current Mainnet Deployments**
+
+```
+EspressoTEEVerifier Contracts (Our Deployments):
+  ApeChain (33139):      0x4fd6D0995B3016726D5674992c1Ec1bDe0989cF5
+  AppChain (466):        0xcC758349CBd99bAA7fAD0558634dAaB176c777D0
+  Huddle01:              0x2E01FA49cB3C3Ff09a5908165A5b5cB7f5cDF271
+  NodeOps:               0xE0032d5a83f082aC05E66C31dcAbd84bc461b767
+  Rufus:                 0xFcb6371757DE81DeaDbE8c13e36bFD7A261dD263
+  T3rn:                  0xf252DDe41C679B2959d7C3a2Ea0bC2fA9dE7Eab7
+
+✅ Each chain has unique address (correct!)
+✅ Each references chain-specific Automata contracts
+```
+
+### Pre-Deployment Checklist
+
+Before deploying to production, verify:
+
+- [ ] **External dependencies verified:**
+  - [ ] Automata `NitroEnclaveVerifier` address confirmed for target chain
+  - [ ] ⚠️ **Verify NitroEnclaveVerifier is DIFFERENT for each chain** (do not reuse!)
+  - [ ] Automata `V3QuoteVerifier` address confirmed for target chain (SGX)
+  - [ ] ⚠️ **Verify V3QuoteVerifier is DIFFERENT for each chain** (do not reuse!)
+  - [ ] Verify external contracts on block explorer
+  - [ ] Check Automata contract owner and governance model
+  
+- [ ] **Initial configuration prepared:**
+  - [ ] SGX mrEnclave hashes computed and documented
+  - [ ] Initial approved hashes ready
+  
+- [ ] **Governance setup:**
+  - [ ] Owner address configured (recommend multisig)
+  - [ ] Ownership transfer process documented
+  - [ ] Emergency response procedures established
+
+### Post-Deployment Actions
+
+**Immediately after deployment:**
+
+1. **Verify contracts on block explorer**
+   ```bash
+   forge verify-contract <address> EspressoNitroTEEVerifier --chain <chain-id>
+   ```
+
+2. **Register initial enclave hashes**
+   ```bash
+   cast send <verifier-address> \
+     "setEnclaveHash(bytes32,bool,uint8)" \
+     <pcr0-hash> true 0 \
+     --private-key $PRIVATE_KEY
+   ```
+
+3. **Transfer ownership to multisig** (recommended)
+   ```bash
+   forge script scripts/MultiSigTransfer.s.sol --broadcast
+   ```
+
+4. **Test with actual TEE attestation**
+   - Generate test attestation from your TEE
+   - Call registerService() with real data
+   - Verify signer is registered correctly
+
+5. **Set up monitoring**
+   - Monitor Automata contract configuration changes
+   - Alert on unexpected registration patterns
+   - Track signer counts per enclave hash

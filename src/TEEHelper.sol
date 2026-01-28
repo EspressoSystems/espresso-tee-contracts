@@ -2,20 +2,16 @@
 pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
-import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import {ServiceType} from "./types/Types.sol";
 import "./interface/ITEEHelper.sol";
 
 abstract contract TEEHelper is ITEEHelper, Initializable {
-    using EnumerableSet for EnumerableSet.AddressSet;
-
     struct TEEHelperStorage {
         mapping(ServiceType => mapping(bytes32 enclaveHash => bool valid)) registeredEnclaveHashes;
         mapping(ServiceType => mapping(address signer => bool valid)) registeredServices;
-        mapping(
-            ServiceType => mapping(bytes32 enclaveHash => EnumerableSet.AddressSet signers)
-        ) enclaveHashToSigner;
         address teeVerifier;
+        // Track which enclave hash each signer was registered with (for automatic revocation)
+        mapping(ServiceType => mapping(address signer => bytes32 enclaveHash)) signerToEnclaveHash;
     }
 
     // keccak256(abi.encode(uint256(keccak256("espresso.storage.TEEHelper")) - 1)) & ~bytes32(uint256(0xff))
@@ -67,18 +63,34 @@ abstract contract TEEHelper is ITEEHelper, Initializable {
     }
 
     /**
-     * @notice This function retrieves whether a signer is registered or not
+     * @notice Validates if a signer is registered AND its enclave hash is still valid
      * @param signer The address of the signer
      * @param service The service type (BatchPoster or CaffNode)
-     * @return bool True if the signer is registered, false otherwise
+     * @return bool True if signer is registered AND its enclave hash is still approved
      */
-    function registeredService(address signer, ServiceType service)
+    function isSignerValid(address signer, ServiceType service)
         external
         view
         virtual
         returns (bool)
     {
-        return _layout().registeredServices[service][signer];
+        TEEHelperStorage storage $ = _layout();
+
+        // Check if signer is registered
+        if (!$.registeredServices[service][signer]) {
+            return false;
+        }
+
+        // Check if signer's enclave hash is still approved
+        bytes32 signerHash = $.signerToEnclaveHash[service][signer];
+
+        // If no hash recorded (shouldn't happen with new registrations), be safe and reject
+        if (signerHash == bytes32(0)) {
+            return false;
+        }
+
+        // Check if the hash is still valid
+        return $.registeredEnclaveHashes[service][signerHash];
     }
 
     /**
@@ -97,24 +109,10 @@ abstract contract TEEHelper is ITEEHelper, Initializable {
     }
 
     /**
-     * @notice This function retrieves the list of signers registered for a given enclave hash
-     * @param enclaveHash The hash of the enclave
-     * @param service The service type (BatchPoster or CaffNode)
-     * @return address[] The list of signers registered for the given enclave hash
-     */
-    function enclaveHashSigners(bytes32 enclaveHash, ServiceType service)
-        external
-        view
-        virtual
-        returns (address[] memory)
-    {
-        EnumerableSet.AddressSet storage signersSet =
-            _layout().enclaveHashToSigner[service][enclaveHash];
-        return signersSet.values();
-    }
-
-    /**
      * @notice Allows the tee verifier to delete registered enclave hashes from the list of valid enclave hashes
+     * @dev FIX: Removes unbounded loop to prevent DoS attack
+     * @dev NOTE: This only removes the hash authorization, existing signers remain in registeredServices
+     * @dev To fully revoke signers, use isSignerValid() which checks hash validity
      * @param enclaveHashes The list of enclave hashes to be deleted
      * @param service The service type (BatchPoster or CaffNode)
      */
@@ -125,18 +123,18 @@ abstract contract TEEHelper is ITEEHelper, Initializable {
     {
         TEEHelperStorage storage $ = _layout();
         for (uint256 i = 0; i < enclaveHashes.length; i++) {
-            // also delete all the corresponding signers from registeredService mapping
-            EnumerableSet.AddressSet storage signersSet =
-                $.enclaveHashToSigner[service][enclaveHashes[i]];
-            while (signersSet.length() > 0) {
-                address signer = signersSet.at(0);
-                delete $.registeredServices[service][signer];
-                // slither-disable-next-line unused-return
-                signersSet.remove(signer);
-                emit DeletedRegisteredService(signer, service);
-            }
-            delete $.registeredEnclaveHashes[service][enclaveHashes[i]];
-            emit DeletedEnclaveHash(enclaveHashes[i], service);
+            bytes32 enclaveHash = enclaveHashes[i];
+
+            // Verify the hash exists before deleting
+            require($.registeredEnclaveHashes[service][enclaveHash], "Enclave hash not registered");
+
+            // Delete the hash authorization (prevents NEW registrations)
+            delete $.registeredEnclaveHashes[service][enclaveHash];
+            emit DeletedEnclaveHash(enclaveHash, service);
+
+            // NOTE: Existing signers are NOT automatically revoked from registeredServices
+            // They remain in the mapping to avoid unbounded loop DoS
+            // Use isSignerValid() for verification - it checks if hash is still valid
         }
     }
 

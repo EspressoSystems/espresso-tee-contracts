@@ -16,3 +16,7 @@ docs/
 
 .DS_Store
 deployments/
+
+# IDEs
+.idea
+

@@ -11,6 +11,7 @@ import {
 } from "aws-nitro-enclave-attestation/interfaces/INitroEnclaveVerifier.sol";
 import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import {TEEHelper} from "./TEEHelper.sol";
+import {JournalValidation} from "./libraries/JournalValidation.sol";
 
 /**
  * @title  Verifies quotes from the AWS Nitro Enclave (TEE) and attests on-chain
@@ -69,6 +70,9 @@ contract EspressoNitroTEEVerifier is IEspressoNitroTEEVerifier, TEEHelper {
             revert VerificationFailed(journal.result);
         }
 
+        // SECURITY: Validate journal format and integrity (Defense in Depth)
+        JournalValidation.validateJournal(journal);
+
         // we hash the pcr0 value to get the the pcr0Hash and then
         // check if the given hash has been registered in the contract by the tee verifier
         // this allows us to verify that the registerSigner request is coming from a TEE
@@ -93,10 +97,13 @@ contract EspressoNitroTEEVerifier is IEspressoNitroTEEVerifier, TEEHelper {
         address enclaveAddress = address(uint160(uint256(publicKeyHash)));
 
         // Mark the signer as registered
-        if (!_layout().registeredServices[service][enclaveAddress]) {
-            TEEHelperStorage storage $ = _layout();
+        TEEHelperStorage storage $ = _layout();
+        if (!$.registeredServices[service][enclaveAddress]) {
             $.registeredServices[service][enclaveAddress] = true;
-            $.enclaveHashToSigner[service][pcr0Hash].add(enclaveAddress);
+
+            // Track which enclave hash this signer belongs to (for automatic revocation)
+            $.signerToEnclaveHash[service][enclaveAddress] = pcr0Hash;
+
             emit ServiceRegistered(enclaveAddress, pcr0Hash, service);
         }
     }
