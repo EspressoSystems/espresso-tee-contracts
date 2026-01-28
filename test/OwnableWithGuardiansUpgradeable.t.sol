@@ -118,7 +118,8 @@ contract OwnableWithGuardiansUpgradeableTest is Test {
         // Get the ProxyAdmin address using ERC1967 storage slot
         // ERC1967 admin slot is: keccak256("eip1967.proxy.admin") - 1
         bytes32 adminSlot = bytes32(uint256(keccak256("eip1967.proxy.admin")) - 1);
-        address adminAddress = address(uint160(uint256(vm.load(address(transparentProxy), adminSlot))));
+        address adminAddress =
+            address(uint160(uint256(vm.load(address(transparentProxy), adminSlot))));
         proxyAdmin = ProxyAdmin(adminAddress);
     }
 
