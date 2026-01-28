@@ -11,6 +11,8 @@ import {
     ZkCoProcessorConfig,
     INitroEnclaveVerifier
 } from "aws-nitro-enclave-attestation/interfaces/INitroEnclaveVerifier.sol";
+import {EspressoNitroTEEVerifier} from "../src/EspressoNitroTEEVerifier.sol";
+import {ServiceType} from "../src/types/Types.sol";
 
 /**
  * @title Journal Validation Tests
@@ -18,12 +20,10 @@ import {
  * @dev Tests all critical validations that prevent security bypasses
  */
 contract JournalValidationTest is Test {
-    MockNitroVerifier mockVerifier;
     TestableNitroVerifier verifier;
 
     function setUp() public {
-        mockVerifier = new MockNitroVerifier();
-        verifier = new TestableNitroVerifier(mockVerifier);
+        verifier = new TestableNitroVerifier();
     }
 
     /**
@@ -202,90 +202,12 @@ contract JournalValidationTest is Test {
 
 /**
  * @dev Testable version that exposes _validateJournal for testing
+ * @notice Inherits from EspressoNitroTEEVerifier to test the ACTUAL validation logic
  */
-contract TestableNitroVerifier {
-    INitroEnclaveVerifier private _verifier;
-
-    constructor(INitroEnclaveVerifier verifier) {
-        _verifier = verifier;
-    }
-
-    // Expose the validation function for testing
+contract TestableNitroVerifier is EspressoNitroTEEVerifier {
+    // Expose the internal validation function for direct testing
     function exposed_validateJournal(VerifierJournal memory journal) external pure {
         _validateJournal(journal);
-    }
-
-    // Copy of the validation function
-    function _validateJournal(VerifierJournal memory journal) internal pure {
-        // 1. Validate PCR array is not empty
-        require(journal.pcrs.length > 0, "PCR array cannot be empty");
-
-        // 2. CRITICAL: Validate PCR index is 0
-        require(journal.pcrs[0].index == 0, "First PCR must be PCR0 (code measurement)");
-
-        // 3. CRITICAL: Validate public key length
-        require(journal.publicKey.length == 65, "Invalid public key length - must be 65 bytes");
-
-        // 4. CRITICAL: Validate public key format
-        require(journal.publicKey[0] == 0x04, "Public key must be uncompressed (0x04 prefix)");
-    }
-}
-
-/**
- * @dev Mock verifier for testing
- */
-contract MockNitroVerifier is INitroEnclaveVerifier {
-    function verify(bytes calldata, ZkCoProcessorType, bytes calldata)
-        external
-        pure
-        returns (VerifierJournal memory)
-    {
-        revert("Not used in these tests");
-    }
-
-    function batchVerify(bytes calldata, ZkCoProcessorType, bytes calldata)
-        external
-        pure
-        returns (VerifierJournal[] memory)
-    {
-        revert("Not implemented");
-    }
-
-    function getZkConfig(ZkCoProcessorType) external pure returns (ZkCoProcessorConfig memory) {
-        return ZkCoProcessorConfig({
-            verifierId: bytes32(0),
-            verifierProofId: bytes32(0),
-            aggregatorId: bytes32(0),
-            zkVerifier: address(0)
-        });
-    }
-
-    function maxTimeDiff() external pure returns (uint64) {
-        return 86_400;
-    }
-
-    function rootCert() external pure returns (bytes32) {
-        return bytes32(0);
-    }
-
-    function revokeCert(bytes32) external pure {
-        revert("Not implemented");
-    }
-
-    function checkTrustedIntermediateCerts(bytes32[][] calldata)
-        external
-        pure
-        returns (uint8[] memory)
-    {
-        revert("Not implemented");
-    }
-
-    function setRootCert(bytes32) external pure {
-        revert("Not implemented");
-    }
-
-    function setZkConfiguration(ZkCoProcessorType, ZkCoProcessorConfig memory) external pure {
-        revert("Not implemented");
     }
 }
 

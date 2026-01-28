@@ -314,7 +314,6 @@ contract EspressoSGXTEEVerifierTest is Test {
         string memory quotePath = "/test/configs/attestation.bin";
         string memory inputFile = string.concat(vm.projectRoot(), quotePath);
         bytes memory sampleQuote = vm.readFileBinary(inputFile);
-        EspressoSGXTEEVerifier localVerifier = _deploySGX(adminTEE);
         vm.prank(adminTEE);
         bytes32[] memory hashes = new bytes32[](1);
         hashes[0] = enclaveHash;
