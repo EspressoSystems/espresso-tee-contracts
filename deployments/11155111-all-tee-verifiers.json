@@ -1,8 +1,0 @@
-{
-  "nitroVerifierImplementation": "0x7F20EaA2cCbf9A299cc51Ab8b724511CCE437092",
-  "nitroVerifierProxy": "0x528923150d8D2B2479f5B20f222e13B27315772D",
-  "sgxVerifierImplementation": "0xA5640d27a4a2eBdcEEdA5795f1775F451815a446",
-  "sgxVerifierProxy": "0xe8A8737CD0EeD2a34DDa292843a843465a50EF57",
-  "teeVerifierImplementation": "0xF138C27dD12923a40Cb2Aaa9aFFDb64ce286d051",
-  "teeVerifierProxy": "0xE035BEdaB73cdA445e2E5C722bcAe0f7F2d897b3"
-}
