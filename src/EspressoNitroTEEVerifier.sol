@@ -96,10 +96,9 @@ contract EspressoNitroTEEVerifier is IEspressoNitroTEEVerifier, TEEHelper {
         address enclaveAddress = address(uint160(uint256(publicKeyHash)));
 
         // Mark the signer as registered
-        if (!_layout().registeredServices[service][enclaveAddress]) {
-            TEEHelperStorage storage $ = _layout();
+        TEEHelperStorage storage $ = _layout();
+        if (!$.registeredServices[service][enclaveAddress]) {
             $.registeredServices[service][enclaveAddress] = true;
-            $.enclaveHashToSigner[service][pcr0Hash].add(enclaveAddress);
             
             // Track which enclave hash this signer belongs to (for automatic revocation)
             $.signerToEnclaveHash[service][enclaveAddress] = pcr0Hash;

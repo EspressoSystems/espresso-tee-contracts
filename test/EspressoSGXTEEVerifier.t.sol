@@ -202,7 +202,7 @@ contract EspressoSGXTEEVerifierTest is Test {
         vm.stopPrank();
     }
 
-    function testEnclaveHashSignersAndDeleteEnclaveHashes() public {
+    function testDeleteEnclaveHashes() public {
         vm.startPrank(adminTEE);
         string memory quotePath = "/test/configs/attestation.bin";
         string memory inputFile = string.concat(vm.projectRoot(), quotePath);
@@ -212,10 +212,10 @@ contract EspressoSGXTEEVerifierTest is Test {
         bytes memory data = abi.encodePacked(batchPosterAddress);
         espressoSGXTEEVerifier.registerService(sampleQuote, data, ServiceType.BatchPoster);
 
-        address[] memory signers =
-            espressoSGXTEEVerifier.enclaveHashSigners(enclaveHash, ServiceType.BatchPoster);
-        assertEq(signers.length, 1);
-        assertEq(signers[0], batchPosterAddress);
+        // Verify signer is valid after registration
+        assertTrue(
+            espressoSGXTEEVerifier.isSignerValid(batchPosterAddress, ServiceType.BatchPoster)
+        );
 
         bytes32[] memory enclaveHashes = new bytes32[](1);
         enclaveHashes[0] = enclaveHash;
@@ -231,10 +231,6 @@ contract EspressoSGXTEEVerifierTest is Test {
         assertFalse(
             espressoSGXTEEVerifier.isSignerValid(batchPosterAddress, ServiceType.BatchPoster)
         );
-        address[] memory signersAfter =
-            espressoSGXTEEVerifier.enclaveHashSigners(enclaveHash, ServiceType.BatchPoster);
-        // Signers remain in enclaveHashToSigner set (not cleaned to avoid DoS)
-        assertEq(signersAfter.length, 1);
         vm.stopPrank();
     }
 

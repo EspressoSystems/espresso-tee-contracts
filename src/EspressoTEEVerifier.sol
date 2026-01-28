@@ -118,29 +118,9 @@ contract EspressoTEEVerifier is Ownable2StepUpgradeable, IEspressoTEEVerifier {
         }
     }
 
-    /**
-     * @notice This function retrieves the list of signers registered for a given enclave hash
-     * @param enclaveHash The hash of the enclave
-     * @param teeType The type of TEE
-     * @param service The service type (BatchPoster or CaffNode)
-     * @return address[] The list of signers registered for the given enclave hash
-     */
-    function enclaveHashSigners(bytes32 enclaveHash, TeeType teeType, ServiceType service)
-        external
-        view
-        returns (address[] memory)
-    {
-        EspressoTEEVerifierStorage storage $ = _layout();
-        if (teeType == TeeType.SGX) {
-            return $.espressoSGXTEEVerifier.enclaveHashSigners(enclaveHash, service);
-        } else {
-            return $.espressoNitroTEEVerifier.enclaveHashSigners(enclaveHash, service);
-        }
-    }
-
-    /**
-     *     @notice Set the EspressoSGXTEEVerifier
-     *     @param _espressoSGXTEEVerifier The address of the EspressoSGXTEEVerifier
+    /*
+        @notice Set the EspressoSGXTEEVerifier
+        @param _espressoSGXTEEVerifier The address of the EspressoSGXTEEVerifier
      */
     function setEspressoSGXTEEVerifier(IEspressoSGXTEEVerifier _espressoSGXTEEVerifier)
         public

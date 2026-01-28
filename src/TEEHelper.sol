@@ -2,19 +2,13 @@
 pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
-import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import {ServiceType} from "./types/Types.sol";
 import "./interface/ITEEHelper.sol";
 
 abstract contract TEEHelper is ITEEHelper, Initializable {
-    using EnumerableSet for EnumerableSet.AddressSet;
-
     struct TEEHelperStorage {
         mapping(ServiceType => mapping(bytes32 enclaveHash => bool valid)) registeredEnclaveHashes;
         mapping(ServiceType => mapping(address signer => bool valid)) registeredServices;
-        mapping(
-            ServiceType => mapping(bytes32 enclaveHash => EnumerableSet.AddressSet signers)
-        ) enclaveHashToSigner;
         address teeVerifier;
         // Track which enclave hash each signer was registered with (for automatic revocation)
         mapping(ServiceType => mapping(address signer => bytes32 enclaveHash)) signerToEnclaveHash;
@@ -112,23 +106,6 @@ abstract contract TEEHelper is ITEEHelper, Initializable {
         returns (bool)
     {
         return _layout().registeredEnclaveHashes[service][enclaveHash];
-    }
-
-    /**
-     * @notice This function retrieves the list of signers registered for a given enclave hash
-     * @param enclaveHash The hash of the enclave
-     * @param service The service type (BatchPoster or CaffNode)
-     * @return address[] The list of signers registered for the given enclave hash
-     */
-    function enclaveHashSigners(bytes32 enclaveHash, ServiceType service)
-        external
-        view
-        virtual
-        returns (address[] memory)
-    {
-        EnumerableSet.AddressSet storage signersSet =
-            _layout().enclaveHashToSigner[service][enclaveHash];
-        return signersSet.values();
     }
 
     /**

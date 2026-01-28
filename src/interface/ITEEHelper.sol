@@ -70,17 +70,6 @@ interface ITEEHelper {
     function isSignerValid(address signer, ServiceType service) external view returns (bool);
 
     /*
-     * @notice This function retrieves the list of signers registered for a given enclave hash
-     * @param enclaveHash The hash of the enclave
-     * @param service The service type (BatchPoster or CaffNode)
-     * @return address[] The list of signers registered for the given enclave hash
-     */
-    function enclaveHashSigners(bytes32 enclaveHash, ServiceType service)
-        external
-        view
-        returns (address[] memory);
-
-    /*
      * @notice Allows the tee verifier to delete registered enclave hashes from the list of valid enclave hashes
      * @param enclaveHashes The array of enclave hashes to delete
      * @param service The service type (BatchPoster or CaffNode)

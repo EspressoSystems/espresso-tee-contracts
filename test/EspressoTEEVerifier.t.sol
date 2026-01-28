@@ -290,7 +290,7 @@ contract EspressoTEEVerifierTest is Test {
         );
     }
 
-    function testEnclaveHashSignersAndDeleteEnclaveHashesSGX() public {
+    function testDeleteEnclaveHashesSGX() public {
         vm.startPrank(adminTEE);
         string memory quotePath = "/test/configs/attestation.bin";
         string memory inputFile = string.concat(vm.projectRoot(), quotePath);
@@ -303,11 +303,10 @@ contract EspressoTEEVerifierTest is Test {
             ServiceType.BatchPoster
         );
 
-        address[] memory signers = espressoTEEVerifier.enclaveHashSigners(
-            enclaveHash, IEspressoTEEVerifier.TeeType.SGX, ServiceType.BatchPoster
+        // Verify signer is valid after registration
+        assertTrue(
+            espressoSGXTEEVerifier.isSignerValid(batchPosterAddress, ServiceType.BatchPoster)
         );
-        assertEq(signers.length, 1);
-        assertEq(signers[0], batchPosterAddress);
 
         bytes32[] memory enclaveHashes = new bytes32[](1);
         enclaveHashes[0] = enclaveHash;
@@ -325,15 +324,10 @@ contract EspressoTEEVerifierTest is Test {
         assertFalse(
             espressoSGXTEEVerifier.isSignerValid(batchPosterAddress, ServiceType.BatchPoster)
         );
-        address[] memory signersAfter = espressoTEEVerifier.enclaveHashSigners(
-            enclaveHash, IEspressoTEEVerifier.TeeType.SGX, ServiceType.BatchPoster
-        );
-        // NOTE: Signers remain in enclaveHashToSigner set (not cleaned to avoid DoS)
-        assertEq(signersAfter.length, 1);
         vm.stopPrank();
     }
 
-    function testEnclaveHashSignersAndDeleteEnclaveHashesNitro() public {
+    function testDeleteEnclaveHashesNitro() public {
         vm.startPrank(adminTEE);
         vm.warp(1_764_889_188);
         string memory proofPath = "/test/configs/proof.json";
@@ -347,11 +341,8 @@ contract EspressoTEEVerifierTest is Test {
         );
 
         address signer = 0xF8463E0aF00C1910402D2A51B3a8CecD0dC1c3fE;
-        address[] memory signers = espressoTEEVerifier.enclaveHashSigners(
-            pcr0Hash, IEspressoTEEVerifier.TeeType.NITRO, ServiceType.BatchPoster
-        );
-        assertEq(signers.length, 1);
-        assertEq(signers[0], signer);
+        // Verify signer is valid after registration
+        assertTrue(espressoNitroTEEVerifier.isSignerValid(signer, ServiceType.BatchPoster));
 
         bytes32[] memory enclaveHashes = new bytes32[](1);
         enclaveHashes[0] = pcr0Hash;
@@ -367,12 +358,6 @@ contract EspressoTEEVerifierTest is Test {
         // NOTE: Signers remain in internal mapping (not cleaned to avoid DoS)
         // But signer is automatically invalid (hash was deleted)
         assertFalse(espressoNitroTEEVerifier.isSignerValid(signer, ServiceType.BatchPoster));
-
-        address[] memory signersAfter = espressoTEEVerifier.enclaveHashSigners(
-            pcr0Hash, IEspressoTEEVerifier.TeeType.NITRO, ServiceType.BatchPoster
-        );
-        // Signers remain in the set (not cleaned up to avoid DoS)
-        assertEq(signersAfter.length, 1);
         vm.stopPrank();
     }
 

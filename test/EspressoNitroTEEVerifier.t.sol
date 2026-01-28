@@ -278,7 +278,7 @@ contract EspressoNitroTEEVerifierTest is Test {
         );
     }
 
-    function testEnclaveHashSignersAndDeleteEnclaveHashes() public {
+    function testDeleteEnclaveHashes() public {
         vm.startPrank(adminTEE);
         vm.warp(1_764_889_188);
         string memory proofPath = "/test/configs/proof.json";
@@ -290,10 +290,8 @@ contract EspressoNitroTEEVerifierTest is Test {
         espressoNitroTEEVerifier.registerService(output, proofBytes, ServiceType.BatchPoster);
 
         address signer = 0xF8463E0aF00C1910402D2A51B3a8CecD0dC1c3fE;
-        address[] memory signers =
-            espressoNitroTEEVerifier.enclaveHashSigners(pcr0Hash, ServiceType.BatchPoster);
-        assertEq(signers.length, 1);
-        assertEq(signers[0], signer);
+        // Verify signer is valid after registration
+        assertTrue(espressoNitroTEEVerifier.isSignerValid(signer, ServiceType.BatchPoster));
 
         bytes32[] memory enclaveHashes = new bytes32[](1);
         enclaveHashes[0] = pcr0Hash;
@@ -306,11 +304,6 @@ contract EspressoNitroTEEVerifierTest is Test {
         // NOTE: Signers remain in registeredServices (not cleaned to avoid DoS)
         // But isSignerValid() checks if their hash is still approved (automatic revocation!)
         assertFalse(espressoNitroTEEVerifier.isSignerValid(signer, ServiceType.BatchPoster));
-
-        address[] memory signersAfter =
-            espressoNitroTEEVerifier.enclaveHashSigners(pcr0Hash, ServiceType.BatchPoster);
-        // Signers remain in enclaveHashToSigner set (not cleaned to avoid DoS)
-        assertEq(signersAfter.length, 1);
     }
 
     // Test setting Nitro Enclave Verifier address for tee verifier and non-tee verifier
