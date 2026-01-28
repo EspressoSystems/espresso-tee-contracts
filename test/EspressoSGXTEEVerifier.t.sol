@@ -95,7 +95,7 @@ contract EspressoSGXTEEVerifierTest is Test {
         // Convert the data to bytes32 and pass it to the verify function
         espressoSGXTEEVerifier.registerService(sampleQuote, data, ServiceType.BatchPoster);
         assertTrue(
-            espressoSGXTEEVerifier.registeredService(batchPosterAddress, ServiceType.BatchPoster)
+            espressoSGXTEEVerifier.isSignerValid(batchPosterAddress, ServiceType.BatchPoster)
         );
         vm.stopPrank();
     }
@@ -202,7 +202,7 @@ contract EspressoSGXTEEVerifierTest is Test {
         vm.stopPrank();
     }
 
-    function testEnclaveHashSignersAndDeleteEnclaveHashes() public {
+    function testDeleteEnclaveHashes() public {
         vm.startPrank(adminTEE);
         string memory quotePath = "/test/configs/attestation.bin";
         string memory inputFile = string.concat(vm.projectRoot(), quotePath);
@@ -212,10 +212,10 @@ contract EspressoSGXTEEVerifierTest is Test {
         bytes memory data = abi.encodePacked(batchPosterAddress);
         espressoSGXTEEVerifier.registerService(sampleQuote, data, ServiceType.BatchPoster);
 
-        address[] memory signers =
-            espressoSGXTEEVerifier.enclaveHashSigners(enclaveHash, ServiceType.BatchPoster);
-        assertEq(signers.length, 1);
-        assertEq(signers[0], batchPosterAddress);
+        // Verify signer is valid after registration
+        assertTrue(
+            espressoSGXTEEVerifier.isSignerValid(batchPosterAddress, ServiceType.BatchPoster)
+        );
 
         bytes32[] memory enclaveHashes = new bytes32[](1);
         enclaveHashes[0] = enclaveHash;
@@ -226,13 +226,11 @@ contract EspressoSGXTEEVerifierTest is Test {
             espressoSGXTEEVerifier.registeredEnclaveHash(enclaveHash, ServiceType.BatchPoster),
             false
         );
-        assertEq(
-            espressoSGXTEEVerifier.registeredService(batchPosterAddress, ServiceType.BatchPoster),
-            false
+        // NOTE: Signers remain in registeredServices (not cleaned to avoid DoS)
+        // isSignerValid returns false (automatic revocation via hash check)
+        assertFalse(
+            espressoSGXTEEVerifier.isSignerValid(batchPosterAddress, ServiceType.BatchPoster)
         );
-        address[] memory signersAfter =
-            espressoSGXTEEVerifier.enclaveHashSigners(enclaveHash, ServiceType.BatchPoster);
-        assertEq(signersAfter.length, 0);
         vm.stopPrank();
     }
 
@@ -316,7 +314,6 @@ contract EspressoSGXTEEVerifierTest is Test {
         string memory quotePath = "/test/configs/attestation.bin";
         string memory inputFile = string.concat(vm.projectRoot(), quotePath);
         bytes memory sampleQuote = vm.readFileBinary(inputFile);
-        EspressoSGXTEEVerifier localVerifier = _deploySGX(adminTEE);
         vm.prank(adminTEE);
         bytes32[] memory hashes = new bytes32[](1);
         hashes[0] = enclaveHash;

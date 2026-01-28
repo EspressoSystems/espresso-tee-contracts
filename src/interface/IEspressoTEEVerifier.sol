@@ -42,12 +42,6 @@ interface IEspressoTEEVerifier {
         ServiceType serviceType
     ) external;
 
-    // Function to retrieve whether a service is registered or not
-    function registeredService(address signer, TeeType teeType, ServiceType serviceType)
-        external
-        view
-        returns (bool);
-
     /**
      * @notice This function retrieves whether an enclave hash is registered or not
      * @param enclaveHash The hash of the enclave
@@ -59,19 +53,6 @@ interface IEspressoTEEVerifier {
         external
         view
         returns (bool);
-
-    /**
-     * @notice This function retrieves the list of signers registered for a given enclave hash
-     * @param enclaveHash The hash of the enclave
-     * @param teeType The type of TEE
-     * @param serviceType The service type (BatchPoster or CaffNode)
-     * @return address[] The list of signers registered for the given enclave hash
-     *
-     */
-    function enclaveHashSigners(bytes32 enclaveHash, TeeType teeType, ServiceType serviceType)
-        external
-        view
-        returns (address[] memory);
 
     // Function to set the EspressoSGXTEEVerifier
     function setEspressoSGXTEEVerifier(IEspressoSGXTEEVerifier _espressoSGXTEEVerifier) external;

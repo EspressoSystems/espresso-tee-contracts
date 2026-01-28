@@ -44,7 +44,7 @@ contract EspressoNitroTEEVerifierMock {
         return registeredEnclaveHashes[service][enclaveHash];
     }
 
-    function registeredService(address signer, ServiceType service) external view returns (bool) {
+    function isSignerValid(address signer, ServiceType service) external view returns (bool) {
         return registeredServices[service][signer];
     }
 

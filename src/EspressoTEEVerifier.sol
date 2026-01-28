@@ -62,11 +62,13 @@ contract EspressoTEEVerifier is Ownable2StepUpgradeable, IEspressoTEEVerifier {
         EspressoTEEVerifierStorage storage $ = _layout();
         address signer = ECDSA.recover(userDataHash, signature);
         if (teeType == TeeType.SGX) {
-            if (!$.espressoSGXTEEVerifier.registeredService(signer, service)) {
+            // Use isSignerValid to check both registration AND hash validity
+            if (!$.espressoSGXTEEVerifier.isSignerValid(signer, service)) {
                 revert InvalidSignature();
             }
         } else {
-            if (!$.espressoNitroTEEVerifier.registeredService(signer, service)) {
+            // Use isSignerValid to check both registration AND hash validity
+            if (!$.espressoNitroTEEVerifier.isSignerValid(signer, service)) {
                 revert InvalidSignature();
             }
         }
@@ -99,24 +101,6 @@ contract EspressoTEEVerifier is Ownable2StepUpgradeable, IEspressoTEEVerifier {
     }
 
     /**
-     * @notice This function retrieves whether a signer is registered or not
-     *     @param signer The address of the signer
-     *     @param teeType The type of TEE
-     */
-    function registeredService(address signer, TeeType teeType, ServiceType service)
-        external
-        view
-        returns (bool)
-    {
-        EspressoTEEVerifierStorage storage $ = _layout();
-        if (teeType == TeeType.SGX) {
-            return $.espressoSGXTEEVerifier.registeredService(signer, service);
-        } else {
-            return $.espressoNitroTEEVerifier.registeredService(signer, service);
-        }
-    }
-
-    /**
      * @notice This function retrieves whether an enclave hash is registered or not
      *     @param enclaveHash The hash of the enclave
      *     @param teeType The type of TEE
@@ -134,29 +118,9 @@ contract EspressoTEEVerifier is Ownable2StepUpgradeable, IEspressoTEEVerifier {
         }
     }
 
-    /**
-     * @notice This function retrieves the list of signers registered for a given enclave hash
-     * @param enclaveHash The hash of the enclave
-     * @param teeType The type of TEE
-     * @param service The service type (BatchPoster or CaffNode)
-     * @return address[] The list of signers registered for the given enclave hash
-     */
-    function enclaveHashSigners(bytes32 enclaveHash, TeeType teeType, ServiceType service)
-        external
-        view
-        returns (address[] memory)
-    {
-        EspressoTEEVerifierStorage storage $ = _layout();
-        if (teeType == TeeType.SGX) {
-            return $.espressoSGXTEEVerifier.enclaveHashSigners(enclaveHash, service);
-        } else {
-            return $.espressoNitroTEEVerifier.enclaveHashSigners(enclaveHash, service);
-        }
-    }
-
-    /**
-     *     @notice Set the EspressoSGXTEEVerifier
-     *     @param _espressoSGXTEEVerifier The address of the EspressoSGXTEEVerifier
+    /*
+        @notice Set the EspressoSGXTEEVerifier
+        @param _espressoSGXTEEVerifier The address of the EspressoSGXTEEVerifier
      */
     function setEspressoSGXTEEVerifier(IEspressoSGXTEEVerifier _espressoSGXTEEVerifier)
         public

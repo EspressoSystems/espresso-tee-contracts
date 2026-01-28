@@ -39,14 +39,14 @@ contract EspressoTEEVerifierMock {
         address signer = ECDSA.recover(userDataHash, signature);
 
         if (teeType == IEspressoTEEVerifier.TeeType.SGX) {
-            if (!espressoSGXTEEVerifier.registeredService(signer, service)) {
+            if (!espressoSGXTEEVerifier.isSignerValid(signer, service)) {
                 revert IEspressoTEEVerifier.InvalidSignature();
             }
             return true;
         }
 
         if (teeType == IEspressoTEEVerifier.TeeType.NITRO) {
-            if (!espressoNitroTEEVerifier.registeredService(signer, service)) {
+            if (!espressoNitroTEEVerifier.isSignerValid(signer, service)) {
                 revert IEspressoTEEVerifier.InvalidSignature();
             }
             return true;
@@ -73,25 +73,6 @@ contract EspressoTEEVerifierMock {
         if (teeType == IEspressoTEEVerifier.TeeType.NITRO) {
             espressoNitroTEEVerifier.registerService(attestation, data, service);
             return;
-        }
-    }
-
-    /**
-     * @notice Check if a signer is registered
-     * @param signer The address of the signer
-     * @param teeType The type of TEE
-     */
-    function registeredService(
-        address signer,
-        IEspressoTEEVerifier.TeeType teeType,
-        ServiceType service
-    ) external view returns (bool) {
-        if (teeType == IEspressoTEEVerifier.TeeType.SGX) {
-            return espressoSGXTEEVerifier.registeredService(signer, service);
-        }
-
-        if (teeType == IEspressoTEEVerifier.TeeType.NITRO) {
-            return espressoNitroTEEVerifier.registeredService(signer, service);
         }
     }
 
