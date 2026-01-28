@@ -4,7 +4,7 @@ import {console2} from "forge-std/console2.sol";
 import {EspressoSGXTEEVerifier} from "src/EspressoSGXTEEVerifier.sol";
 import {IEspressoSGXTEEVerifier} from "src/interface/IEspressoSGXTEEVerifier.sol";
 import {V3QuoteVerifier} from "automata-on-chain-pccs/V3QuoteVerifier.sol";
-import {ERC1967Proxy} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
+import {TransparentUpgradeableProxy} from "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
 import {ServiceType} from "src/types/Types.sol";
 
 contract DeploySGXTEEVerifier is Script {
@@ -33,13 +33,14 @@ contract DeploySGXTEEVerifier is Script {
         // 2. Prepare initialization data (deployer as initial owner)
         bytes memory initData = abi.encodeWithSelector(
             EspressoSGXTEEVerifier.initialize.selector,
-            quoteVerifierAddr,
-            msg.sender
+            msg.sender,
+            quoteVerifierAddr
         );
 
         // 3. Deploy proxy and initialize
-        ERC1967Proxy proxy = new ERC1967Proxy(
+        TransparentUpgradeableProxy proxy = new TransparentUpgradeableProxy(
             address(implementation),
+            msg.sender,
             initData
         );
         EspressoSGXTEEVerifier sgxVerifier = EspressoSGXTEEVerifier(

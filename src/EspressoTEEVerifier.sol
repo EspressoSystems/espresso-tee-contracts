@@ -216,7 +216,7 @@ contract EspressoTEEVerifier is
     }
 
     /**
-     * @notice Allows the owner to set enclave hashes
+     * @notice Allows the owner or guardian to set enclave hashes
      * @param enclaveHash The enclave hash to set
      * @param valid Whether the enclave hash is valid or not
      * @param teeType The type of TEE
@@ -227,7 +227,7 @@ contract EspressoTEEVerifier is
         bool valid,
         TeeType teeType,
         ServiceType service
-    ) external onlyOwner {
+    ) external onlyGuardianOrOwner {
         EspressoTEEVerifierStorage storage $ = _layout();
         if (teeType == TeeType.SGX) {
             $.espressoSGXTEEVerifier.setEnclaveHash(
@@ -245,7 +245,7 @@ contract EspressoTEEVerifier is
     }
 
     /**
-     * @notice Allows the owner to delete enclave hashes
+     * @notice Allows the owner or guardian to delete enclave hashes
      * @param enclaveHashes The list of enclave hashes to delete
      * @param teeType The type of TEE
      * @param service The service type (BatchPoster or CaffNode)
@@ -254,7 +254,7 @@ contract EspressoTEEVerifier is
         bytes32[] memory enclaveHashes,
         TeeType teeType,
         ServiceType service
-    ) external onlyOwner {
+    ) external onlyGuardianOrOwner {
         EspressoTEEVerifierStorage storage $ = _layout();
         if (teeType == TeeType.SGX) {
             $.espressoSGXTEEVerifier.deleteEnclaveHashes(

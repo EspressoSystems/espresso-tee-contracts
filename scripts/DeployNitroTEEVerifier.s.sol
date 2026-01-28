@@ -4,7 +4,7 @@ import {console2} from "forge-std/console2.sol";
 import {EspressoNitroTEEVerifier} from "src/EspressoNitroTEEVerifier.sol";
 import {IEspressoNitroTEEVerifier} from "src/interface/IEspressoNitroTEEVerifier.sol";
 import {INitroEnclaveVerifier} from "aws-nitro-enclave-attestation/interfaces/INitroEnclaveVerifier.sol";
-import {ERC1967Proxy} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
+import {TransparentUpgradeableProxy} from "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
 import {ServiceType} from "src/types/Types.sol";
 
 contract DeployNitroTEEVerifier is Script {
@@ -33,13 +33,14 @@ contract DeployNitroTEEVerifier is Script {
         // 2. Prepare initialization data (deployer as initial owner)
         bytes memory initData = abi.encodeWithSelector(
             EspressoNitroTEEVerifier.initialize.selector,
-            INitroEnclaveVerifier(nitroEnclaveVerifier),
-            msg.sender
+            msg.sender,
+            INitroEnclaveVerifier(nitroEnclaveVerifier)
         );
 
         // 3. Deploy proxy and initialize
-        ERC1967Proxy proxy = new ERC1967Proxy(
+        TransparentUpgradeableProxy proxy = new TransparentUpgradeableProxy(
             address(implementation),
+            msg.sender,
             initData
         );
         EspressoNitroTEEVerifier nitroVerifier = EspressoNitroTEEVerifier(

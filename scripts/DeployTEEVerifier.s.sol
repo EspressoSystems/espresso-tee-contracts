@@ -5,7 +5,7 @@ import {console2} from "forge-std/console2.sol";
 import {EspressoTEEVerifier} from "src/EspressoTEEVerifier.sol";
 import {IEspressoSGXTEEVerifier} from "../src/interface/IEspressoSGXTEEVerifier.sol";
 import {IEspressoNitroTEEVerifier} from "../src/interface/IEspressoNitroTEEVerifier.sol";
-import {ERC1967Proxy} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
+import {TransparentUpgradeableProxy} from "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
 
 contract DeployTEEVerifier is Script {
     function run() external {
@@ -41,14 +41,15 @@ contract DeployTEEVerifier is Script {
         // Prepare initialization data
         bytes memory initData = abi.encodeWithSelector(
             EspressoTEEVerifier.initialize.selector,
+            initialOwner,
             sgxVerifier,
-            nitroVerifier,
-            initialOwner
+            nitroVerifier
         );
 
         // Deploy proxy and initialize
-        ERC1967Proxy proxy = new ERC1967Proxy(
+        TransparentUpgradeableProxy proxy = new TransparentUpgradeableProxy(
             address(implementation),
+            initialOwner,
             initData
         );
         EspressoTEEVerifier verifier = EspressoTEEVerifier(address(proxy));
