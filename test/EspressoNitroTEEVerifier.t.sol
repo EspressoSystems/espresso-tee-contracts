@@ -215,7 +215,7 @@ contract EspressoNitroTEEVerifierTest is Test {
         espressoNitroTEEVerifier.registerService(output, proofBytes, ServiceType.BatchPoster);
 
         address signer = 0xF8463E0aF00C1910402D2A51B3a8CecD0dC1c3fE;
-        assertEq(espressoNitroTEEVerifier.registeredService(signer, ServiceType.BatchPoster), true);
+        assertTrue(espressoNitroTEEVerifier.isSignerValid(signer, ServiceType.BatchPoster));
 
         // start with incorrect admin address
         vm.stopPrank();
@@ -238,8 +238,7 @@ contract EspressoNitroTEEVerifierTest is Test {
             enclaveHashes, IEspressoTEEVerifier.TeeType.NITRO, ServiceType.BatchPoster
         );
 
-        // Signer still in registeredServices, but NOT valid (hash deleted)
-        assertTrue(espressoNitroTEEVerifier.registeredService(signer, ServiceType.BatchPoster));
+        // Signer is NOT valid (hash deleted, automatic revocation)
         assertFalse(espressoNitroTEEVerifier.isSignerValid(signer, ServiceType.BatchPoster));
         assertEq(
             espressoNitroTEEVerifier.registeredEnclaveHash(pcr0Hash, ServiceType.BatchPoster), false
@@ -263,7 +262,7 @@ contract EspressoNitroTEEVerifierTest is Test {
         espressoNitroTEEVerifier.registerService(journal, onchain, ServiceType.CaffNode);
 
         address signer = 0xF8463E0aF00C1910402D2A51B3a8CecD0dC1c3fE;
-        assertEq(espressoNitroTEEVerifier.registeredService(signer, ServiceType.CaffNode), true);
+        assertTrue(espressoNitroTEEVerifier.isSignerValid(signer, ServiceType.CaffNode));
 
         // delete hash (automatically invalidates signer via isSignerValid)
         bytes32[] memory enclaveHashes = new bytes32[](1);
@@ -272,8 +271,7 @@ contract EspressoNitroTEEVerifierTest is Test {
             enclaveHashes, IEspressoTEEVerifier.TeeType.NITRO, ServiceType.CaffNode
         );
 
-        // Signer still in registeredServices, but NOT valid (hash deleted)
-        assertTrue(espressoNitroTEEVerifier.registeredService(signer, ServiceType.CaffNode));
+        // Signer is NOT valid (hash deleted, automatic revocation)
         assertFalse(espressoNitroTEEVerifier.isSignerValid(signer, ServiceType.CaffNode));
         assertEq(
             espressoNitroTEEVerifier.registeredEnclaveHash(pcr0Hash, ServiceType.CaffNode), false
@@ -305,9 +303,8 @@ contract EspressoNitroTEEVerifierTest is Test {
         assertEq(
             espressoNitroTEEVerifier.registeredEnclaveHash(pcr0Hash, ServiceType.BatchPoster), false
         );
-        // NOTE: With DoS fix, signers remain in registeredServices
+        // NOTE: Signers remain in registeredServices (not cleaned to avoid DoS)
         // But isSignerValid() checks if their hash is still approved (automatic revocation!)
-        assertEq(espressoNitroTEEVerifier.registeredService(signer, ServiceType.BatchPoster), true);
         assertFalse(espressoNitroTEEVerifier.isSignerValid(signer, ServiceType.BatchPoster));
 
         address[] memory signersAfter =

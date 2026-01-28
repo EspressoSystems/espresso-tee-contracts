@@ -58,8 +58,7 @@ contract SignerValidationTest is Test {
 
         address signer = 0xF8463E0aF00C1910402D2A51B3a8CecD0dC1c3fE;
 
-        // Both should return true
-        assertTrue(espressoNitroTEEVerifier.registeredService(signer, ServiceType.BatchPoster));
+        // Signer should be valid
         assertTrue(espressoNitroTEEVerifier.isSignerValid(signer, ServiceType.BatchPoster));
 
         vm.stopPrank();
@@ -83,8 +82,7 @@ contract SignerValidationTest is Test {
 
         address signer = 0xF8463E0aF00C1910402D2A51B3a8CecD0dC1c3fE;
 
-        // Before deletion
-        assertTrue(espressoNitroTEEVerifier.registeredService(signer, ServiceType.BatchPoster));
+        // Before deletion - signer should be valid
         assertTrue(espressoNitroTEEVerifier.isSignerValid(signer, ServiceType.BatchPoster));
 
         // Delete the hash
@@ -92,9 +90,9 @@ contract SignerValidationTest is Test {
         hashes[0] = pcr0Hash;
         espressoNitroTEEVerifier.deleteEnclaveHashes(hashes, ServiceType.BatchPoster);
 
-        // After deletion
-        assertTrue(espressoNitroTEEVerifier.registeredService(signer, ServiceType.BatchPoster)); // Still in mapping!
-        assertFalse(espressoNitroTEEVerifier.isSignerValid(signer, ServiceType.BatchPoster)); // But NOT valid! (Automatic revocation!)
+        // After deletion - signer is NOT valid (automatic revocation!)
+        // Note: Signer remains in internal mapping but isSignerValid() returns false
+        assertFalse(espressoNitroTEEVerifier.isSignerValid(signer, ServiceType.BatchPoster));
 
         vm.stopPrank();
     }

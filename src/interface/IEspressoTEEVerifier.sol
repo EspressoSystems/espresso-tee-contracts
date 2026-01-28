@@ -42,12 +42,6 @@ interface IEspressoTEEVerifier {
         ServiceType serviceType
     ) external;
 
-    // Function to retrieve whether a service is registered or not
-    function registeredService(address signer, TeeType teeType, ServiceType serviceType)
-        external
-        view
-        returns (bool);
-
     /**
      * @notice This function retrieves whether an enclave hash is registered or not
      * @param enclaveHash The hash of the enclave

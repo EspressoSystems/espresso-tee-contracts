@@ -209,21 +209,13 @@ contract EspressoTEEVerifierTest is Test {
             sampleQuote, data, IEspressoTEEVerifier.TeeType.SGX, ServiceType.BatchPoster
         );
 
-        assertEq(
-            espressoTEEVerifier.registeredService(
-                batchPosterAddress, IEspressoTEEVerifier.TeeType.SGX, ServiceType.BatchPoster
-            ),
-            true
+        assertTrue(
+            espressoSGXTEEVerifier.isSignerValid(batchPosterAddress, ServiceType.BatchPoster)
         );
         // Assert that this address is not yet registered as a caff node.
         // if the registration process differs between the caff node and the batcher in the
         // future, we will need to update this test.
-        assertEq(
-            espressoTEEVerifier.registeredService(
-                batchPosterAddress, IEspressoTEEVerifier.TeeType.SGX, ServiceType.CaffNode
-            ),
-            false
-        );
+        assertFalse(espressoSGXTEEVerifier.isSignerValid(batchPosterAddress, ServiceType.CaffNode));
 
         ensureSeparateCaffNodeOperation(
             sampleQuote,
@@ -233,12 +225,7 @@ contract EspressoTEEVerifierTest is Test {
             enclaveHash
         );
 
-        assertEq(
-            espressoTEEVerifier.registeredService(
-                batchPosterAddress, IEspressoTEEVerifier.TeeType.SGX, ServiceType.CaffNode
-            ),
-            true
-        );
+        assertTrue(espressoSGXTEEVerifier.isSignerValid(batchPosterAddress, ServiceType.CaffNode));
     }
 
     function testNitroRegisteredSigners() public {
@@ -255,21 +242,11 @@ contract EspressoTEEVerifierTest is Test {
             journal, onchain, IEspressoTEEVerifier.TeeType.NITRO, ServiceType.BatchPoster
         );
 
-        assertEq(
-            espressoTEEVerifier.registeredService(
-                signerAddr, IEspressoTEEVerifier.TeeType.NITRO, ServiceType.BatchPoster
-            ),
-            true
-        );
+        assertTrue(espressoNitroTEEVerifier.isSignerValid(signerAddr, ServiceType.BatchPoster));
         // Assert that this address is not yet registered as a caff node.
         // if the registration process differs between the caff node and the batcher in the
         // future, we will need to update this test.
-        assertEq(
-            espressoTEEVerifier.registeredService(
-                signerAddr, IEspressoTEEVerifier.TeeType.NITRO, ServiceType.CaffNode
-            ),
-            false
-        );
+        assertFalse(espressoNitroTEEVerifier.isSignerValid(signerAddr, ServiceType.CaffNode));
 
         ensureSeparateCaffNodeOperation(
             journal,
@@ -279,12 +256,7 @@ contract EspressoTEEVerifierTest is Test {
             pcr0Hash
         );
 
-        assertEq(
-            espressoTEEVerifier.registeredService(
-                signerAddr, IEspressoTEEVerifier.TeeType.NITRO, ServiceType.CaffNode
-            ),
-            true
-        );
+        assertTrue(espressoNitroTEEVerifier.isSignerValid(signerAddr, ServiceType.CaffNode));
     }
 
     function testSGXRegisteredEnclaveHash() public {
@@ -348,13 +320,7 @@ contract EspressoTEEVerifierTest is Test {
             ),
             false
         );
-        // NOTE: With DoS fix, signers remain in registeredServices but NOT valid
-        assertEq(
-            espressoTEEVerifier.registeredService(
-                batchPosterAddress, IEspressoTEEVerifier.TeeType.SGX, ServiceType.BatchPoster
-            ),
-            true // Still in mapping
-        );
+        // NOTE: Signers remain in internal mapping (not cleaned to avoid DoS)
         // But signer is automatically invalid (hash was deleted)
         assertFalse(
             espressoSGXTEEVerifier.isSignerValid(batchPosterAddress, ServiceType.BatchPoster)
@@ -398,13 +364,7 @@ contract EspressoTEEVerifierTest is Test {
             ),
             false
         );
-        // NOTE: With DoS fix, signers remain registered but NOT valid
-        assertEq(
-            espressoTEEVerifier.registeredService(
-                signer, IEspressoTEEVerifier.TeeType.NITRO, ServiceType.BatchPoster
-            ),
-            true // Still in mapping
-        );
+        // NOTE: Signers remain in internal mapping (not cleaned to avoid DoS)
         // But signer is automatically invalid (hash was deleted)
         assertFalse(espressoNitroTEEVerifier.isSignerValid(signer, ServiceType.BatchPoster));
 

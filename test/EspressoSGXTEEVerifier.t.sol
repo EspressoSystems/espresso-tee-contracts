@@ -95,7 +95,7 @@ contract EspressoSGXTEEVerifierTest is Test {
         // Convert the data to bytes32 and pass it to the verify function
         espressoSGXTEEVerifier.registerService(sampleQuote, data, ServiceType.BatchPoster);
         assertTrue(
-            espressoSGXTEEVerifier.registeredService(batchPosterAddress, ServiceType.BatchPoster)
+            espressoSGXTEEVerifier.isSignerValid(batchPosterAddress, ServiceType.BatchPoster)
         );
         vm.stopPrank();
     }
@@ -226,12 +226,8 @@ contract EspressoSGXTEEVerifierTest is Test {
             espressoSGXTEEVerifier.registeredEnclaveHash(enclaveHash, ServiceType.BatchPoster),
             false
         );
-        // NOTE: With DoS fix, signers remain in registeredServices but NOT valid
-        assertEq(
-            espressoSGXTEEVerifier.registeredService(batchPosterAddress, ServiceType.BatchPoster),
-            true // Still in mapping
-        );
-        // But isSignerValid returns false (automatic revocation via hash check)
+        // NOTE: Signers remain in registeredServices (not cleaned to avoid DoS)
+        // isSignerValid returns false (automatic revocation via hash check)
         assertFalse(
             espressoSGXTEEVerifier.isSignerValid(batchPosterAddress, ServiceType.BatchPoster)
         );

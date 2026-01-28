@@ -101,24 +101,6 @@ contract EspressoTEEVerifier is Ownable2StepUpgradeable, IEspressoTEEVerifier {
     }
 
     /**
-     * @notice This function retrieves whether a signer is registered or not
-     *     @param signer The address of the signer
-     *     @param teeType The type of TEE
-     */
-    function registeredService(address signer, TeeType teeType, ServiceType service)
-        external
-        view
-        returns (bool)
-    {
-        EspressoTEEVerifierStorage storage $ = _layout();
-        if (teeType == TeeType.SGX) {
-            return $.espressoSGXTEEVerifier.registeredService(signer, service);
-        } else {
-            return $.espressoNitroTEEVerifier.registeredService(signer, service);
-        }
-    }
-
-    /**
      * @notice This function retrieves whether an enclave hash is registered or not
      *     @param enclaveHash The hash of the enclave
      *     @param teeType The type of TEE

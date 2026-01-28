@@ -62,16 +62,7 @@ interface ITEEHelper {
         returns (bool);
 
     /*
-     * @notice This function retrieves whether a signer is registered or not
-     * @param signer The address of the signer
-     * @param service The service type (BatchPoster or CaffNode)
-     * @return bool True if the signer is registered, false otherwise
-     */
-    function registeredService(address signer, ServiceType service) external view returns (bool);
-
-    /*
      * @notice Validates if a signer is registered AND its enclave hash is still valid
-     * @dev RECOMMENDED: Use this for verification to prevent zombie signers
      * @param signer The address of the signer
      * @param service The service type (BatchPoster or CaffNode)
      * @return bool True if signer is registered AND its enclave hash is still approved

@@ -69,23 +69,7 @@ abstract contract TEEHelper is ITEEHelper, Initializable {
     }
 
     /**
-     * @notice This function retrieves whether a signer is registered or not
-     * @param signer The address of the signer
-     * @param service The service type (BatchPoster or CaffNode)
-     * @return bool True if the signer is registered, false otherwise
-     */
-    function registeredService(address signer, ServiceType service)
-        external
-        view
-        virtual
-        returns (bool)
-    {
-        return _layout().registeredServices[service][signer];
-    }
-
-    /**
      * @notice Validates if a signer is registered AND its enclave hash is still valid
-     * @dev This is the RECOMMENDED function to use for verification (prevents zombie signers)
      * @param signer The address of the signer
      * @param service The service type (BatchPoster or CaffNode)
      * @return bool True if signer is registered AND its enclave hash is still approved
