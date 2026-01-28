@@ -7,29 +7,25 @@ import {
 import {
     AccessControlEnumerableUpgradeable
 } from "@openzeppelin/contracts-upgradeable/access/extensions/AccessControlEnumerableUpgradeable.sol";
-import {UUPSUpgradeable} from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 
 /**
  * @title OwnableWithGuardiansUpgradeable
  * @author Espresso Systems (https://espresso.systems)
  * @notice Abstract contract combining Ownable2Step with a guardian role system for emergency operations.
- * @notice Guardians do not have upgrade permissions unless explicitly granted by overriding _authorizeUpgrade
  * @dev This contract provides:
  *      - 2-step ownership transfer (transferOwnership + acceptOwnership)
  *      - Multiple guardian addresses for time-sensitive operations
- *      - UUPS upgradeability pattern
+ *      - TransparentUpgradeableProxy pattern compatibility
  *      - EIP-7201 namespaced storage (via OZ upgradeable contracts)
  *
  * Inheriting contracts must:
  *      1. Call __OwnableWithGuardians_init(initialOwner) in their initializer
- *      2. Implement the _authorizeUpgrade function if they want to customize upgrade authorization
  */
 abstract contract OwnableWithGuardiansUpgradeable is
     Initializable,
     Ownable2StepUpgradeable,
-    AccessControlEnumerableUpgradeable,
-    UUPSUpgradeable
+    AccessControlEnumerableUpgradeable
 {
     /// @notice Role identifier for guardians who can execute time-sensitive operations
     bytes32 public constant GUARDIAN_ROLE = keccak256("GUARDIAN_ROLE");
@@ -57,7 +53,6 @@ abstract contract OwnableWithGuardiansUpgradeable is
         __Ownable_init(initialOwner);
         __AccessControl_init();
         __AccessControlEnumerable_init();
-        __UUPSUpgradeable_init();
         __OwnableWithGuardians_init_unchained(initialOwner);
     }
 
@@ -164,12 +159,4 @@ abstract contract OwnableWithGuardiansUpgradeable is
         }
         _grantRole(DEFAULT_ADMIN_ROLE, newOwner);
     }
-
-    /**
-     * @dev Function that should revert when `msg.sender` is not authorized to upgrade the contract.
-     * @param newImplementation The address of the new implementation
-     *
-     * By default, only the owner can authorize upgrades. Override this function to customize authorization.
-     */
-    function _authorizeUpgrade(address newImplementation) internal virtual override onlyOwner {}
 }
