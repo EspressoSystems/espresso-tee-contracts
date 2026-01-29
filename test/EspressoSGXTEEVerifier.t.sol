@@ -72,12 +72,12 @@ contract EspressoSGXTEEVerifierTest is Test {
 
     function _deploySGX(address teeVerifier) internal returns (EspressoSGXTEEVerifier) {
         EspressoSGXTEEVerifier impl = new EspressoSGXTEEVerifier();
-        TransparentUpgradeableProxy proxy =
-            new TransparentUpgradeableProxy(address(impl), proxyAdminOwner, "");
-        EspressoSGXTEEVerifier proxied = EspressoSGXTEEVerifier(address(proxy));
-        vm.prank(teeVerifier);
-        proxied.initialize(teeVerifier, v3QuoteVerifier);
-        return proxied;
+        TransparentUpgradeableProxy proxy = new TransparentUpgradeableProxy(
+            address(impl),
+            proxyAdminOwner,
+            abi.encodeCall(EspressoSGXTEEVerifier.initialize, (teeVerifier, v3QuoteVerifier))
+        );
+        return EspressoSGXTEEVerifier(address(proxy));
     }
 
     function testRegisterBatchPoster() public {
