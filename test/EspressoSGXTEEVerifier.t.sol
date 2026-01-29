@@ -72,12 +72,12 @@ contract EspressoSGXTEEVerifierTest is Test {
 
     function _deploySGX(address teeVerifier) internal returns (EspressoSGXTEEVerifier) {
         EspressoSGXTEEVerifier impl = new EspressoSGXTEEVerifier();
-        TransparentUpgradeableProxy proxy =
-            new TransparentUpgradeableProxy(address(impl), proxyAdminOwner, "");
-        EspressoSGXTEEVerifier proxied = EspressoSGXTEEVerifier(address(proxy));
-        vm.prank(teeVerifier);
-        proxied.initialize(teeVerifier, v3QuoteVerifier);
-        return proxied;
+        TransparentUpgradeableProxy proxy = new TransparentUpgradeableProxy(
+            address(impl),
+            proxyAdminOwner,
+            abi.encodeCall(EspressoSGXTEEVerifier.initialize, (teeVerifier, v3QuoteVerifier))
+        );
+        return EspressoSGXTEEVerifier(address(proxy));
     }
 
     function testRegisterBatchPoster() public {
@@ -404,5 +404,56 @@ contract EspressoSGXTEEVerifierTest is Test {
         vm.prank(adminTEE);
         vm.expectRevert(Initializable.InvalidInitialization.selector);
         espressoSGXTEEVerifier.initialize(adminTEE, v3QuoteVerifier);
+    }
+
+    function testGuardianCanSetEnclaveHash() public {
+        address guardian = address(0x888);
+
+        // Add guardian as owner
+        vm.prank(adminTEE);
+        espressoTEEVerifier.addGuardian(guardian);
+
+        // Guardian should be able to set enclave hash via TEEVerifier
+        bytes32 newHash = bytes32(uint256(77_777));
+        vm.prank(guardian);
+        espressoTEEVerifier.setEnclaveHash(
+            newHash, true, IEspressoTEEVerifier.TeeType.SGX, ServiceType.BatchPoster
+        );
+
+        // Verify the hash was set
+        assertTrue(espressoSGXTEEVerifier.registeredEnclaveHash(newHash, ServiceType.BatchPoster));
+    }
+
+    function testGuardianCanDeleteEnclaveHashes() public {
+        address guardian = address(0x888);
+
+        // Add guardian as owner
+        vm.prank(adminTEE);
+        espressoTEEVerifier.addGuardian(guardian);
+
+        // First set a hash as owner
+        bytes32 hashToDelete = bytes32(uint256(66_666));
+        vm.prank(adminTEE);
+        espressoTEEVerifier.setEnclaveHash(
+            hashToDelete, true, IEspressoTEEVerifier.TeeType.SGX, ServiceType.BatchPoster
+        );
+
+        // Verify it's set
+        assertTrue(
+            espressoSGXTEEVerifier.registeredEnclaveHash(hashToDelete, ServiceType.BatchPoster)
+        );
+
+        // Guardian should be able to delete it via TEEVerifier
+        bytes32[] memory hashes = new bytes32[](1);
+        hashes[0] = hashToDelete;
+        vm.prank(guardian);
+        espressoTEEVerifier.deleteEnclaveHashes(
+            hashes, IEspressoTEEVerifier.TeeType.SGX, ServiceType.BatchPoster
+        );
+
+        // Verify it's deleted
+        assertFalse(
+            espressoSGXTEEVerifier.registeredEnclaveHash(hashToDelete, ServiceType.BatchPoster)
+        );
     }
 }

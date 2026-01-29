@@ -68,15 +68,15 @@ contract EspressoNitroTEEVerifierTest is Test {
 
     function _deployNitro(address teeVerifier) internal returns (EspressoNitroTEEVerifier) {
         EspressoNitroTEEVerifier impl = new EspressoNitroTEEVerifier();
-        TransparentUpgradeableProxy proxy =
-            new TransparentUpgradeableProxy(address(impl), proxyAdminOwner, "");
-        EspressoNitroTEEVerifier proxied = EspressoNitroTEEVerifier(address(proxy));
-        vm.prank(teeVerifier);
-        proxied.initialize(
-            teeVerifier,
-            INitroEnclaveVerifier(0x2D7fbBAD6792698Ba92e67b7e180f8010B9Ec788) // Sepolia Nitro Enclave Verifier address
+        TransparentUpgradeableProxy proxy = new TransparentUpgradeableProxy(
+            address(impl),
+            proxyAdminOwner,
+            abi.encodeCall(
+                EspressoNitroTEEVerifier.initialize,
+                (teeVerifier, INitroEnclaveVerifier(0x2D7fbBAD6792698Ba92e67b7e180f8010B9Ec788))
+            )
         );
-        return proxied;
+        return EspressoNitroTEEVerifier(address(proxy));
     }
 
     /**
@@ -310,7 +310,8 @@ contract EspressoNitroTEEVerifierTest is Test {
     // Test setting Nitro Enclave Verifier address for tee verifier and non-tee verifier
     function testSetNitroEnclaveVerifierAddress() public {
         vm.startPrank(adminTEE);
-        address newVerifierAddress = 0x1234567890123456789012345678901234567890;
+        // Use the actual Sepolia Nitro Enclave Verifier address which has deployed code
+        address newVerifierAddress = 0x2D7fbBAD6792698Ba92e67b7e180f8010B9Ec788;
         espressoTEEVerifier.setNitroEnclaveVerifier(newVerifierAddress);
         vm.stopPrank();
         // Check that only tee verifier can set the address
@@ -329,6 +330,57 @@ contract EspressoNitroTEEVerifierTest is Test {
         vm.expectRevert(Initializable.InvalidInitialization.selector);
         espressoNitroTEEVerifier.initialize(
             adminTEE, INitroEnclaveVerifier(0x2D7fbBAD6792698Ba92e67b7e180f8010B9Ec788)
+        );
+    }
+
+    function testGuardianCanSetEnclaveHash() public {
+        address guardian = address(0x777);
+
+        // Add guardian as owner
+        vm.prank(adminTEE);
+        espressoTEEVerifier.addGuardian(guardian);
+
+        // Guardian should be able to set enclave hash via TEEVerifier
+        bytes32 newHash = bytes32(uint256(55_555));
+        vm.prank(guardian);
+        espressoTEEVerifier.setEnclaveHash(
+            newHash, true, IEspressoTEEVerifier.TeeType.NITRO, ServiceType.CaffNode
+        );
+
+        // Verify the hash was set
+        assertTrue(espressoNitroTEEVerifier.registeredEnclaveHash(newHash, ServiceType.CaffNode));
+    }
+
+    function testGuardianCanDeleteEnclaveHashes() public {
+        address guardian = address(0x777);
+
+        // Add guardian as owner
+        vm.prank(adminTEE);
+        espressoTEEVerifier.addGuardian(guardian);
+
+        // First set a hash as owner
+        bytes32 hashToDelete = bytes32(uint256(44_444));
+        vm.prank(adminTEE);
+        espressoTEEVerifier.setEnclaveHash(
+            hashToDelete, true, IEspressoTEEVerifier.TeeType.NITRO, ServiceType.CaffNode
+        );
+
+        // Verify it's set
+        assertTrue(
+            espressoNitroTEEVerifier.registeredEnclaveHash(hashToDelete, ServiceType.CaffNode)
+        );
+
+        // Guardian should be able to delete it via TEEVerifier
+        bytes32[] memory hashes = new bytes32[](1);
+        hashes[0] = hashToDelete;
+        vm.prank(guardian);
+        espressoTEEVerifier.deleteEnclaveHashes(
+            hashes, IEspressoTEEVerifier.TeeType.NITRO, ServiceType.CaffNode
+        );
+
+        // Verify it's deleted
+        assertFalse(
+            espressoNitroTEEVerifier.registeredEnclaveHash(hashToDelete, ServiceType.CaffNode)
         );
     }
 }

@@ -2,7 +2,7 @@
 pragma solidity ^0.8.0;
 
 import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
-import "@openzeppelin/contracts-upgradeable/access/Ownable2StepUpgradeable.sol";
+import {OwnableWithGuardiansUpgradeable} from "./OwnableWithGuardiansUpgradeable.sol";
 import {IEspressoSGXTEEVerifier} from "./interface/IEspressoSGXTEEVerifier.sol";
 import {IEspressoNitroTEEVerifier} from "./interface/IEspressoNitroTEEVerifier.sol";
 import {IEspressoTEEVerifier} from "./interface/IEspressoTEEVerifier.sol";
@@ -13,7 +13,7 @@ import {ServiceType} from "./types/Types.sol";
  *     @author Espresso Systems (https://espresso.systems)
  *     @notice This contract is used to resgister a signer which has been attested by the TEE
  */
-contract EspressoTEEVerifier is Ownable2StepUpgradeable, IEspressoTEEVerifier {
+contract EspressoTEEVerifier is OwnableWithGuardiansUpgradeable, IEspressoTEEVerifier {
     /// @custom:storage-location erc7201:espresso.storage.EspressoTEEVerifier
     struct EspressoTEEVerifierStorage {
         IEspressoSGXTEEVerifier espressoSGXTEEVerifier;
@@ -42,8 +42,7 @@ contract EspressoTEEVerifier is Ownable2StepUpgradeable, IEspressoTEEVerifier {
         EspressoTEEVerifierStorage storage $ = _layout();
         $.espressoSGXTEEVerifier = _espressoSGXTEEVerifier;
         $.espressoNitroTEEVerifier = _espressoNitroTEEVerifier;
-        __Ownable2Step_init();
-        _transferOwnership(_owner);
+        __OwnableWithGuardians_init(_owner);
     }
 
     /**
@@ -118,9 +117,9 @@ contract EspressoTEEVerifier is Ownable2StepUpgradeable, IEspressoTEEVerifier {
         }
     }
 
-    /*
-        @notice Set the EspressoSGXTEEVerifier
-        @param _espressoSGXTEEVerifier The address of the EspressoSGXTEEVerifier
+    /**
+     *     @notice Set the EspressoSGXTEEVerifier
+     *     @param _espressoSGXTEEVerifier The address of the EspressoSGXTEEVerifier
      */
     function setEspressoSGXTEEVerifier(IEspressoSGXTEEVerifier _espressoSGXTEEVerifier)
         public
@@ -149,7 +148,7 @@ contract EspressoTEEVerifier is Ownable2StepUpgradeable, IEspressoTEEVerifier {
     }
 
     /**
-     * @notice Allows the owner to set enclave hashes
+     * @notice Allows the owner or guardian to set enclave hashes
      * @param enclaveHash The enclave hash to set
      * @param valid Whether the enclave hash is valid or not
      * @param teeType The type of TEE
@@ -157,7 +156,7 @@ contract EspressoTEEVerifier is Ownable2StepUpgradeable, IEspressoTEEVerifier {
      */
     function setEnclaveHash(bytes32 enclaveHash, bool valid, TeeType teeType, ServiceType service)
         external
-        onlyOwner
+        onlyGuardianOrOwner
     {
         EspressoTEEVerifierStorage storage $ = _layout();
         if (teeType == TeeType.SGX) {
@@ -168,7 +167,7 @@ contract EspressoTEEVerifier is Ownable2StepUpgradeable, IEspressoTEEVerifier {
     }
 
     /**
-     * @notice Allows the owner to delete enclave hashes
+     * @notice Allows the owner or guardian to delete enclave hashes
      * @param enclaveHashes The list of enclave hashes to delete
      * @param teeType The type of TEE
      * @param service The service type (BatchPoster or CaffNode)
@@ -177,7 +176,7 @@ contract EspressoTEEVerifier is Ownable2StepUpgradeable, IEspressoTEEVerifier {
         bytes32[] memory enclaveHashes,
         TeeType teeType,
         ServiceType service
-    ) external onlyOwner {
+    ) external onlyGuardianOrOwner {
         EspressoTEEVerifierStorage storage $ = _layout();
         if (teeType == TeeType.SGX) {
             $.espressoSGXTEEVerifier.deleteEnclaveHashes(enclaveHashes, service);

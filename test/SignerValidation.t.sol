@@ -27,14 +27,15 @@ contract SignerValidationTest is Test {
         );
 
         EspressoNitroTEEVerifier impl = new EspressoNitroTEEVerifier();
-        TransparentUpgradeableProxy proxy =
-            new TransparentUpgradeableProxy(address(impl), proxyAdminOwner, "");
-        espressoNitroTEEVerifier = EspressoNitroTEEVerifier(address(proxy));
-
-        vm.prank(adminTEE);
-        espressoNitroTEEVerifier.initialize(
-            adminTEE, INitroEnclaveVerifier(0x2D7fbBAD6792698Ba92e67b7e180f8010B9Ec788)
+        TransparentUpgradeableProxy proxy = new TransparentUpgradeableProxy(
+            address(impl),
+            proxyAdminOwner,
+            abi.encodeCall(
+                EspressoNitroTEEVerifier.initialize,
+                (adminTEE, INitroEnclaveVerifier(0x2D7fbBAD6792698Ba92e67b7e180f8010B9Ec788))
+            )
         );
+        espressoNitroTEEVerifier = EspressoNitroTEEVerifier(address(proxy));
 
         vm.prank(adminTEE);
         espressoNitroTEEVerifier.setEnclaveHash(pcr0Hash, true, ServiceType.BatchPoster);
