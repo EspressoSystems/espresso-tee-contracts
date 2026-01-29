@@ -26,11 +26,12 @@ contract TEEHelperTest is Test {
 
     function setUp() public {
         TEEHelperImplementation impl = new TEEHelperImplementation();
-        TransparentUpgradeableProxy proxy =
-            new TransparentUpgradeableProxy(address(impl), proxyAdminOwner, "");
+        TransparentUpgradeableProxy proxy = new TransparentUpgradeableProxy(
+            address(impl),
+            proxyAdminOwner,
+            abi.encodeCall(TEEHelperImplementation.initialize, (initialTEEVerifier))
+        );
         helper = TEEHelperImplementation(address(proxy));
-        vm.prank(initialTEEVerifier);
-        helper.initialize(initialTEEVerifier);
     }
 
     function testOnlyTEEVerifierCanSetEnclaveHash() public {
@@ -50,11 +51,11 @@ contract TEEHelperTest is Test {
 
     function testInitializeZeroAddressReverts() public {
         TEEHelperImplementation impl = new TEEHelperImplementation();
-        TransparentUpgradeableProxy proxy =
-            new TransparentUpgradeableProxy(address(impl), proxyAdminOwner, "");
-        TEEHelperImplementation localHelper = TEEHelperImplementation(address(proxy));
-        vm.prank(initialTEEVerifier);
         vm.expectRevert(ITEEHelper.InvalidTEEVerifierAddress.selector);
-        localHelper.initialize(address(0));
+        new TransparentUpgradeableProxy(
+            address(impl),
+            proxyAdminOwner,
+            abi.encodeCall(TEEHelperImplementation.initialize, (address(0)))
+        );
     }
 }

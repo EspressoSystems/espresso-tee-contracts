@@ -29,13 +29,15 @@ contract TEEHelperDoSFixTest is Test {
         owner = address(this);
 
         EspressoNitroTEEVerifier impl = new EspressoNitroTEEVerifier();
-        TransparentUpgradeableProxy proxy =
-            new TransparentUpgradeableProxy(address(impl), proxyAdminOwner, "");
-        verifier = EspressoNitroTEEVerifier(address(proxy));
-
-        verifier.initialize(
-            owner, INitroEnclaveVerifier(0x2D7fbBAD6792698Ba92e67b7e180f8010B9Ec788)
+        TransparentUpgradeableProxy proxy = new TransparentUpgradeableProxy(
+            address(impl),
+            proxyAdminOwner,
+            abi.encodeCall(
+                EspressoNitroTEEVerifier.initialize,
+                (owner, INitroEnclaveVerifier(0x2D7fbBAD6792698Ba92e67b7e180f8010B9Ec788))
+            )
         );
+        verifier = EspressoNitroTEEVerifier(address(proxy));
     }
 
     /**

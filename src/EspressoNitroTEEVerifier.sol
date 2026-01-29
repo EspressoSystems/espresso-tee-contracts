@@ -117,7 +117,7 @@ contract EspressoNitroTEEVerifier is IEspressoNitroTEEVerifier, TEEHelper {
     }
 
     function _setNitroEnclaveVerifier(address nitroEnclaveVerifier_) internal {
-        if (nitroEnclaveVerifier_ == address(0)) {
+        if (nitroEnclaveVerifier_ == address(0) || nitroEnclaveVerifier_.code.length == 0) {
             revert InvalidNitroEnclaveVerifierAddress();
         }
         _nitroLayout().nitroEnclaveVerifier = INitroEnclaveVerifier(nitroEnclaveVerifier_);

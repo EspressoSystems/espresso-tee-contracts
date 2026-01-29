@@ -6,6 +6,7 @@ import {ServiceType} from "./types/Types.sol";
 import "./interface/ITEEHelper.sol";
 
 abstract contract TEEHelper is ITEEHelper, Initializable {
+    /// @custom:storage-location erc7201:espresso.storage.TEEHelper
     struct TEEHelperStorage {
         mapping(ServiceType => mapping(bytes32 enclaveHash => bool valid)) registeredEnclaveHashes;
         mapping(ServiceType => mapping(address signer => bool valid)) registeredServices;
