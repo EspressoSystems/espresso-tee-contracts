@@ -45,6 +45,11 @@ contract DeployAllTEEVerifiers is Script {
         // Owner address for the auto-deployed ProxyAdmin contracts
         address proxyAdminOwner = vm.envOr("PROXY_ADMIN_OWNER", msg.sender);
 
+        // Optional guardian addresses (comma-separated)
+        // Uses Forge's built-in envOr with comma delimiter to parse address arrays
+        address[] memory emptyGuardians = new address[](0);
+        address[] memory guardians = vm.envOr("GUARDIANS", ",", emptyGuardians);
+
         // ============ Step 1: Deploy TEEVerifier ============
         // Deploy implementation
         EspressoTEEVerifier teeVerifierImpl = new EspressoTEEVerifier();
@@ -130,6 +135,14 @@ contract DeployAllTEEVerifiers is Script {
         console2.log(
             "TEEVerifier updated with SGX and Nitro verifier addresses"
         );
+
+        // Add guardians if provided
+        for (uint256 i = 0; i < guardians.length; i++) {
+            if (guardians[i] != address(0)) {
+                teeVerifier.addGuardian(guardians[i]);
+                console2.log("Added guardian:", guardians[i]);
+            }
+        }
 
         vm.stopBroadcast();
 

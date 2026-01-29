@@ -27,6 +27,11 @@ contract DeployTEEVerifier is Script {
         // If not set, defaults to msg.sender
         address proxyAdminOwner = vm.envOr("PROXY_ADMIN_OWNER", msg.sender);
 
+        // Optional guardian addresses (comma-separated)
+        // Uses Forge's built-in envOr with comma delimiter to parse address arrays
+        address[] memory emptyGuardians = new address[](0);
+        address[] memory guardians = vm.envOr("GUARDIANS", ",", emptyGuardians);
+
         // 1. Deploy TEEVerifier implementation
         EspressoTEEVerifier teeVerifierImpl = new EspressoTEEVerifier();
         console2.log(
@@ -50,6 +55,15 @@ contract DeployTEEVerifier is Script {
             initData
         );
         console2.log("TEEVerifier proxy deployed at:", address(proxy));
+
+        // Add guardians if provided
+        EspressoTEEVerifier teeVerifier = EspressoTEEVerifier(address(proxy));
+        for (uint256 i = 0; i < guardians.length; i++) {
+            if (guardians[i] != address(0)) {
+                teeVerifier.addGuardian(guardians[i]);
+                console2.log("Added guardian:", guardians[i]);
+            }
+        }
 
         vm.stopBroadcast();
 
