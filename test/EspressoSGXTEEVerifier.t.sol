@@ -408,39 +408,41 @@ contract EspressoSGXTEEVerifierTest is Test {
 
     function testGuardianCanSetEnclaveHash() public {
         address guardian = address(0x888);
-        
+
         // Add guardian as owner
         vm.prank(adminTEE);
         espressoTEEVerifier.addGuardian(guardian);
-        
+
         // Guardian should be able to set enclave hash via TEEVerifier
-        bytes32 newHash = bytes32(uint256(77777));
+        bytes32 newHash = bytes32(uint256(77_777));
         vm.prank(guardian);
         espressoTEEVerifier.setEnclaveHash(
             newHash, true, IEspressoTEEVerifier.TeeType.SGX, ServiceType.BatchPoster
         );
-        
+
         // Verify the hash was set
         assertTrue(espressoSGXTEEVerifier.registeredEnclaveHash(newHash, ServiceType.BatchPoster));
     }
 
     function testGuardianCanDeleteEnclaveHashes() public {
         address guardian = address(0x888);
-        
+
         // Add guardian as owner
         vm.prank(adminTEE);
         espressoTEEVerifier.addGuardian(guardian);
-        
+
         // First set a hash as owner
-        bytes32 hashToDelete = bytes32(uint256(66666));
+        bytes32 hashToDelete = bytes32(uint256(66_666));
         vm.prank(adminTEE);
         espressoTEEVerifier.setEnclaveHash(
             hashToDelete, true, IEspressoTEEVerifier.TeeType.SGX, ServiceType.BatchPoster
         );
-        
+
         // Verify it's set
-        assertTrue(espressoSGXTEEVerifier.registeredEnclaveHash(hashToDelete, ServiceType.BatchPoster));
-        
+        assertTrue(
+            espressoSGXTEEVerifier.registeredEnclaveHash(hashToDelete, ServiceType.BatchPoster)
+        );
+
         // Guardian should be able to delete it via TEEVerifier
         bytes32[] memory hashes = new bytes32[](1);
         hashes[0] = hashToDelete;
@@ -448,8 +450,10 @@ contract EspressoSGXTEEVerifierTest is Test {
         espressoTEEVerifier.deleteEnclaveHashes(
             hashes, IEspressoTEEVerifier.TeeType.SGX, ServiceType.BatchPoster
         );
-        
+
         // Verify it's deleted
-        assertFalse(espressoSGXTEEVerifier.registeredEnclaveHash(hashToDelete, ServiceType.BatchPoster));
+        assertFalse(
+            espressoSGXTEEVerifier.registeredEnclaveHash(hashToDelete, ServiceType.BatchPoster)
+        );
     }
 }

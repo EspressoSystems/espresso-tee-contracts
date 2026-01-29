@@ -534,18 +534,18 @@ contract EspressoTEEVerifierTest is Test {
 
     function testGuardianCanSetEnclaveHashSGX() public {
         address guardian = address(0x999);
-        
+
         // Add guardian as owner
         vm.prank(adminTEE);
         espressoTEEVerifier.addGuardian(guardian);
-        
+
         // Guardian should be able to set enclave hash
-        bytes32 newHash = bytes32(uint256(12345));
+        bytes32 newHash = bytes32(uint256(12_345));
         vm.prank(guardian);
         espressoTEEVerifier.setEnclaveHash(
             newHash, true, IEspressoTEEVerifier.TeeType.SGX, ServiceType.BatchPoster
         );
-        
+
         // Verify the hash was set
         assertTrue(
             espressoTEEVerifier.registeredEnclaveHashes(
@@ -556,18 +556,18 @@ contract EspressoTEEVerifierTest is Test {
 
     function testGuardianCanSetEnclaveHashNitro() public {
         address guardian = address(0x999);
-        
+
         // Add guardian as owner
         vm.prank(adminTEE);
         espressoTEEVerifier.addGuardian(guardian);
-        
+
         // Guardian should be able to set enclave hash
-        bytes32 newHash = bytes32(uint256(54321));
+        bytes32 newHash = bytes32(uint256(54_321));
         vm.prank(guardian);
         espressoTEEVerifier.setEnclaveHash(
             newHash, true, IEspressoTEEVerifier.TeeType.NITRO, ServiceType.CaffNode
         );
-        
+
         // Verify the hash was set
         assertTrue(
             espressoTEEVerifier.registeredEnclaveHashes(
@@ -578,25 +578,25 @@ contract EspressoTEEVerifierTest is Test {
 
     function testGuardianCanDeleteEnclaveHashesSGX() public {
         address guardian = address(0x999);
-        
+
         // Add guardian as owner
         vm.prank(adminTEE);
         espressoTEEVerifier.addGuardian(guardian);
-        
+
         // First set a hash as owner
-        bytes32 hashToDelete = bytes32(uint256(99999));
+        bytes32 hashToDelete = bytes32(uint256(99_999));
         vm.prank(adminTEE);
         espressoTEEVerifier.setEnclaveHash(
             hashToDelete, true, IEspressoTEEVerifier.TeeType.SGX, ServiceType.BatchPoster
         );
-        
+
         // Verify it's set
         assertTrue(
             espressoTEEVerifier.registeredEnclaveHashes(
                 hashToDelete, IEspressoTEEVerifier.TeeType.SGX, ServiceType.BatchPoster
             )
         );
-        
+
         // Guardian should be able to delete it
         bytes32[] memory hashes = new bytes32[](1);
         hashes[0] = hashToDelete;
@@ -604,7 +604,7 @@ contract EspressoTEEVerifierTest is Test {
         espressoTEEVerifier.deleteEnclaveHashes(
             hashes, IEspressoTEEVerifier.TeeType.SGX, ServiceType.BatchPoster
         );
-        
+
         // Verify it's deleted
         assertFalse(
             espressoTEEVerifier.registeredEnclaveHashes(
@@ -615,25 +615,25 @@ contract EspressoTEEVerifierTest is Test {
 
     function testGuardianCanDeleteEnclaveHashesNitro() public {
         address guardian = address(0x999);
-        
+
         // Add guardian as owner
         vm.prank(adminTEE);
         espressoTEEVerifier.addGuardian(guardian);
-        
+
         // First set a hash as owner
-        bytes32 hashToDelete = bytes32(uint256(88888));
+        bytes32 hashToDelete = bytes32(uint256(88_888));
         vm.prank(adminTEE);
         espressoTEEVerifier.setEnclaveHash(
             hashToDelete, true, IEspressoTEEVerifier.TeeType.NITRO, ServiceType.CaffNode
         );
-        
+
         // Verify it's set
         assertTrue(
             espressoTEEVerifier.registeredEnclaveHashes(
                 hashToDelete, IEspressoTEEVerifier.TeeType.NITRO, ServiceType.CaffNode
             )
         );
-        
+
         // Guardian should be able to delete it
         bytes32[] memory hashes = new bytes32[](1);
         hashes[0] = hashToDelete;
@@ -641,7 +641,7 @@ contract EspressoTEEVerifierTest is Test {
         espressoTEEVerifier.deleteEnclaveHashes(
             hashes, IEspressoTEEVerifier.TeeType.NITRO, ServiceType.CaffNode
         );
-        
+
         // Verify it's deleted
         assertFalse(
             espressoTEEVerifier.registeredEnclaveHashes(
