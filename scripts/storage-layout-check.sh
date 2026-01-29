@@ -18,19 +18,16 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 SNAPSHOT_DIR="$ROOT_DIR/.storage-layouts"
 
-# Upgradeable contracts that need storage layout checks
-# These use the transparent proxy pattern and must maintain storage compatibility
 UPGRADEABLE_CONTRACTS=(
     "EspressoTEEVerifier"
     "EspressoSGXTEEVerifier"
     "EspressoNitroTEEVerifier"
 )
 
-# Colors for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
-NC='\033[0m' # No Color
+NC='\033[0m' 
 
 log_info() {
     echo -e "${GREEN}[INFO]${NC} $1"
@@ -44,19 +41,15 @@ log_error() {
     echo -e "${RED}[ERROR]${NC} $1"
 }
 
-# Generate storage layout for a contract
 generate_layout() {
     local contract=$1
     local output_file=$2
     
     log_info "Generating storage layout for $contract..."
     
-    # Use forge inspect to get storage layout in JSON format
-    # The --json flag provides structured output that's easier to diff
     forge inspect "$contract" storage-layout --json > "$output_file"
 }
 
-# Compare two layout files
 compare_layouts() {
     local contract=$1
     local snapshot_file="$SNAPSHOT_DIR/${contract}.json"
@@ -68,10 +61,8 @@ compare_layouts() {
         return 1
     fi
     
-    # Generate current layout
     generate_layout "$contract" "$current_file"
     
-    # Compare using diff
     if diff -q "$snapshot_file" "$current_file" > /dev/null 2>&1; then
         log_info "$contract: Storage layout unchanged"
         rm -f "$current_file"
@@ -93,13 +84,11 @@ compare_layouts() {
     fi
 }
 
-# Update all snapshots
 update_snapshots() {
     log_info "Updating storage layout snapshots..."
     
     mkdir -p "$SNAPSHOT_DIR"
     
-    # Build contracts first
     log_info "Building contracts..."
     forge build --quiet
     
@@ -112,11 +101,8 @@ update_snapshots() {
     log_info "Don't forget to commit the changes in $SNAPSHOT_DIR"
 }
 
-# Check all layouts
 check_layouts() {
     log_info "Checking storage layouts for upgradeable contracts..."
-    
-    # Build contracts first
     log_info "Building contracts..."
     forge build --quiet
     
@@ -139,7 +125,6 @@ check_layouts() {
     log_info "All storage layouts are compatible!"
 }
 
-# Main
 main() {
     cd "$ROOT_DIR"
     
