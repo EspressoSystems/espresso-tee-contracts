@@ -3,11 +3,11 @@ pragma solidity ^0.8.25;
 
 import {Script} from "forge-std/Script.sol";
 import {console2} from "forge-std/console2.sol";
-import {EspressoTEEVerifierMock} from "src/mocks/EspressoTEEVerifier.sol";
-import {EspressoSGXTEEVerifierMock} from "src/mocks/EspressoSGXTEEVerifierMock.sol";
-import {EspressoNitroTEEVerifierMock} from "src/mocks/EspressoNitroTEEVerifierMock.sol";
-import {IEspressoSGXTEEVerifier} from "src/interface/IEspressoSGXTEEVerifier.sol";
-import {IEspressoNitroTEEVerifier} from "src/interface/IEspressoNitroTEEVerifier.sol";
+import {EspressoTEEVerifierMock} from "@espresso-tee/mocks/EspressoTEEVerifier.sol";
+import {EspressoSGXTEEVerifierMock} from "@espresso-tee/mocks/EspressoSGXTEEVerifierMock.sol";
+import {EspressoNitroTEEVerifierMock} from "@espresso-tee/mocks/EspressoNitroTEEVerifierMock.sol";
+import {IEspressoSGXTEEVerifier} from "@espresso-tee/interface/IEspressoSGXTEEVerifier.sol";
+import {IEspressoNitroTEEVerifier} from "@espresso-tee/interface/IEspressoNitroTEEVerifier.sol";
 
 /**
  * @title DeployMockTEEVerifiers
