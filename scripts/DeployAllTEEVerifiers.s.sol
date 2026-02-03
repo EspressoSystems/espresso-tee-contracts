@@ -2,11 +2,11 @@ pragma solidity 0.8.25;
 
 import {Script} from "forge-std/Script.sol";
 import {console2} from "forge-std/console2.sol";
-import {EspressoTEEVerifier} from "src/EspressoTEEVerifier.sol";
-import {EspressoSGXTEEVerifier} from "src/EspressoSGXTEEVerifier.sol";
-import {EspressoNitroTEEVerifier} from "src/EspressoNitroTEEVerifier.sol";
-import {IEspressoSGXTEEVerifier} from "src/interface/IEspressoSGXTEEVerifier.sol";
-import {IEspressoNitroTEEVerifier} from "src/interface/IEspressoNitroTEEVerifier.sol";
+import {EspressoTEEVerifier} from "@espresso-tee/EspressoTEEVerifier.sol";
+import {EspressoSGXTEEVerifier} from "@espresso-tee/EspressoSGXTEEVerifier.sol";
+import {EspressoNitroTEEVerifier} from "@espresso-tee/EspressoNitroTEEVerifier.sol";
+import {IEspressoSGXTEEVerifier} from "@espresso-tee/interface/IEspressoSGXTEEVerifier.sol";
+import {IEspressoNitroTEEVerifier} from "@espresso-tee/interface/IEspressoNitroTEEVerifier.sol";
 import {INitroEnclaveVerifier} from "aws-nitro-enclave-attestation/interfaces/INitroEnclaveVerifier.sol";
 import {TransparentUpgradeableProxy} from "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
 

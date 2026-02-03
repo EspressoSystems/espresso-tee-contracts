@@ -63,7 +63,7 @@ anvil --help
 cast --help
 ```
 
-# Development
+## Development
 
 For ease of development in go projects, we have included a small utility in this repo to generate go bindings for the TEEVerifier contracts present here.
 
@@ -99,7 +99,7 @@ CHAIN_ID=<your-chain-id>
 ETHERSCAN_API_KEY=<your-etherscan-v2-api-key>
 
 # Variables for deployment
-SGX_QUOTE_VERIFIER_ADDRESS=<quote_verifier_address_from_automata>  # From: https://github.com/automata-network/automata-dcap-attestation
+SGX_QUOTE_VERIFIER_ADDRESS=<quote_verifier_address_from_automata>  # From: https://github.com/automata-network/automata-dcap-attestation/tree/main/rust-crates/libraries/network-registry/deployment/current
 NITRO_ENCLAVE_VERIFIER=<nitro_enclave_verifier_address>  # From: https://github.com/automata-network/aws-nitro-enclave-attestation
 
 # To be updated after individual deployment (not needed for DeployAllTEEVerifiers)
@@ -131,6 +131,7 @@ forge script scripts/DeployAllTEEVerifiers.s.sol:DeployAllTEEVerifiers \
 ```
 
 This script will:
+
 1. Deploy `EspressoTEEVerifier` proxy (with placeholder SGX/Nitro addresses)
 2. Deploy `EspressoSGXTEEVerifier` proxy (linked to TEEVerifier)
 3. Deploy `EspressoNitroTEEVerifier` proxy (linked to TEEVerifier)
@@ -157,6 +158,7 @@ If you prefer to deploy contracts separately:
    ```
 
    Update your `.env` with the deployed TEEVerifier proxy address:
+
    ```text
    TEE_VERIFIER_ADDRESS=<deployed_tee_verifier_proxy>
    ```
@@ -202,7 +204,6 @@ If you prefer to deploy contracts separately:
   - `proxy`: The proxy address (this is what users interact with)
   - `implementation`: The implementation contract address
 
-
 ### Transferring ownership of the TEEVerifier contracts to a multi-sig wallet
 
 The script located at `scripts/MultiSigTransfer.s.sol` is meant to assist with this.
@@ -213,7 +214,8 @@ the proposal to the multi-sig wallet with a ledger containing an account that is
 
 If the ledger signature fails, or is invalid, the entire script will revert, meaning that the initial ownership transfer will not be reflected on chain.
 
-#### Compatibility:
+#### Compatibility
+
 Currently this script is *NOT* compatible with ARB Sepolia, only ETH, ETH Sepolia, and ARB One. We hope to extend compatibility to ARB Sepolia in the future.
 
 #### Usage
@@ -247,34 +249,34 @@ Currently this script is *NOT* compatible with ARB Sepolia, only ETH, ETH Sepoli
 }
 ```
 
-    NOTE: you will need to prepend the `m/` to this path for foundry to correctly locate the account.
+NOTE: you will need to prepend the `m/` to this path for foundry to correctly locate the account.
 
-  - MULTISIG_CONTRACT_ADDRESS: The address of your Multi-sig wallet on the chain you wish this transaction to occurr on.
+- MULTISIG_CONTRACT_ADDRESS: The address of your Multi-sig wallet on the chain you wish this transaction to occurr on.
 
-  - TEE_VERIFIER_ADDRESS: The address of the outer EspressoTEEVerifier contract.
-    Note: this must be the outer TEEVerifier contract. The script locates the inner contracts by calling espressoNitroVerifier and espressoSGXVerifier on the outer contract.
+- TEE_VERIFIER_ADDRESS: The address of the outer EspressoTEEVerifier contract.
+  Note: this must be the outer TEEVerifier contract. The script locates the inner contracts by calling espressoNitroVerifier and espressoSGXVerifier on the outer contract.
 
-  - PROPOSER_ADDRESS: The address used to propose the transaction to the multi-sig wallet.
-    Note: This must be the address associated with the account located at the wallets provided derivation path.
+- PROPOSER_ADDRESS: The address used to propose the transaction to the multi-sig wallet.
+  Note: This must be the address associated with the account located at the wallets provided derivation path.
 
-  - ORIGINAL_OWNER_KEY: The private key of the account that owns the TEEVerifier contracts before the transfer of ownership.
+- ORIGINAL_OWNER_KEY: The private key of the account that owns the TEEVerifier contracts before the transfer of ownership.
 
-  - RPC_URL: Used for the `forge script` command for specifying the network to send the transaction to.
-  - CHAIN_ID: This is used for the `forge script` command for specifying the network to send the transaction to.
+- RPC_URL: Used for the `forge script` command for specifying the network to send the transaction to.
+- CHAIN_ID: This is used for the `forge script` command for specifying the network to send the transaction to.
 
- 2. Run the MultiSigTransfer script.
+2. Run the MultiSigTransfer script.
 
-  Note: it is important to pass the --ffi flag, otherwise due to some restrictions in forge, the script will not be able to use the ledger for signing the proposal.
+Note: it is important to pass the --ffi flag, otherwise due to some restrictions in forge, the script will not be able to use the ledger for signing the proposal.
 
-  Before running the script, make sure your ledger is plugged into your machine, unlocked, and has the Ethereum app open.  
-  
-```bash  
+  Before running the script, make sure your ledger is plugged into your machine, unlocked, and has the Ethereum app open.
+
+```bash
 forge script scripts/MultiSigTransfer.s.sol:MultiSigTransfer --rpc-url "$RPC_URL" --sender $PROPOSER_ADDRESS --broadcast --verify --verifier etherscan --chain "$CHAIN_ID" --ffi
 ```
 
   You may run into errors like the following:
 
-  ```
+  ```bash
   Error: Could not connect to Ledger device.
   Make sure it's connected and unlocked, with no other desktop wallet apps open.
 
@@ -284,20 +286,19 @@ forge script scripts/MultiSigTransfer.s.sol:MultiSigTransfer --rpc-url "$RPC_URL
 
   or
 
-  ```
+  ```bash
   Error: Ledger device: APDU Response error `Code 6985 ([APDU_CODE_CONDITIONS_NOT_SATISFIED] Conditions of use not satisfied)`
   ```
 
   Or even
 
-  ```
-
+  ```bash
   Error: Could not connect to Ledger device.
   Make sure it's connected and unlocked, with no other desktop wallet apps open.
 
   Context:
   - Ledger device: APDU Response error `Code 6983 ([APDU_CODE_OUTPUT_BUFFER_TOO_SMALL])`
-    
+
   ```
 
   If you encounter any of these, it's best to try quitting the Ethereum app and lock your ledger. Then re-unlock the ledger, open the Ethereum app, and try the script again.
@@ -308,25 +309,23 @@ forge script scripts/MultiSigTransfer.s.sol:MultiSigTransfer --rpc-url "$RPC_URL
   After running this script you will be asked to create one signature with your ledger. Given this is a batch transaction the signature will have a large number of parameters to verify. This is expected.
 
   After you complete the signature with your ledger, forge will broadcast the appropriate transactions on chain starting the ownership transfer.
-  
+
   To finish this ownership transfer, you should go to the web UI for your Safe wallet, and note that a new transaction should be present with a signature from your ledger device!
 
   The final step is to gather the other signatures required to reach your wallets threshold, and execute the transaction with the web UI.
 
+## Security considerations
 
+### Deployment
 
-# Security considerations
-
-## Deployment
-
-### Cross-Chain Security
+#### Cross-Chain Security
 
 ⚠️ **CRITICAL: Each chain MUST have its own separate contract deployments.**
 
 **Required separate deployments per chain:**
 
 1. **`EspressoTEEVerifier`** - Your main TEE verifier contract
-2. **`EspressoNitroTEEVerifier`** - Nitro-specific verifier  
+2. **`EspressoNitroTEEVerifier`** - Nitro-specific verifier
 3. **`EspressoSGXTEEVerifier`** - SGX-specific verifier
 4. **Automata `NitroEnclaveVerifier`** - ⚠️ **MUST be chain-specific!**
 5. **Automata `V3QuoteVerifier`** (for SGX) - ⚠️ **MUST be chain-specific!**
@@ -345,7 +344,7 @@ forge script scripts/MultiSigTransfer.s.sol:MultiSigTransfer --rpc-url "$RPC_URL
 
 3. **Security Isolation**
    - Different chains may have different threat models
-   - Security policies can be chain-specific  
+   - Security policies can be chain-specific
    - Compromise on one chain should NOT affect others
    - Prevents cross-chain authorization bypass
 
@@ -359,7 +358,7 @@ forge script scripts/MultiSigTransfer.s.sol:MultiSigTransfer --rpc-url "$RPC_URL
 
 Do NOT use the same Automata contract across multiple chains! Each chain needs:
 
-```
+```bash
 For Nitro TEE:
   ✅ Chain A: NitroEnclaveVerifier at 0xAAA...
   ✅ Chain B: NitroEnclaveVerifier at 0xBBB... (different!)
@@ -372,6 +371,7 @@ For SGX TEE:
 ```
 
 **Why this matters:**
+
 - Each Automata contract has mutable ZK configuration
 - Your security validation caches the expected config per deployment
 - Shared Automata = single point of configuration control across chains
@@ -380,12 +380,13 @@ For SGX TEE:
 **Verify Automata deployments:**
 
 Check Automata's documentation for chain-specific addresses:
+
 - Nitro: https://github.com/automata-network/aws-nitro-enclave-attestation
 - SGX: https://github.com/automata-network/automata-dcap-attestation
 
 **Example: Current Mainnet Deployments**
 
-```
+```bash
 EspressoTEEVerifier Contracts (Our Deployments):
   ApeChain (33139):      0x4fd6D0995B3016726D5674992c1Ec1bDe0989cF5
   AppChain (466):        0xcC758349CBd99bAA7fAD0558634dAaB176c777D0
@@ -409,11 +410,11 @@ Before deploying to production, verify:
   - [ ] ⚠️ **Verify V3QuoteVerifier is DIFFERENT for each chain** (do not reuse!)
   - [ ] Verify external contracts on block explorer
   - [ ] Check Automata contract owner and governance model
-  
+
 - [ ] **Initial configuration prepared:**
   - [ ] SGX mrEnclave hashes computed and documented
   - [ ] Initial approved hashes ready
-  
+
 - [ ] **Governance setup:**
   - [ ] Owner address configured (recommend multisig)
   - [ ] Ownership transfer process documented
@@ -424,11 +425,13 @@ Before deploying to production, verify:
 **Immediately after deployment:**
 
 1. **Verify contracts on block explorer**
+
    ```bash
    forge verify-contract <address> EspressoNitroTEEVerifier --chain <chain-id>
    ```
 
 2. **Register initial enclave hashes**
+
    ```bash
    cast send <verifier-address> \
      "setEnclaveHash(bytes32,bool,uint8)" \
@@ -437,6 +440,7 @@ Before deploying to production, verify:
    ```
 
 3. **Transfer ownership to multisig** (recommended)
+
    ```bash
    forge script scripts/MultiSigTransfer.s.sol --broadcast
    ```
