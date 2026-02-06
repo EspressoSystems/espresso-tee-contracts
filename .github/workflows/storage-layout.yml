@@ -1,0 +1,23 @@
+name: Storage Layout Check
+
+on:
+  push:
+  workflow_dispatch:
+
+env:
+  FOUNDRY_PROFILE: ci
+
+jobs:
+  storage-layout:
+    name: Storage Layout Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+
+      - name: Check storage layouts
+        run: ./scripts/storage-layout-check.sh
