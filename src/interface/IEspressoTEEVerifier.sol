@@ -54,6 +54,18 @@ interface IEspressoTEEVerifier {
         view
         returns (bool);
 
+    /**
+     * @notice This function checks if a signer is valid for a given TEE type and service
+     * @param signer The address of the signer
+     * @param teeType The type of TEE
+     * @param serviceType The service type (BatchPoster or CaffNode)
+     * @return bool True if the signer is valid, false otherwise
+     */
+    function isSignerValid(address signer, TeeType teeType, ServiceType serviceType)
+        external
+        view
+        returns (bool);
+
     // Function to set the EspressoSGXTEEVerifier
     function setEspressoSGXTEEVerifier(IEspressoSGXTEEVerifier _espressoSGXTEEVerifier) external;
 

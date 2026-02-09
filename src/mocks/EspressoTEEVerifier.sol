@@ -76,6 +76,20 @@ contract EspressoTEEVerifierMock {
         }
     }
 
+    function isSignerValid(
+        address signer,
+        IEspressoTEEVerifier.TeeType teeType,
+        ServiceType serviceType
+    ) external view returns (bool) {
+        if (teeType == IEspressoTEEVerifier.TeeType.SGX) {
+            return espressoSGXTEEVerifier.isSignerValid(signer, serviceType);
+        }
+
+        if (teeType == IEspressoTEEVerifier.TeeType.NITRO) {
+            return espressoNitroTEEVerifier.isSignerValid(signer, serviceType);
+        }
+    }
+
     /**
      * @notice Check if an enclave hash is registered
      * @param enclaveHash The hash of the enclave
