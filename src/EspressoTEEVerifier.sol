@@ -100,6 +100,25 @@ contract EspressoTEEVerifier is OwnableWithGuardiansUpgradeable, IEspressoTEEVer
     }
 
     /**
+     * @notice This function checks if a signer is valid for a given TEE type and service
+     * @param signer The address of the signer
+     * @param teeType The type of TEE
+     * @param serviceType The service type (BatchPoster or CaffNode)
+     */
+    function isSignerValid(address signer, TeeType teeType, ServiceType serviceType)
+        external
+        view
+        returns (bool)
+    {
+        EspressoTEEVerifierStorage storage $ = _layout();
+        if (teeType == TeeType.SGX) {
+            return $.espressoSGXTEEVerifier.isSignerValid(signer, serviceType);
+        } else {
+            return $.espressoNitroTEEVerifier.isSignerValid(signer, serviceType);
+        }
+    }
+
+    /**
      * @notice This function retrieves whether an enclave hash is registered or not
      *     @param enclaveHash The hash of the enclave
      *     @param teeType The type of TEE
