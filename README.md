@@ -97,10 +97,25 @@ CHAIN_ID=<your-chain-id>
 
 # Etherscan V2 API Key from etherscan.io (works for all chains)
 ETHERSCAN_API_KEY=<your-etherscan-v2-api-key>
+```
+
+### 3. Deploying NitroEnclaveVerifier required for AWS Nitro
+Deploy the verifier contract to your target network:
+
+```bash
+./scripts/deploy-nitro-enclave-verifier.sh --force
+```
+
+This script navigates into `lib/aws-nitro-enclave-attestation/contracts/` and runs both `deployVerifier()` and `deploySP1Verifier()` from the `NitroEnclaveVerifier.s.sol` forge script. It requires `RPC_URL` and `PRIVATE_KEY` to be set in your environment.
+
+
+### 4. **Environment Setup** after deployment
+
+```
 
 # Variables for deployment
 SGX_QUOTE_VERIFIER_ADDRESS=<quote_verifier_address_from_automata>  # From: https://github.com/automata-network/automata-dcap-attestation/tree/main/rust-crates/libraries/network-registry/deployment/current
-NITRO_ENCLAVE_VERIFIER=<nitro_enclave_verifier_address>  # From: https://github.com/automata-network/aws-nitro-enclave-attestation
+NITRO_ENCLAVE_VERIFIER=<nitro_enclave_verifier_address>
 
 # To be updated after individual deployment (not needed for DeployAllTEEVerifiers)
 TEE_VERIFIER_ADDRESS=""
