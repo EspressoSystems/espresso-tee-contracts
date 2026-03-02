@@ -1,31 +1,11 @@
 #!/usr/bin/env bash
-# Deploys the NitroEnclaveVerifier and SP1Verifier contracts
-# from the aws-nitro-enclave-attestation submodule.
-#
-# Usage:
-#   ./scripts/deploy-nitro-enclave-verifier.sh [--force]
-#
-# Options:
-#   --force   Deploy even if the submodule already has a deployment record
-#             for the target chain (temporarily hides the existing record).
-#
-# Reads RPC_URL, PRIVATE_KEY, CHAIN_ID, and ETHERSCAN_API_KEY from .env in the project root.
 
 set -euo pipefail
-
-FORCE=false
-for arg in "$@"; do
-    case "$arg" in
-        --force) FORCE=true ;;
-        *) echo "Unknown option: $arg"; exit 1 ;;
-    esac
-done
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 CONTRACTS_DIR="$PROJECT_ROOT/lib/aws-nitro-enclave-attestation/contracts"
 
-# Source .env from project root if it exists
 if [ -f "$PROJECT_ROOT/.env" ]; then
     set -a
     source "$PROJECT_ROOT/.env"
@@ -46,54 +26,44 @@ fi
 
 cd "$CONTRACTS_DIR"
 
-# Resolve chain ID for the deployment JSON lookup
 RESOLVED_CHAIN_ID=$(cast chain-id --rpc-url "$RPC_URL")
 if [ "$RESOLVED_CHAIN_ID" != "$CHAIN_ID" ]; then
     echo "Warning: CHAIN_ID ($CHAIN_ID) does not match RPC chain ($RESOLVED_CHAIN_ID)"
     exit 1
 fi
-DEPLOY_FILE="deployments/${CHAIN_ID}.json"
-BACKUP_FILE=""
 
-# If --force, temporarily hide the existing deployment record so the
-# Solidity script's needsRedeploy() check doesn't skip deployment.
-if $FORCE && [ -f "$DEPLOY_FILE" ]; then
-    BACKUP_FILE="${DEPLOY_FILE}.bak"
-    echo "Force mode: temporarily moving $DEPLOY_FILE aside"
-    mv "$DEPLOY_FILE" "$BACKUP_FILE"
-fi
+OWNER_ADDRESS=$(cast wallet address --private-key "$PRIVATE_KEY")
+echo "Deployer / Owner address: $OWNER_ADDRESS"
 
-# Restore the deployment file on exit (success or failure)
-cleanup() {
-    if [ -n "$BACKUP_FILE" ] && [ -f "$BACKUP_FILE" ]; then
-        # If forge created a new deployment file, keep it; otherwise restore.
-        if [ ! -f "$DEPLOY_FILE" ]; then
-            mv "$BACKUP_FILE" "$DEPLOY_FILE"
-            echo "Restored original $DEPLOY_FILE"
-        else
-            rm "$BACKUP_FILE"
-        fi
-    fi
-}
-trap cleanup EXIT
+# maxTimeDiff from the submodule's deploy-config.json (3 hours = 10800 seconds)
+MAX_TIME_DIFF=10800
 
+echo ""
 echo "=== Deploying NitroEnclaveVerifier (chain ${CHAIN_ID}) ==="
-forge script script/NitroEnclaveVerifier.s.sol \
+echo "  owner:       $OWNER_ADDRESS"
+echo "  maxTimeDiff: $MAX_TIME_DIFF"
+
+VERIFIER_OUTPUT=$(forge create \
+    src/NitroEnclaveVerifier.sol:NitroEnclaveVerifier \
     --rpc-url "$RPC_URL" \
     --private-key "$PRIVATE_KEY" \
     --broadcast \
-    --verify --verifier etherscan --chain "$CHAIN_ID" \
-    --sig 'deployVerifier()'
+    --verify --etherscan-api-key "$ETHERSCAN_API_KEY" \
+    --chain "$CHAIN_ID" \
+    --constructor-args "$OWNER_ADDRESS" "$MAX_TIME_DIFF" "[]")
 
-echo ""
-echo "=== Deploying SP1Verifier ==="
-forge script script/NitroEnclaveVerifier.s.sol \
+VERIFIER_ADDRESS=$(echo "$VERIFIER_OUTPUT" | grep 'Deployed to:' | awk '{print $3}')
+echo "NitroEnclaveVerifier deployed at: $VERIFIER_ADDRESS"
+
+SP1_ADDRESS=""
+echo "=== Deploying SP1Verifier (chain ${CHAIN_ID}) ==="
+SP1_OUTPUT=$(forge create \
+    lib/sp1-contracts/contracts/src/v5.0.0/SP1VerifierGroth16.sol:SP1Verifier \
     --rpc-url "$RPC_URL" \
     --private-key "$PRIVATE_KEY" \
     --broadcast \
-    --verify --verifier etherscan --chain "$CHAIN_ID" \
-    --sig 'deploySP1Verifier()'
+    --verify --etherscan-api-key "$ETHERSCAN_API_KEY" \
+    --chain "$CHAIN_ID")
 
-echo ""
-echo "=== Done ==="
-echo "Deployment artifacts saved in: $CONTRACTS_DIR/deployments/"
+SP1_ADDRESS=$(echo "$SP1_OUTPUT" | grep 'Deployed to:' | awk '{print $3}')
+echo "SP1Verifier deployed at: $SP1_ADDRESS"
