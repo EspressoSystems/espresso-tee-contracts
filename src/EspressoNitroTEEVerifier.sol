@@ -9,7 +9,6 @@ import {
     ZkCoProcessorType,
     VerificationResult
 } from "aws-nitro-enclave-attestation/interfaces/INitroEnclaveVerifier.sol";
-import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import {TEEHelper} from "./TEEHelper.sol";
 import {JournalValidation} from "./libraries/JournalValidation.sol";
 
@@ -19,8 +18,6 @@ import {JournalValidation} from "./libraries/JournalValidation.sol";
  *         from `automata` to verify the proof.
  */
 contract EspressoNitroTEEVerifier is IEspressoNitroTEEVerifier, TEEHelper {
-    using EnumerableSet for EnumerableSet.AddressSet;
-
     /// @custom:storage-location erc7201:espresso.storage.EspressoNitroTEEVerifier
     struct EspressoNitroTEEVerifierStorage {
         INitroEnclaveVerifier nitroEnclaveVerifier;
