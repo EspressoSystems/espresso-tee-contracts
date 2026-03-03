@@ -153,8 +153,11 @@ contract EspressoTEEVerifier is OwnableWithGuardiansUpgradeable, IEspressoTEEVer
         if (address(_espressoSGXTEEVerifier) == address(0)) {
             revert InvalidVerifierAddress();
         }
-
-        _layout().espressoSGXTEEVerifier = _espressoSGXTEEVerifier;
+        EspressoTEEVerifierStorage storage $ = _layout();
+        address oldVerifier = address($.espressoSGXTEEVerifier);
+        address newVerifier = address(_espressoSGXTEEVerifier);
+        $.espressoSGXTEEVerifier = _espressoSGXTEEVerifier;
+        emit EspressoSGXTEEVerifierSet(oldVerifier, newVerifier);
     }
 
     /**
@@ -168,8 +171,11 @@ contract EspressoTEEVerifier is OwnableWithGuardiansUpgradeable, IEspressoTEEVer
         if (address(_espressoNitroTEEVerifier) == address(0)) {
             revert InvalidVerifierAddress();
         }
-
-        _layout().espressoNitroTEEVerifier = _espressoNitroTEEVerifier;
+        EspressoTEEVerifierStorage storage $ = _layout();
+        address oldVerifier = address($.espressoNitroTEEVerifier);
+        address newVerifier = address(_espressoNitroTEEVerifier);
+        $.espressoNitroTEEVerifier = _espressoNitroTEEVerifier;
+        emit EspressoNitroTEEVerifierSet(oldVerifier, newVerifier);
     }
 
     /**

@@ -355,7 +355,12 @@ contract EspressoTEEVerifierTest is Test {
 
     function testSetEspressoSGXTEEVerifier() public {
         EspressoSGXTEEVerifier newEspressoSGXTEEVerifier = _deploySGX(address(espressoTEEVerifier));
+        address oldVerifier = address(espressoTEEVerifier.espressoSGXTEEVerifier());
         vm.startPrank(adminTEE);
+        vm.expectEmit(true, true, false, false, address(espressoTEEVerifier));
+        emit IEspressoTEEVerifier.EspressoSGXTEEVerifierSet(
+            oldVerifier, address(newEspressoSGXTEEVerifier)
+        );
         espressoTEEVerifier.setEspressoSGXTEEVerifier(
             IEspressoSGXTEEVerifier(address(newEspressoSGXTEEVerifier))
         );
@@ -379,7 +384,12 @@ contract EspressoTEEVerifierTest is Test {
     function testSetEspressoNitroTEEVerifier() public {
         EspressoNitroTEEVerifier newEspressoNitroTEEVerifier =
             _deployNitro(address(espressoTEEVerifier));
+        address oldVerifier = address(espressoTEEVerifier.espressoNitroTEEVerifier());
         vm.startPrank(adminTEE);
+        vm.expectEmit(true, true, false, false, address(espressoTEEVerifier));
+        emit IEspressoTEEVerifier.EspressoNitroTEEVerifierSet(
+            oldVerifier, address(newEspressoNitroTEEVerifier)
+        );
         espressoTEEVerifier.setEspressoNitroTEEVerifier(
             IEspressoNitroTEEVerifier(address(newEspressoNitroTEEVerifier))
         );
