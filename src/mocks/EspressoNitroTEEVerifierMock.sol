@@ -20,11 +20,8 @@ contract EspressoNitroTEEVerifierMock {
     /**
      * @notice Register a signer without verification. In mock, we skip ZK proof verification.
      * @param output The public output (ignored in mock, but we extract signer from it)
-     * @param proofBytes The proof bytes (ignored in mock)
      */
-    function registerService(bytes calldata output, bytes calldata proofBytes, ServiceType service)
-        external
-    {
+    function registerService(bytes calldata output, bytes calldata, ServiceType service) external {
         VerifierJournal memory journal = abi.decode(output, (VerifierJournal));
 
         // The publicKey's first byte 0x04 byte followed which only determine if the public key is compressed or not.
