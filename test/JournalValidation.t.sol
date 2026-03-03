@@ -162,6 +162,8 @@ contract JournalValidationTest is Test {
         bytes memory validKey = new bytes(65);
         validKey[0] = 0x04; // Uncompressed marker
         for (uint256 i = 1; i < 65; i++) {
+            // casting to 'uint8' is safe because loop bounds guarantee i is in [1, 64]
+            // forge-lint: disable-next-line(unsafe-typecast)
             validKey[i] = bytes1(uint8(i));
         }
 
@@ -176,6 +178,8 @@ contract JournalValidationTest is Test {
         bytes memory validPublicKey = new bytes(65);
         validPublicKey[0] = 0x04;
         for (uint256 i = 1; i < 65; i++) {
+            // casting to 'uint8' is safe because loop bounds guarantee i is in [1, 64]
+            // forge-lint: disable-next-line(unsafe-typecast)
             validPublicKey[i] = bytes1(uint8(i));
         }
 

@@ -34,6 +34,12 @@ contract EspressoTEEVerifier is OwnableWithGuardiansUpgradeable, IEspressoTEEVer
         _disableInitializers();
     }
 
+    /**
+     * @notice Initializes verifier contracts and ownership for this proxy instance.
+     * @param _owner The owner address that can manage verifier configuration.
+     * @param _espressoSGXTEEVerifier The SGX verifier used for SGX-based attestations.
+     * @param _espressoNitroTEEVerifier The Nitro verifier used for Nitro-based attestations.
+     */
     function initialize(
         address _owner,
         IEspressoSGXTEEVerifier _espressoSGXTEEVerifier,

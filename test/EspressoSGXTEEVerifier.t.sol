@@ -337,7 +337,7 @@ contract EspressoSGXTEEVerifierTest is Test {
 
     function testSetEnclaveHash() public {
         vm.startPrank(adminTEE);
-        bytes32 newMrEnclave = bytes32(hex"01");
+        bytes32 newMrEnclave = bytes32(uint256(1));
         espressoTEEVerifier.setEnclaveHash(
             newMrEnclave, true, IEspressoTEEVerifier.TeeType.SGX, ServiceType.BatchPoster
         );
