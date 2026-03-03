@@ -19,6 +19,10 @@ abstract contract TEEHelper is ITEEHelper, Initializable {
     bytes32 internal constant TEE_HELPER_STORAGE_SLOT =
         0x6c53fdf1cef7bc567e8d46761d9c42d29c5fad7063be8d47b686412bfc375800;
 
+    /**
+     * @notice Returns the ERC-7201 namespaced storage pointer for TEE helper state.
+     * @return l Storage reference for TEEHelper state variables.
+     */
     function _layout() internal pure returns (TEEHelperStorage storage l) {
         bytes32 slot = TEE_HELPER_STORAGE_SLOT;
         assembly {
@@ -139,6 +143,10 @@ abstract contract TEEHelper is ITEEHelper, Initializable {
         }
     }
 
+    /**
+     * @notice Updates the authorized TEE verifier address.
+     * @param newTEEVerifier The new verifier address allowed to manage enclave hashes.
+     */
     function _setTEEVerifier(address newTEEVerifier) internal {
         if (newTEEVerifier == address(0)) {
             revert InvalidTEEVerifierAddress();
