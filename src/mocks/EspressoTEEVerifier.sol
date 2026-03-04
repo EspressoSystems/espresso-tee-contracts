@@ -35,7 +35,7 @@ contract EspressoTEEVerifierMock {
         bytes32 userDataHash,
         IEspressoTEEVerifier.TeeType teeType,
         ServiceType service
-    ) external view returns (bool) {
+    ) external returns (bool) {
         address signer = ECDSA.recover(userDataHash, signature);
 
         if (teeType == IEspressoTEEVerifier.TeeType.SGX) {

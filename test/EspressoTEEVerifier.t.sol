@@ -649,4 +649,68 @@ contract EspressoTEEVerifierTest is Test {
             )
         );
     }
+
+    function testVerifyWithEIP712() public {
+        uint256 signerPk = 0x1;
+        address signerAddr = vm.addr(signerPk);
+
+        // Mock isSignerValid on NitroVerifier
+        vm.mockCall(
+            address(espressoNitroTEEVerifier),
+            abi.encodeWithSelector(
+                ITEEHelper.isSignerValid.selector, signerAddr, ServiceType.BatchPoster
+            ),
+            abi.encode(true)
+        );
+
+        bytes32 typeHash = keccak256("EspressoTEEVerifier(bytes32 commitment,uint256 nonce)");
+
+        bytes32 userDataHash = keccak256("test data");
+        uint256 nonce = 0;
+        bytes32 structHash = keccak256(abi.encode(typeHash, userDataHash, nonce));
+
+        // Reconstruct EIP-712 domain separator
+        bytes32 domainSeperator = keccak256(
+            abi.encode(
+                keccak256(
+                    "EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)"
+                ),
+                keccak256("EspressoTEEVerifier"),
+                keccak256("1"),
+                block.chainid,
+                address(espressoTEEVerifier)
+            )
+        );
+
+        bytes32 digest = keccak256(abi.encodePacked("\x19\x01", domainSeperator, structHash));
+        // Sign the digest with the signer's private key
+        (uint8 v, bytes32 r, bytes32 s) = vm.sign(signerPk, digest);
+        bytes memory signature = abi.encodePacked(r, s, v);
+
+        // Call verify as the caller
+        vm.prank(signerAddr);
+        bool result = espressoTEEVerifier.verify(
+            signature, userDataHash, IEspressoTEEVerifier.TeeType.NITRO, ServiceType.BatchPoster
+        );
+        assertTrue(result);
+
+        // Now try with the same nonce, it sould fail
+        vm.prank(signerAddr);
+        vm.expectRevert(IEspressoTEEVerifier.InvalidSignature.selector);
+        espressoTEEVerifier.verify(
+            signature, userDataHash, IEspressoTEEVerifier.TeeType.NITRO, ServiceType.BatchPoster
+        );
+
+        // Now try adding a nonce
+        nonce = 1;
+        structHash = keccak256(abi.encode(typeHash, userDataHash, nonce));
+        digest = keccak256(abi.encodePacked("\x19\x01", domainSeperator, structHash));
+        (v, r, s) = vm.sign(signerPk, digest);
+        signature = abi.encodePacked(r, s, v);
+        vm.prank(signerAddr);
+        result = espressoTEEVerifier.verify(
+            signature, userDataHash, IEspressoTEEVerifier.TeeType.NITRO, ServiceType.BatchPoster
+        );
+        assertTrue(result);
+    }
 }
