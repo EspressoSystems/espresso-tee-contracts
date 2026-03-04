@@ -143,42 +143,6 @@ contract EspressoTEEVerifier is OwnableWithGuardiansUpgradeable, IEspressoTEEVer
     }
 
     /**
-     *     @notice Set the EspressoSGXTEEVerifier
-     *     @param _espressoSGXTEEVerifier The address of the EspressoSGXTEEVerifier
-     */
-    function setEspressoSGXTEEVerifier(IEspressoSGXTEEVerifier _espressoSGXTEEVerifier)
-        public
-        onlyOwner
-    {
-        if (address(_espressoSGXTEEVerifier) == address(0)) {
-            revert InvalidVerifierAddress();
-        }
-        EspressoTEEVerifierStorage storage $ = _layout();
-        address oldVerifier = address($.espressoSGXTEEVerifier);
-        address newVerifier = address(_espressoSGXTEEVerifier);
-        $.espressoSGXTEEVerifier = _espressoSGXTEEVerifier;
-        emit EspressoSGXTEEVerifierSet(oldVerifier, newVerifier);
-    }
-
-    /**
-     * @notice Set the EspressoNitroTEEVerifier
-     * @param _espressoNitroTEEVerifier The address of the EspressoNitroTEEVerifier
-     */
-    function setEspressoNitroTEEVerifier(IEspressoNitroTEEVerifier _espressoNitroTEEVerifier)
-        public
-        onlyOwner
-    {
-        if (address(_espressoNitroTEEVerifier) == address(0)) {
-            revert InvalidVerifierAddress();
-        }
-        EspressoTEEVerifierStorage storage $ = _layout();
-        address oldVerifier = address($.espressoNitroTEEVerifier);
-        address newVerifier = address(_espressoNitroTEEVerifier);
-        $.espressoNitroTEEVerifier = _espressoNitroTEEVerifier;
-        emit EspressoNitroTEEVerifierSet(oldVerifier, newVerifier);
-    }
-
-    /**
      * @notice Allows the owner or guardian to set enclave hashes
      * @param enclaveHash The enclave hash to set
      * @param valid Whether the enclave hash is valid or not
