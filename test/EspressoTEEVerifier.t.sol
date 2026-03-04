@@ -673,11 +673,10 @@ contract EspressoTEEVerifierTest is Test {
             abi.encode(true)
         );
 
-        bytes32 typeHash = keccak256("EspressoTEEVerifier(bytes32 commitment,uint256 nonce)");
+        bytes32 typeHash = keccak256("EspressoTEEVerifier(bytes32 commitment)");
 
         bytes32 userDataHash = keccak256("test data");
-        uint256 nonce = 0;
-        bytes32 structHash = keccak256(abi.encode(typeHash, userDataHash, nonce));
+        bytes32 structHash = keccak256(abi.encode(typeHash, userDataHash));
 
         // Reconstruct EIP-712 domain separator
         bytes32 domainSeperator = keccak256(
@@ -700,25 +699,6 @@ contract EspressoTEEVerifierTest is Test {
         // Call verify as the caller
         vm.prank(signerAddr);
         bool result = espressoTEEVerifier.verify(
-            signature, userDataHash, IEspressoTEEVerifier.TeeType.NITRO, ServiceType.BatchPoster
-        );
-        assertTrue(result);
-
-        // Now try with the same nonce, it sould fail
-        vm.prank(signerAddr);
-        vm.expectRevert(IEspressoTEEVerifier.InvalidSignature.selector);
-        espressoTEEVerifier.verify(
-            signature, userDataHash, IEspressoTEEVerifier.TeeType.NITRO, ServiceType.BatchPoster
-        );
-
-        // Now try adding a nonce
-        nonce = 1;
-        structHash = keccak256(abi.encode(typeHash, userDataHash, nonce));
-        digest = keccak256(abi.encodePacked("\x19\x01", domainSeperator, structHash));
-        (v, r, s) = vm.sign(signerPk, digest);
-        signature = abi.encodePacked(r, s, v);
-        vm.prank(signerAddr);
-        result = espressoTEEVerifier.verify(
             signature, userDataHash, IEspressoTEEVerifier.TeeType.NITRO, ServiceType.BatchPoster
         );
         assertTrue(result);

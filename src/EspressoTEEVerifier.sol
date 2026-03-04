@@ -25,7 +25,6 @@ contract EspressoTEEVerifier is
     struct EspressoTEEVerifierStorage {
         IEspressoSGXTEEVerifier espressoSGXTEEVerifier;
         IEspressoNitroTEEVerifier espressoNitroTEEVerifier;
-        mapping(address => uint256) signerNonces;
     }
 
     // keccak256(abi.encode(uint256(keccak256("espresso.storage.EspressoTEEVerifier")) - 1)) & ~bytes32(uint256(0xff))
@@ -33,7 +32,7 @@ contract EspressoTEEVerifier is
         0x89639f446056f5d7661bbd94e8ab0617a80058ed7b072845818d4b93332e4800;
 
     bytes32 private constant ESPRESSO_TEE_VERIFIER_TYPE_HASH =
-        keccak256("EspressoTEEVerifier(bytes32 commitment,uint256 nonce)");
+        keccak256("EspressoTEEVerifier(bytes32 commitment)");
 
     function _layout() private pure returns (EspressoTEEVerifierStorage storage $) {
         assembly {
@@ -75,11 +74,9 @@ contract EspressoTEEVerifier is
         bytes32 userDataHash,
         TeeType teeType,
         ServiceType service
-    ) external returns (bool) {
+    ) external view returns (bool) {
         EspressoTEEVerifierStorage storage $ = _layout();
-        uint256 addressNonce = $.signerNonces[msg.sender];
-        bytes32 structHash =
-            keccak256(abi.encode(ESPRESSO_TEE_VERIFIER_TYPE_HASH, userDataHash, addressNonce));
+        bytes32 structHash = keccak256(abi.encode(ESPRESSO_TEE_VERIFIER_TYPE_HASH, userDataHash));
         bytes32 digest = _hashTypedDataV4(structHash);
         address signer = ECDSA.recover(digest, signature);
         if (teeType == TeeType.SGX) {
@@ -93,8 +90,6 @@ contract EspressoTEEVerifier is
                 revert InvalidSignature();
             }
         }
-        // Increment the signer nonce
-        $.signerNonces[msg.sender] += 1;
         return true;
     }
 

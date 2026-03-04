@@ -17,10 +17,9 @@ import {ServiceType} from "../types/Types.sol";
 contract EspressoTEEVerifierMock is EIP712 {
     IEspressoSGXTEEVerifier public espressoSGXTEEVerifier;
     IEspressoNitroTEEVerifier public espressoNitroTEEVerifier;
-    mapping(address => uint256) public signerNonces;
 
     bytes32 private constant ESPRESSO_TEE_VERIFIER_TYPE_HASH =
-        keccak256("EspressoTEEVerifier(bytes32 commitment,uint256 nonce)");
+        keccak256("EspressoTEEVerifier(bytes32 commitment)");
 
     constructor(
         IEspressoSGXTEEVerifier _espressoSGXTEEVerifier,
@@ -41,10 +40,8 @@ contract EspressoTEEVerifierMock is EIP712 {
         bytes32 userDataHash,
         IEspressoTEEVerifier.TeeType teeType,
         ServiceType service
-    ) external returns (bool) {
-        uint256 addressNonce = signerNonces[msg.sender];
-        bytes32 structHash =
-            keccak256(abi.encode(ESPRESSO_TEE_VERIFIER_TYPE_HASH, userDataHash, addressNonce));
+    ) external view returns (bool) {
+        bytes32 structHash = keccak256(abi.encode(ESPRESSO_TEE_VERIFIER_TYPE_HASH, userDataHash));
         bytes32 digest = _hashTypedDataV4(structHash);
         address signer = ECDSA.recover(digest, signature);
 
@@ -58,7 +55,6 @@ contract EspressoTEEVerifierMock is EIP712 {
             }
         }
 
-        signerNonces[msg.sender] += 1;
         return true;
     }
 
