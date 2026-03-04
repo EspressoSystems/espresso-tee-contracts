@@ -33,7 +33,7 @@ interface IEspressoTEEVerifier {
         bytes32 userDataHash,
         TeeType teeType,
         ServiceType service
-    ) external returns (bool);
+    ) external view returns (bool);
 
     // Function to register a service which has been attested by a TEE or Attestation Verifier
     // This function has succeeded if it does not revert.
