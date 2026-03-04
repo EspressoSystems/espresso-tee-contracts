@@ -36,8 +36,7 @@ contract EspressoNitroTEEVerifierTest is Test {
         );
         // Precompute TEE verifier proxy address:
         // 3 deployments ahead: Nitro impl, Nitro proxy, TEE impl → TEE proxy
-        address teeAddr =
-            vm.computeCreateAddress(address(this), vm.getNonce(address(this)) + 3);
+        address teeAddr = vm.computeCreateAddress(address(this), vm.getNonce(address(this)) + 3);
         espressoNitroTEEVerifier = _deployNitro(teeAddr);
         espressoTEEVerifier = _deployTEEVerifier(address(espressoNitroTEEVerifier));
         vm.startPrank(adminTEE);

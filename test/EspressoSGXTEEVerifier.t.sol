@@ -39,8 +39,7 @@ contract EspressoSGXTEEVerifierTest is Test {
         );
         // Precompute TEE verifier proxy address:
         // 3 deployments ahead: SGX impl, SGX proxy, TEE impl → TEE proxy
-        address teeAddr =
-            vm.computeCreateAddress(address(this), vm.getNonce(address(this)) + 3);
+        address teeAddr = vm.computeCreateAddress(address(this), vm.getNonce(address(this)) + 3);
         espressoSGXTEEVerifier = _deploySGX(teeAddr);
         espressoTEEVerifier = _deployTEEVerifier(address(espressoSGXTEEVerifier));
         vm.startPrank(adminTEE);

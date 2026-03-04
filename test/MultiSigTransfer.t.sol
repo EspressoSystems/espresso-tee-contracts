@@ -68,13 +68,13 @@ contract MultiSigTransferTest is Test {
 
         // Precompute TEE verifier proxy address:
         // 5 deployments ahead: SGX impl, SGX proxy, Nitro impl, Nitro proxy, TEE impl → TEE proxy
-        address teeAddr =
-            vm.computeCreateAddress(address(this), vm.getNonce(address(this)) + 5);
+        address teeAddr = vm.computeCreateAddress(address(this), vm.getNonce(address(this)) + 5);
 
         espressoSGXTEEVerifier = _deploySGX(teeAddr);
         espressoNitroTEEVerifier = _deployNitro(teeAddr);
 
-        espressoTEEVerifier = _deployTEEVerifier(address(espressoSGXTEEVerifier), address(espressoNitroTEEVerifier));
+        espressoTEEVerifier =
+            _deployTEEVerifier(address(espressoSGXTEEVerifier), address(espressoNitroTEEVerifier));
 
         vm.stopPrank();
 
@@ -109,7 +109,10 @@ contract MultiSigTransferTest is Test {
         return EspressoNitroTEEVerifier(address(proxy));
     }
 
-    function _deployTEEVerifier(address sgxVerifier, address nitroVerifier) internal returns (EspressoTEEVerifier) {
+    function _deployTEEVerifier(address sgxVerifier, address nitroVerifier)
+        internal
+        returns (EspressoTEEVerifier)
+    {
         EspressoTEEVerifier impl = new EspressoTEEVerifier();
         TransparentUpgradeableProxy proxy = new TransparentUpgradeableProxy(
             address(impl),

@@ -85,13 +85,14 @@ contract EspressoTEEVerifierTest is Test {
             "https://rpc.ankr.com/eth_sepolia/10a56026b3c20655c1dab931446156dea4d63d87d1261934c82a1b8045885923"
         );
 
-        address teeVerifierAddress = vm.computeCreateAddress(address(this), vm.getNonce(address(this)) + 5);
+        address teeVerifierAddress =
+            vm.computeCreateAddress(address(this), vm.getNonce(address(this)) + 5);
 
         espressoSGXTEEVerifier = _deploySGX(teeVerifierAddress);
         espressoNitroTEEVerifier = _deployNitro(teeVerifierAddress);
 
-        espressoTEEVerifier = _deployTEEVerifier(address(espressoSGXTEEVerifier), address(espressoNitroTEEVerifier));
-
+        espressoTEEVerifier =
+            _deployTEEVerifier(address(espressoSGXTEEVerifier), address(espressoNitroTEEVerifier));
 
         // Register enclave hashes.
         vm.startPrank(adminTEE);

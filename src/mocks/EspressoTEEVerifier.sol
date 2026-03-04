@@ -114,5 +114,4 @@ contract EspressoTEEVerifierMock {
 
         return false;
     }
-
 }
