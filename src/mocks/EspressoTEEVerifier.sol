@@ -43,8 +43,13 @@ contract EspressoTEEVerifierMock is EIP712 {
         ServiceType service
     ) external returns (bool) {
         uint256 addressNonce = signerNonces[msg.sender];
-        bytes32 structHash =
-            keccak256(abi.encode(ESPRESSO_TEE_VERIFIER_TYPE_HASH, userDataHash, addressNonce));
+        bytes32 structHash = keccak256(
+            abi.encode(
+                ESPRESSO_TEE_VERIFIER_TYPE_HASH,
+                userDataHash,
+                addressNonce
+            )
+        );
         bytes32 digest = _hashTypedDataV4(structHash);
         address signer = ECDSA.recover(digest, signature);
 
@@ -80,7 +85,11 @@ contract EspressoTEEVerifierMock is EIP712 {
         }
 
         if (teeType == IEspressoTEEVerifier.TeeType.NITRO) {
-            espressoNitroTEEVerifier.registerService(attestation, data, service);
+            espressoNitroTEEVerifier.registerService(
+                attestation,
+                data,
+                service
+            );
             return;
         }
     }
@@ -97,6 +106,8 @@ contract EspressoTEEVerifierMock is EIP712 {
         if (teeType == IEspressoTEEVerifier.TeeType.NITRO) {
             return espressoNitroTEEVerifier.isSignerValid(signer, serviceType);
         }
+
+        return false;
     }
 
     /**
@@ -110,21 +121,33 @@ contract EspressoTEEVerifierMock is EIP712 {
         ServiceType service
     ) external view returns (bool) {
         if (teeType == IEspressoTEEVerifier.TeeType.SGX) {
-            return espressoSGXTEEVerifier.registeredEnclaveHash(enclaveHash, service);
+            return
+                espressoSGXTEEVerifier.registeredEnclaveHash(
+                    enclaveHash,
+                    service
+                );
         }
 
         if (teeType == IEspressoTEEVerifier.TeeType.NITRO) {
-            return espressoNitroTEEVerifier.registeredEnclaveHash(enclaveHash, service);
+            return
+                espressoNitroTEEVerifier.registeredEnclaveHash(
+                    enclaveHash,
+                    service
+                );
         }
+
+        return false;
     }
 
-    function setEspressoSGXTEEVerifier(IEspressoSGXTEEVerifier _espressoSGXTEEVerifier) external {
+    function setEspressoSGXTEEVerifier(
+        IEspressoSGXTEEVerifier _espressoSGXTEEVerifier
+    ) external {
         espressoSGXTEEVerifier = _espressoSGXTEEVerifier;
     }
 
-    function setEspressoNitroTEEVerifier(IEspressoNitroTEEVerifier _espressoNitroTEEVerifier)
-        external
-    {
+    function setEspressoNitroTEEVerifier(
+        IEspressoNitroTEEVerifier _espressoNitroTEEVerifier
+    ) external {
         espressoNitroTEEVerifier = _espressoNitroTEEVerifier;
     }
 }

@@ -12,7 +12,6 @@ import {
 } from "@automata-network/dcap-attestation/contracts/types/Constants.sol";
 import {EnclaveReport} from "@automata-network/dcap-attestation/contracts/types/V3Structs.sol";
 import {BytesUtils} from "@automata-network/dcap-attestation/contracts/utils/BytesUtils.sol";
-import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import {IEspressoSGXTEEVerifier} from "./interface/IEspressoSGXTEEVerifier.sol";
 import {ServiceType} from "./types/Types.sol";
 import {TEEHelper} from "./TEEHelper.sol";
@@ -26,7 +25,6 @@ import {TEEHelper} from "./TEEHelper.sol";
 
 contract EspressoSGXTEEVerifier is IEspressoSGXTEEVerifier, TEEHelper {
     using BytesUtils for bytes;
-    using EnumerableSet for EnumerableSet.AddressSet;
 
     /// @custom:storage-location erc7201:espresso.storage.EspressoSGXTEEVerifier
     struct EspressoSGXTEEVerifierStorage {

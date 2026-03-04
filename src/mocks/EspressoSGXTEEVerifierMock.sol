@@ -20,12 +20,9 @@ contract EspressoSGXTEEVerifierMock {
 
     /**
      * @notice Register a signer without verification. In mock, we skip quote verification.
-     * @param attestation The attestation (ignored in mock)
      * @param data The signer address as bytes (20 bytes)
      */
-    function registerService(bytes calldata attestation, bytes calldata data, ServiceType service)
-        external
-    {
+    function registerService(bytes calldata, bytes calldata data, ServiceType service) external {
         require(data.length == 20, "Invalid data length");
 
         address signer = address(uint160(bytes20(data[:20])));

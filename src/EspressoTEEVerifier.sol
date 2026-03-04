@@ -45,6 +45,12 @@ contract EspressoTEEVerifier is
         _disableInitializers();
     }
 
+    /**
+     * @notice Initializes verifier contracts and ownership for this proxy instance.
+     * @param _owner The owner address that can manage verifier configuration.
+     * @param _espressoSGXTEEVerifier The SGX verifier used for SGX-based attestations.
+     * @param _espressoNitroTEEVerifier The Nitro verifier used for Nitro-based attestations.
+     */
     function initialize(
         address _owner,
         IEspressoSGXTEEVerifier _espressoSGXTEEVerifier,
@@ -165,8 +171,11 @@ contract EspressoTEEVerifier is
         if (address(_espressoSGXTEEVerifier) == address(0)) {
             revert InvalidVerifierAddress();
         }
-
-        _layout().espressoSGXTEEVerifier = _espressoSGXTEEVerifier;
+        EspressoTEEVerifierStorage storage $ = _layout();
+        address oldVerifier = address($.espressoSGXTEEVerifier);
+        address newVerifier = address(_espressoSGXTEEVerifier);
+        $.espressoSGXTEEVerifier = _espressoSGXTEEVerifier;
+        emit EspressoSGXTEEVerifierSet(oldVerifier, newVerifier);
     }
 
     /**
@@ -180,8 +189,11 @@ contract EspressoTEEVerifier is
         if (address(_espressoNitroTEEVerifier) == address(0)) {
             revert InvalidVerifierAddress();
         }
-
-        _layout().espressoNitroTEEVerifier = _espressoNitroTEEVerifier;
+        EspressoTEEVerifierStorage storage $ = _layout();
+        address oldVerifier = address($.espressoNitroTEEVerifier);
+        address newVerifier = address(_espressoNitroTEEVerifier);
+        $.espressoNitroTEEVerifier = _espressoNitroTEEVerifier;
+        emit EspressoNitroTEEVerifierSet(oldVerifier, newVerifier);
     }
 
     /**

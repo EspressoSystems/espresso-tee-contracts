@@ -7,6 +7,8 @@ import {ServiceType} from "../types/Types.sol";
 
 interface IEspressoTEEVerifier {
     error InvalidVerifierAddress();
+    event EspressoSGXTEEVerifierSet(address indexed oldVerifier, address indexed newVerifier);
+    event EspressoNitroTEEVerifierSet(address indexed oldVerifier, address indexed newVerifier);
 
     /**
      * @notice This enum is used to specify the type of TEE
