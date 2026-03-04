@@ -16,10 +16,9 @@ import {TransparentUpgradeableProxy} from "@openzeppelin/contracts/proxy/transpa
  *         using OpenZeppelin v5.x Transparent Proxy pattern in a single transaction batch.
  *
  *      Deployment order:
- *      1. Deploy EspressoTEEVerifier proxy (with placeholder addresses for SGX/Nitro)
- *      2. Deploy EspressoSGXTEEVerifier proxy (with TEEVerifier proxy address)
- *      3. Deploy EspressoNitroTEEVerifier proxy (with TEEVerifier proxy address)
- *      4. Update TEEVerifier with actual SGX and Nitro proxy addresses
+ *      1. Deploy EspressoSGXTEEVerifier proxy (with precomputed TEEVerifier proxy address)
+ *      2. Deploy EspressoNitroTEEVerifier proxy (with precomputed TEEVerifier proxy address)
+ *      3. Deploy EspressoTEEVerifier proxy (with actual SGX and Nitro proxy addresses)
  */
 contract DeployAllTEEVerifiers is Script {
     // ERC1967 admin slot: keccak256("eip1967.proxy.admin") - 1
@@ -50,91 +49,58 @@ contract DeployAllTEEVerifiers is Script {
         address[] memory emptyGuardians = new address[](0);
         address[] memory guardians = vm.envOr("GUARDIANS", ",", emptyGuardians);
 
-        // ============ Step 1: Deploy TEEVerifier ============
-        // Deploy implementation
-        EspressoTEEVerifier teeVerifierImpl = new EspressoTEEVerifier();
-        console2.log(
-            "TEEVerifier implementation deployed at:",
-            address(teeVerifierImpl)
-        );
+        // Precompute TEE verifier proxy address — 5 nonces ahead from msg.sender:
+        // SGX impl, SGX proxy, Nitro impl, Nitro proxy, TEE impl → TEE proxy
+        address teeVerifierAddr =
+            vm.computeCreateAddress(msg.sender, vm.getNonce(msg.sender) + 5);
 
-        // Deploy proxy with placeholder addresses (will be updated after SGX/Nitro deployment)
-        // Note: Initialize accepts zero addresses, they will be set properly after SGX/Nitro deployment
-        bytes memory teeInitData = abi.encodeWithSelector(
-            EspressoTEEVerifier.initialize.selector,
-            proxyAdminOwner,
-            IEspressoSGXTEEVerifier(address(0)), // placeholder
-            IEspressoNitroTEEVerifier(address(0)) // placeholder
-        );
-
-        TransparentUpgradeableProxy teeVerifierProxy = new TransparentUpgradeableProxy(
-                address(teeVerifierImpl),
-                proxyAdminOwner,
-                teeInitData
-            );
-        console2.log(
-            "TEEVerifier proxy deployed at:",
-            address(teeVerifierProxy)
-        );
-
+        // ============ Step 1: Deploy SGXVerifier ============
         EspressoSGXTEEVerifier sgxVerifierImpl = new EspressoSGXTEEVerifier();
-        console2.log(
-            "SGXVerifier implementation deployed at:",
-            address(sgxVerifierImpl)
-        );
-
-        // Deploy proxy with TEEVerifier proxy address
-        bytes memory sgxInitData = abi.encodeWithSelector(
-            EspressoSGXTEEVerifier.initialize.selector,
-            address(teeVerifierProxy),
-            quoteVerifierAddr
-        );
+        console2.log("SGXVerifier implementation deployed at:", address(sgxVerifierImpl));
 
         TransparentUpgradeableProxy sgxVerifierProxy = new TransparentUpgradeableProxy(
-                address(sgxVerifierImpl),
-                proxyAdminOwner,
-                sgxInitData
-            );
-        console2.log(
-            "SGXVerifier proxy deployed at:",
-            address(sgxVerifierProxy)
+            address(sgxVerifierImpl),
+            proxyAdminOwner,
+            abi.encodeWithSelector(
+                EspressoSGXTEEVerifier.initialize.selector,
+                teeVerifierAddr,
+                quoteVerifierAddr
+            )
         );
+        console2.log("SGXVerifier proxy deployed at:", address(sgxVerifierProxy));
 
+        // ============ Step 2: Deploy NitroVerifier ============
         EspressoNitroTEEVerifier nitroVerifierImpl = new EspressoNitroTEEVerifier();
-        console2.log(
-            "NitroVerifier implementation deployed at:",
-            address(nitroVerifierImpl)
-        );
-
-        bytes memory nitroInitData = abi.encodeWithSelector(
-            EspressoNitroTEEVerifier.initialize.selector,
-            address(teeVerifierProxy),
-            INitroEnclaveVerifier(nitroEnclaveVerifier)
-        );
+        console2.log("NitroVerifier implementation deployed at:", address(nitroVerifierImpl));
 
         TransparentUpgradeableProxy nitroVerifierProxy = new TransparentUpgradeableProxy(
-                address(nitroVerifierImpl),
-                proxyAdminOwner,
-                nitroInitData
-            );
-        console2.log(
-            "NitroVerifier proxy deployed at:",
-            address(nitroVerifierProxy)
+            address(nitroVerifierImpl),
+            proxyAdminOwner,
+            abi.encodeWithSelector(
+                EspressoNitroTEEVerifier.initialize.selector,
+                teeVerifierAddr,
+                INitroEnclaveVerifier(nitroEnclaveVerifier)
+            )
         );
+        console2.log("NitroVerifier proxy deployed at:", address(nitroVerifierProxy));
 
-        //  Update TEEVerifier with actual verifier addresses
-        EspressoTEEVerifier teeVerifier = EspressoTEEVerifier(
-            address(teeVerifierProxy)
+        // ============ Step 3: Deploy TEEVerifier with real subverifier addresses ============
+        EspressoTEEVerifier teeVerifierImpl = new EspressoTEEVerifier();
+        console2.log("TEEVerifier implementation deployed at:", address(teeVerifierImpl));
+
+        TransparentUpgradeableProxy teeVerifierProxy = new TransparentUpgradeableProxy(
+            address(teeVerifierImpl),
+            proxyAdminOwner,
+            abi.encodeWithSelector(
+                EspressoTEEVerifier.initialize.selector,
+                proxyAdminOwner,
+                IEspressoSGXTEEVerifier(address(sgxVerifierProxy)),
+                IEspressoNitroTEEVerifier(address(nitroVerifierProxy))
+            )
         );
-        teeVerifier.setEspressoSGXTEEVerifier(
-            IEspressoSGXTEEVerifier(address(sgxVerifierProxy))
-        );
-        teeVerifier.setEspressoNitroTEEVerifier(
-            IEspressoNitroTEEVerifier(address(nitroVerifierProxy))
-        );
-        console2.log(
-            "TEEVerifier updated with SGX and Nitro verifier addresses"
-        );
+        console2.log("TEEVerifier proxy deployed at:", address(teeVerifierProxy));
+
+        EspressoTEEVerifier teeVerifier = EspressoTEEVerifier(address(teeVerifierProxy));
 
         // Add guardians if provided
         for (uint256 i = 0; i < guardians.length; i++) {
