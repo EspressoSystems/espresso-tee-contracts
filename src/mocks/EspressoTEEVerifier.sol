@@ -13,8 +13,8 @@ import {ServiceType} from "../types/Types.sol";
  *         but still requires signers to be registered before they can be used.
  */
 contract EspressoTEEVerifierMock {
-    IEspressoSGXTEEVerifier public espressoSGXTEEVerifier;
-    IEspressoNitroTEEVerifier public espressoNitroTEEVerifier;
+    IEspressoSGXTEEVerifier public immutable espressoSGXTEEVerifier;
+    IEspressoNitroTEEVerifier public immutable espressoNitroTEEVerifier;
 
     constructor(
         IEspressoSGXTEEVerifier _espressoSGXTEEVerifier,
