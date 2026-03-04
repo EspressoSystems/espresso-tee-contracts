@@ -66,16 +66,16 @@ contract MultiSigTransferTest is Test {
             "https://rpc.ankr.com/eth_sepolia/10a56026b3c20655c1dab931446156dea4d63d87d1261934c82a1b8045885923"
         );
 
-        espressoTEEVerifier = _deployTEEVerifierWithPlaceholders();
-        espressoSGXTEEVerifier = _deploySGX(address(espressoTEEVerifier));
-        espressoNitroTEEVerifier = _deployNitro(address(espressoTEEVerifier));
-        vm.startPrank(originalOwner);
-        espressoTEEVerifier.setEspressoSGXTEEVerifier(
-            IEspressoSGXTEEVerifier(address(espressoSGXTEEVerifier))
-        );
-        espressoTEEVerifier.setEspressoNitroTEEVerifier(
-            IEspressoNitroTEEVerifier(address(espressoNitroTEEVerifier))
-        );
+        // Precompute TEE verifier proxy address:
+        // 5 deployments ahead: SGX impl, SGX proxy, Nitro impl, Nitro proxy, TEE impl → TEE proxy
+        address teeAddr =
+            vm.computeCreateAddress(address(this), vm.getNonce(address(this)) + 5);
+
+        espressoSGXTEEVerifier = _deploySGX(teeAddr);
+        espressoNitroTEEVerifier = _deployNitro(teeAddr);
+
+        espressoTEEVerifier = _deployTEEVerifier(address(espressoSGXTEEVerifier), address(espressoNitroTEEVerifier));
+
         vm.stopPrank();
 
         teeVerifierAddress = Strings.toHexString(address(espressoTEEVerifier));
@@ -109,7 +109,7 @@ contract MultiSigTransferTest is Test {
         return EspressoNitroTEEVerifier(address(proxy));
     }
 
-    function _deployTEEVerifierWithPlaceholders() internal returns (EspressoTEEVerifier) {
+    function _deployTEEVerifier(address sgxVerifier, address nitroVerifier) internal returns (EspressoTEEVerifier) {
         EspressoTEEVerifier impl = new EspressoTEEVerifier();
         TransparentUpgradeableProxy proxy = new TransparentUpgradeableProxy(
             address(impl),
@@ -118,8 +118,8 @@ contract MultiSigTransferTest is Test {
                 EspressoTEEVerifier.initialize,
                 (
                     originalOwner,
-                    IEspressoSGXTEEVerifier(address(0xDEAD)),
-                    IEspressoNitroTEEVerifier(address(0xBEEF))
+                    IEspressoSGXTEEVerifier(sgxVerifier),
+                    IEspressoNitroTEEVerifier(nitroVerifier)
                 )
             )
         );

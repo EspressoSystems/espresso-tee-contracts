@@ -37,13 +37,13 @@ contract EspressoSGXTEEVerifierTest is Test {
         vm.createSelectFork(
             "https://rpc.ankr.com/eth_sepolia/10a56026b3c20655c1dab931446156dea4d63d87d1261934c82a1b8045885923"
         );
-        espressoTEEVerifier = _deployTEEVerifierWithPlaceholders();
-        // Get the instance of the DCAP Attestation QuoteVerifier on the Arbitrum Sepolia Rollup
-        espressoSGXTEEVerifier = _deploySGX(address(espressoTEEVerifier));
+        // Precompute TEE verifier proxy address:
+        // 3 deployments ahead: SGX impl, SGX proxy, TEE impl → TEE proxy
+        address teeAddr =
+            vm.computeCreateAddress(address(this), vm.getNonce(address(this)) + 3);
+        espressoSGXTEEVerifier = _deploySGX(teeAddr);
+        espressoTEEVerifier = _deployTEEVerifier(address(espressoSGXTEEVerifier));
         vm.startPrank(adminTEE);
-        espressoTEEVerifier.setEspressoSGXTEEVerifier(
-            IEspressoSGXTEEVerifier(address(espressoSGXTEEVerifier))
-        );
         espressoTEEVerifier.setEnclaveHash(
             enclaveHash, true, IEspressoTEEVerifier.TeeType.SGX, ServiceType.BatchPoster
         );
@@ -53,7 +53,7 @@ contract EspressoSGXTEEVerifierTest is Test {
         vm.stopPrank();
     }
 
-    function _deployTEEVerifierWithPlaceholders() internal returns (EspressoTEEVerifier) {
+    function _deployTEEVerifier(address sgxVerifier) internal returns (EspressoTEEVerifier) {
         EspressoTEEVerifier impl = new EspressoTEEVerifier();
         TransparentUpgradeableProxy proxy = new TransparentUpgradeableProxy(
             address(impl),
@@ -62,8 +62,8 @@ contract EspressoSGXTEEVerifierTest is Test {
                 EspressoTEEVerifier.initialize,
                 (
                     adminTEE,
-                    IEspressoSGXTEEVerifier(address(0xDEAD)),
-                    IEspressoNitroTEEVerifier(address(0xBEEF))
+                    IEspressoSGXTEEVerifier(sgxVerifier),
+                    IEspressoNitroTEEVerifier(address(0))
                 )
             )
         );

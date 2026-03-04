@@ -34,12 +34,13 @@ contract EspressoNitroTEEVerifierTest is Test {
         vm.createSelectFork(
             "https://rpc.ankr.com/eth_sepolia/10a56026b3c20655c1dab931446156dea4d63d87d1261934c82a1b8045885923"
         );
-        espressoTEEVerifier = _deployTEEVerifierWithPlaceholders();
-        espressoNitroTEEVerifier = _deployNitro(address(espressoTEEVerifier));
+        // Precompute TEE verifier proxy address:
+        // 3 deployments ahead: Nitro impl, Nitro proxy, TEE impl → TEE proxy
+        address teeAddr =
+            vm.computeCreateAddress(address(this), vm.getNonce(address(this)) + 3);
+        espressoNitroTEEVerifier = _deployNitro(teeAddr);
+        espressoTEEVerifier = _deployTEEVerifier(address(espressoNitroTEEVerifier));
         vm.startPrank(adminTEE);
-        espressoTEEVerifier.setEspressoNitroTEEVerifier(
-            IEspressoNitroTEEVerifier(address(espressoNitroTEEVerifier))
-        );
         espressoTEEVerifier.setEnclaveHash(
             pcr0Hash, true, IEspressoTEEVerifier.TeeType.NITRO, ServiceType.BatchPoster
         );
@@ -49,7 +50,7 @@ contract EspressoNitroTEEVerifierTest is Test {
         vm.stopPrank();
     }
 
-    function _deployTEEVerifierWithPlaceholders() internal returns (EspressoTEEVerifier) {
+    function _deployTEEVerifier(address nitroVerifier) internal returns (EspressoTEEVerifier) {
         EspressoTEEVerifier impl = new EspressoTEEVerifier();
         TransparentUpgradeableProxy proxy = new TransparentUpgradeableProxy(
             address(impl),
@@ -58,8 +59,8 @@ contract EspressoNitroTEEVerifierTest is Test {
                 EspressoTEEVerifier.initialize,
                 (
                     adminTEE,
-                    IEspressoSGXTEEVerifier(address(0xDEAD)),
-                    IEspressoNitroTEEVerifier(address(0xBEEF))
+                    IEspressoSGXTEEVerifier(address(0)),
+                    IEspressoNitroTEEVerifier(nitroVerifier)
                 )
             )
         );

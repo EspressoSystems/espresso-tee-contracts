@@ -115,13 +115,4 @@ contract EspressoTEEVerifierMock {
         return false;
     }
 
-    function setEspressoSGXTEEVerifier(IEspressoSGXTEEVerifier _espressoSGXTEEVerifier) external {
-        espressoSGXTEEVerifier = _espressoSGXTEEVerifier;
-    }
-
-    function setEspressoNitroTEEVerifier(IEspressoNitroTEEVerifier _espressoNitroTEEVerifier)
-        external
-    {
-        espressoNitroTEEVerifier = _espressoNitroTEEVerifier;
-    }
 }

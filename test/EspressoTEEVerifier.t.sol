@@ -59,7 +59,10 @@ contract EspressoTEEVerifierTest is Test {
         return EspressoNitroTEEVerifier(address(proxy));
     }
 
-    function _deployTEEVerifierWithPlaceholders() internal returns (EspressoTEEVerifier) {
+    function _deployTEEVerifier(address sgxVerifier, address nitroVerifier)
+        internal
+        returns (EspressoTEEVerifier)
+    {
         EspressoTEEVerifier impl = new EspressoTEEVerifier();
         TransparentUpgradeableProxy proxy = new TransparentUpgradeableProxy(
             address(impl),
@@ -68,8 +71,8 @@ contract EspressoTEEVerifierTest is Test {
                 EspressoTEEVerifier.initialize,
                 (
                     adminTEE,
-                    IEspressoSGXTEEVerifier(address(0xDEAD)),
-                    IEspressoNitroTEEVerifier(address(0xBEEF))
+                    IEspressoSGXTEEVerifier(sgxVerifier),
+                    IEspressoNitroTEEVerifier(nitroVerifier)
                 )
             )
         );
@@ -81,18 +84,17 @@ contract EspressoTEEVerifierTest is Test {
         vm.createSelectFork(
             "https://rpc.ankr.com/eth_sepolia/10a56026b3c20655c1dab931446156dea4d63d87d1261934c82a1b8045885923"
         );
-        espressoTEEVerifier = _deployTEEVerifierWithPlaceholders();
-        espressoSGXTEEVerifier = _deploySGX(address(espressoTEEVerifier));
-        espressoNitroTEEVerifier = _deployNitro(address(espressoTEEVerifier));
 
-        // Wire the tee verifier to the freshly deployed helpers and seed enclave hashes.
+        address teeVerifierAddress = vm.computeCreateAddress(address(this), vm.getNonce(address(this)) + 5);
+
+        espressoSGXTEEVerifier = _deploySGX(teeVerifierAddress);
+        espressoNitroTEEVerifier = _deployNitro(teeVerifierAddress);
+
+        espressoTEEVerifier = _deployTEEVerifier(address(espressoSGXTEEVerifier), address(espressoNitroTEEVerifier));
+
+
+        // Register enclave hashes.
         vm.startPrank(adminTEE);
-        espressoTEEVerifier.setEspressoSGXTEEVerifier(
-            IEspressoSGXTEEVerifier(address(espressoSGXTEEVerifier))
-        );
-        espressoTEEVerifier.setEspressoNitroTEEVerifier(
-            IEspressoNitroTEEVerifier(address(espressoNitroTEEVerifier))
-        );
         espressoTEEVerifier.setEnclaveHash(
             enclaveHash, true, IEspressoTEEVerifier.TeeType.SGX, ServiceType.BatchPoster
         );
@@ -350,63 +352,6 @@ contract EspressoTEEVerifierTest is Test {
         // NOTE: Signers remain in internal mapping (not cleaned to avoid DoS)
         // But signer is automatically invalid (hash was deleted)
         assertFalse(espressoNitroTEEVerifier.isSignerValid(signer, ServiceType.BatchPoster));
-        vm.stopPrank();
-    }
-
-    function testSetEspressoSGXTEEVerifier() public {
-        EspressoSGXTEEVerifier newEspressoSGXTEEVerifier = _deploySGX(address(espressoTEEVerifier));
-        address oldVerifier = address(espressoTEEVerifier.espressoSGXTEEVerifier());
-        vm.startPrank(adminTEE);
-        vm.expectEmit(true, true, false, false, address(espressoTEEVerifier));
-        emit IEspressoTEEVerifier.EspressoSGXTEEVerifierSet(
-            oldVerifier, address(newEspressoSGXTEEVerifier)
-        );
-        espressoTEEVerifier.setEspressoSGXTEEVerifier(
-            IEspressoSGXTEEVerifier(address(newEspressoSGXTEEVerifier))
-        );
-        assertEq(
-            address(espressoTEEVerifier.espressoSGXTEEVerifier()),
-            address(newEspressoSGXTEEVerifier)
-        );
-        vm.stopPrank();
-        vm.startPrank(fakeAddress);
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                OwnableUpgradeable.OwnableUnauthorizedAccount.selector, fakeAddress
-            )
-        );
-        espressoTEEVerifier.setEspressoSGXTEEVerifier(
-            IEspressoSGXTEEVerifier(address(newEspressoSGXTEEVerifier))
-        );
-        vm.stopPrank();
-    }
-
-    function testSetEspressoNitroTEEVerifier() public {
-        EspressoNitroTEEVerifier newEspressoNitroTEEVerifier =
-            _deployNitro(address(espressoTEEVerifier));
-        address oldVerifier = address(espressoTEEVerifier.espressoNitroTEEVerifier());
-        vm.startPrank(adminTEE);
-        vm.expectEmit(true, true, false, false, address(espressoTEEVerifier));
-        emit IEspressoTEEVerifier.EspressoNitroTEEVerifierSet(
-            oldVerifier, address(newEspressoNitroTEEVerifier)
-        );
-        espressoTEEVerifier.setEspressoNitroTEEVerifier(
-            IEspressoNitroTEEVerifier(address(newEspressoNitroTEEVerifier))
-        );
-        assertEq(
-            address(espressoTEEVerifier.espressoNitroTEEVerifier()),
-            address(newEspressoNitroTEEVerifier)
-        );
-        vm.stopPrank();
-        vm.startPrank(fakeAddress);
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                OwnableUpgradeable.OwnableUnauthorizedAccount.selector, fakeAddress
-            )
-        );
-        espressoTEEVerifier.setEspressoNitroTEEVerifier(
-            IEspressoNitroTEEVerifier(address(newEspressoNitroTEEVerifier))
-        );
         vm.stopPrank();
     }
 
