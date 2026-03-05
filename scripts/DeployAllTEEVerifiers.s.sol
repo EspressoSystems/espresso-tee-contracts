@@ -16,9 +16,10 @@ import {TransparentUpgradeableProxy} from "@openzeppelin/contracts/proxy/transpa
  *         EspressoTEEVerifier is deployed behind a TransparentUpgradeableProxy.
  *
  *      Deployment order:
- *      1. Deploy EspressoSGXTEEVerifier with precomputed TEEVerifier proxy address
- *      2. Deploy EspressoNitroTEEVerifier with precomputed TEEVerifier proxy address
- *      3. Deploy EspressoTEEVerifier proxy (with actual SGX and Nitro addresses)
+ *      1. Deploy EspressoTEEVerifier proxy (with zero placeholder addresses for SGX/Nitro)
+ *      2. Deploy EspressoSGXTEEVerifier with the actual TEEVerifier proxy address
+ *      3. Deploy EspressoNitroTEEVerifier with the actual TEEVerifier proxy address
+ *      4. Update EspressoTEEVerifier with the actual SGX and Nitro addresses
  */
 contract DeployAllTEEVerifiers is Script {
     function run() external {
@@ -45,28 +46,7 @@ contract DeployAllTEEVerifiers is Script {
         address[] memory emptyGuardians = new address[](0);
         address[] memory guardians = vm.envOr("GUARDIANS", ",", emptyGuardians);
 
-        // Precompute TEE verifier proxy address — 3 nonces ahead from msg.sender:
-        // SGX, Nitro, TEE impl → TEE proxy
-        address teeVerifierAddr =
-            vm.computeCreateAddress(msg.sender, vm.getNonce(msg.sender) + 3);
-
-        // ============ Step 1: Deploy SGXVerifier ============
-        EspressoSGXTEEVerifier sgxVerifier =
-            new EspressoSGXTEEVerifier(teeVerifierAddr, quoteVerifierAddr);
-        console2.log(
-            "SGXVerifier deployed at:",
-            address(sgxVerifier)
-        );
-
-        // ============ Step 2: Deploy NitroVerifier ============
-        EspressoNitroTEEVerifier nitroVerifier =
-            new EspressoNitroTEEVerifier(teeVerifierAddr, nitroEnclaveVerifier);
-        console2.log(
-            "NitroVerifier deployed at:",
-            address(nitroVerifier)
-        );
-
-        // ============ Step 3: Deploy TEEVerifier with real subverifier addresses ============
+        // ============ Step 1: Deploy TEEVerifier with zero placeholder addresses ============
         EspressoTEEVerifier teeVerifierImpl = new EspressoTEEVerifier();
         console2.log(
             "TEEVerifier implementation deployed at:",
@@ -79,8 +59,8 @@ contract DeployAllTEEVerifiers is Script {
                 abi.encodeWithSelector(
                     EspressoTEEVerifier.initialize.selector,
                     proxyAdminOwner,
-                    IEspressoSGXTEEVerifier(address(sgxVerifier)),
-                    IEspressoNitroTEEVerifier(address(nitroVerifier))
+                    IEspressoSGXTEEVerifier(address(0)),
+                    IEspressoNitroTEEVerifier(address(0))
                 )
             );
         console2.log(
@@ -88,9 +68,28 @@ contract DeployAllTEEVerifiers is Script {
             address(teeVerifierProxy)
         );
 
-        EspressoTEEVerifier teeVerifier = EspressoTEEVerifier(
-            address(teeVerifierProxy)
+        address teeVerifierAddr = address(teeVerifierProxy);
+
+        // ============ Step 2: Deploy SGXVerifier pointing to TEEVerifier ============
+        EspressoSGXTEEVerifier sgxVerifier =
+            new EspressoSGXTEEVerifier(teeVerifierAddr, quoteVerifierAddr);
+        console2.log(
+            "SGXVerifier deployed at:",
+            address(sgxVerifier)
         );
+
+        // ============ Step 3: Deploy NitroVerifier pointing to TEEVerifier ============
+        EspressoNitroTEEVerifier nitroVerifier =
+            new EspressoNitroTEEVerifier(teeVerifierAddr, nitroEnclaveVerifier);
+        console2.log(
+            "NitroVerifier deployed at:",
+            address(nitroVerifier)
+        );
+
+        // ============ Step 4: Update TEEVerifier with actual subverifier addresses ============
+        EspressoTEEVerifier teeVerifier = EspressoTEEVerifier(teeVerifierAddr);
+        teeVerifier.setEspressoSGXTEEVerifier(IEspressoSGXTEEVerifier(address(sgxVerifier)));
+        teeVerifier.setEspressoNitroTEEVerifier(IEspressoNitroTEEVerifier(address(nitroVerifier)));
 
         // Add guardians if provided
         for (uint256 i = 0; i < guardians.length; i++) {

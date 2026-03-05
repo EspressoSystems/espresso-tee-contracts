@@ -149,9 +149,10 @@ forge script scripts/DeployAllTEEVerifiers.s.sol:DeployAllTEEVerifiers \
 
 This script will:
 
-1. Deploy `EspressoSGXTEEVerifier` (pre-linked to TEEVerifier via computed address)
-2. Deploy `EspressoNitroTEEVerifier` (pre-linked to TEEVerifier via computed address)
-3. Deploy `EspressoTEEVerifier` proxy (with the SGX and Nitro addresses already set)
+1. Deploy `EspressoTEEVerifier` proxy (with zero placeholder addresses for SGX/Nitro)
+2. Deploy `EspressoSGXTEEVerifier` (linked to TEEVerifier)
+3. Deploy `EspressoNitroTEEVerifier` (linked to TEEVerifier)
+4. Update `EspressoTEEVerifier` with the actual SGX and Nitro addresses
 
 #### Option B: Deploy Contracts Individually
 
