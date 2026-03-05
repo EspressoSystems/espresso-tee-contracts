@@ -1,11 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import {ServiceType} from "./types/Types.sol";
 import "./interface/ITEEHelper.sol";
 
-abstract contract TEEHelper is ITEEHelper, Initializable {
+abstract contract TEEHelper is ITEEHelper {
     /// @custom:storage-location erc7201:espresso.storage.TEEHelper
     struct TEEHelperStorage {
         mapping(ServiceType => mapping(bytes32 enclaveHash => bool valid)) registeredEnclaveHashes;
@@ -37,11 +36,7 @@ abstract contract TEEHelper is ITEEHelper, Initializable {
         _;
     }
 
-    constructor() {
-        _disableInitializers();
-    }
-
-    function __TEEHelper_init(address teeVerifier_) internal onlyInitializing {
+    function __TEEHelper_init(address teeVerifier_) internal {
         _setTEEVerifier(teeVerifier_);
     }
 

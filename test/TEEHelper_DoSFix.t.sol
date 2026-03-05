@@ -2,23 +2,15 @@
 pragma solidity ^0.8.20;
 
 import "forge-std/Test.sol";
-import {
-    TransparentUpgradeableProxy
-} from "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
 import {EspressoNitroTEEVerifier} from "../src/EspressoNitroTEEVerifier.sol";
 import {ServiceType} from "../src/types/Types.sol";
-import {
-    INitroEnclaveVerifier
-} from "aws-nitro-enclave-attestation/interfaces/INitroEnclaveVerifier.sol";
 
 /**
  * @title Tests for DoS Fix in TEEHelper
  * @notice Verifies that deleteEnclaveHashes no longer has unbounded loop vulnerability
  */
 contract TEEHelperDoSFixTest is Test {
-    address proxyAdminOwner = address(140);
     EspressoNitroTEEVerifier verifier;
-    address owner;
     bytes32 testHash1 = keccak256("hash1");
     bytes32 testHash2 = keccak256("hash2");
 
@@ -26,18 +18,10 @@ contract TEEHelperDoSFixTest is Test {
         vm.createSelectFork(
             "https://rpc.ankr.com/eth_sepolia/10a56026b3c20655c1dab931446156dea4d63d87d1261934c82a1b8045885923"
         );
-        owner = address(this);
-
-        EspressoNitroTEEVerifier impl = new EspressoNitroTEEVerifier();
-        TransparentUpgradeableProxy proxy = new TransparentUpgradeableProxy(
-            address(impl),
-            proxyAdminOwner,
-            abi.encodeCall(
-                EspressoNitroTEEVerifier.initialize,
-                (owner, INitroEnclaveVerifier(0x2D7fbBAD6792698Ba92e67b7e180f8010B9Ec788))
-            )
+        // address(this) is the teeVerifier so test functions can call setEnclaveHash/deleteEnclaveHashes
+        verifier = new EspressoNitroTEEVerifier(
+            address(this), address(0x2D7fbBAD6792698Ba92e67b7e180f8010B9Ec788)
         );
-        verifier = EspressoNitroTEEVerifier(address(proxy));
     }
 
     /**

@@ -42,11 +42,7 @@ contract EspressoSGXTEEVerifier is IEspressoSGXTEEVerifier, TEEHelper {
         }
     }
 
-    constructor() {
-        _disableInitializers();
-    }
-
-    function initialize(address teeVerifier_, address quoteVerifier_) external initializer {
+    constructor(address teeVerifier_, address quoteVerifier_) {
         __TEEHelper_init(teeVerifier_);
         _setQuoteVerifier(quoteVerifier_);
     }

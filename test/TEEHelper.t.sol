@@ -2,16 +2,12 @@
 pragma solidity ^0.8.20;
 
 import "forge-std/Test.sol";
-import {
-    TransparentUpgradeableProxy
-} from "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
-import {Initializable} from "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 import {TEEHelper} from "../src/TEEHelper.sol";
 import {ServiceType} from "../src/types/Types.sol";
 import {ITEEHelper} from "../src/interface/ITEEHelper.sol";
 
 contract TEEHelperImplementation is TEEHelper {
-    function initialize(address teeVerifier_) external initializer {
+    constructor(address teeVerifier_) {
         __TEEHelper_init(teeVerifier_);
     }
 }
@@ -19,19 +15,11 @@ contract TEEHelperImplementation is TEEHelper {
 contract TEEHelperTest is Test {
     address initialTEEVerifier = address(0xBEEF);
     address rando = address(0xBAD);
-    // Owner of the ProxyAdmin contracts that get auto-created by TransparentUpgradeableProxy
-    address proxyAdminOwner = address(0xAAA);
 
     TEEHelperImplementation helper;
 
     function setUp() public {
-        TEEHelperImplementation impl = new TEEHelperImplementation();
-        TransparentUpgradeableProxy proxy = new TransparentUpgradeableProxy(
-            address(impl),
-            proxyAdminOwner,
-            abi.encodeCall(TEEHelperImplementation.initialize, (initialTEEVerifier))
-        );
-        helper = TEEHelperImplementation(address(proxy));
+        helper = new TEEHelperImplementation(initialTEEVerifier);
     }
 
     function testOnlyTEEVerifierCanSetEnclaveHash() public {
@@ -44,18 +32,8 @@ contract TEEHelperTest is Test {
         helper.setEnclaveHash(bytes32(uint256(2)), true, ServiceType.BatchPoster);
     }
 
-    function testInitializeCannotRunTwice() public {
-        vm.expectRevert(Initializable.InvalidInitialization.selector);
-        helper.initialize(initialTEEVerifier);
-    }
-
     function testInitializeZeroAddressReverts() public {
-        TEEHelperImplementation impl = new TEEHelperImplementation();
         vm.expectRevert(ITEEHelper.InvalidTEEVerifierAddress.selector);
-        new TransparentUpgradeableProxy(
-            address(impl),
-            proxyAdminOwner,
-            abi.encodeCall(TEEHelperImplementation.initialize, (address(0)))
-        );
+        new TEEHelperImplementation(address(0));
     }
 }

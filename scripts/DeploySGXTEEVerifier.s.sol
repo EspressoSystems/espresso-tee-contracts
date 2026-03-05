@@ -3,14 +3,10 @@ pragma solidity ^0.8.25;
 import {Script} from "forge-std/Script.sol";
 import {console2} from "forge-std/console2.sol";
 import {EspressoSGXTEEVerifier} from "@espresso-tee/EspressoSGXTEEVerifier.sol";
-import {IEspressoSGXTEEVerifier} from "@espresso-tee/interface/IEspressoSGXTEEVerifier.sol";
-import {TransparentUpgradeableProxy} from "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
 
 /**
  * @title DeploySGXTEEVerifier
- * @notice Deploys EspressoSGXTEEVerifier using OpenZeppelin v5.x Transparent Proxy pattern
- * @dev In v5.x, TransparentUpgradeableProxy automatically deploys a ProxyAdmin internally.
- *      The initialOwner passed becomes the owner of the auto-deployed ProxyAdmin.
+ * @notice Deploys EspressoSGXTEEVerifier as a plain (non-proxy) contract.
  */
 contract DeploySGXTEEVerifier is Script {
     function run() external {
@@ -30,32 +26,9 @@ contract DeploySGXTEEVerifier is Script {
             "TEE_VERIFIER_ADDRESS environment variable not set or invalid"
         );
 
-        // PROXY_ADMIN_OWNER is the address that will own the auto-deployed ProxyAdmin
-        // If not set, defaults to msg.sender
-        address proxyAdminOwner = vm.envOr("PROXY_ADMIN_OWNER", msg.sender);
-
-        // 1. Deploy SGX Verifier implementation
-        EspressoSGXTEEVerifier sgxVerifierImpl = new EspressoSGXTEEVerifier();
-        console2.log(
-            "SGXVerifier implementation deployed at:",
-            address(sgxVerifierImpl)
-        );
-
-        // 2. Prepare initialization data
-        bytes memory initData = abi.encodeWithSelector(
-            EspressoSGXTEEVerifier.initialize.selector,
-            teeVerifierAddress,
-            quoteVerifierAddr
-        );
-
-        // 3. Deploy TransparentUpgradeableProxy (v5.x pattern)
-        // ProxyAdmin is automatically deployed internally with proxyAdminOwner as its owner
-        TransparentUpgradeableProxy proxy = new TransparentUpgradeableProxy(
-            address(sgxVerifierImpl),
-            proxyAdminOwner,
-            initData
-        );
-        console2.log("SGXVerifier proxy deployed at:", address(proxy));
+        EspressoSGXTEEVerifier sgxVerifier =
+            new EspressoSGXTEEVerifier(teeVerifierAddress, quoteVerifierAddr);
+        console2.log("SGXVerifier deployed at:", address(sgxVerifier));
 
         vm.stopBroadcast();
 
@@ -63,18 +36,9 @@ contract DeploySGXTEEVerifier is Script {
         string memory chainId = vm.toString(block.chainid);
         string memory dir = string.concat(vm.projectRoot(), "/deployments");
 
-        // Write deployment addresses
-        string memory json = "sgx";
-        vm.serializeAddress(json, "implementation", address(sgxVerifierImpl));
-        string memory finalJson = vm.serializeAddress(
-            json,
-            "proxy",
-            address(proxy)
-        );
+        string memory finalJson =
+            vm.serializeAddress("sgx", "sgxVerifier", address(sgxVerifier));
 
-        vm.writeJson(
-            finalJson,
-            string.concat(dir, "/", chainId, "-sgx-verifier.json")
-        );
+        vm.writeJson(finalJson, string.concat(dir, "/", chainId, "-sgx-verifier.json"));
     }
 }

@@ -33,16 +33,9 @@ contract EspressoNitroTEEVerifier is IEspressoNitroTEEVerifier, TEEHelper {
         }
     }
 
-    constructor() {
-        _disableInitializers();
-    }
-
-    function initialize(address teeVerifier_, INitroEnclaveVerifier nitroEnclaveVerifier_)
-        external
-        initializer
-    {
+    constructor(address teeVerifier_, address nitroEnclaveVerifier_) {
         __TEEHelper_init(teeVerifier_);
-        _setNitroEnclaveVerifier(address(nitroEnclaveVerifier_));
+        _setNitroEnclaveVerifier(nitroEnclaveVerifier_);
     }
 
     /**
