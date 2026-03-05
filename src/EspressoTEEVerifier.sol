@@ -14,7 +14,7 @@ import {
 /**
  * @title EspressoTEEVerifier
  *     @author Espresso Systems (https://espresso.systems)
- *     @notice This contract is used to resgister a signer which has been attested by the TEE
+ *     @notice This contract is used to register a signer which has been attested by the TEE
  */
 contract EspressoTEEVerifier is
     OwnableWithGuardiansUpgradeable,

@@ -679,7 +679,7 @@ contract EspressoTEEVerifierTest is Test {
         bytes32 structHash = keccak256(abi.encode(typeHash, userDataHash));
 
         // Reconstruct EIP-712 domain separator
-        bytes32 domainSeperator = keccak256(
+        bytes32 domainSeparator = keccak256(
             abi.encode(
                 keccak256(
                     "EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)"
@@ -691,7 +691,7 @@ contract EspressoTEEVerifierTest is Test {
             )
         );
 
-        bytes32 digest = keccak256(abi.encodePacked("\x19\x01", domainSeperator, structHash));
+        bytes32 digest = keccak256(abi.encodePacked("\x19\x01", domainSeparator, structHash));
         // Sign the digest with the signer's private key
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(signerPk, digest);
         bytes memory signature = abi.encodePacked(r, s, v);
@@ -702,5 +702,18 @@ contract EspressoTEEVerifierTest is Test {
             signature, userDataHash, IEspressoTEEVerifier.TeeType.NITRO, ServiceType.BatchPoster
         );
         assertTrue(result);
+
+        // Test signature without EIP712 should revert
+
+        vm.prank(signerAddr);
+        bytes32 emptyDomainSeparator = bytes32(0);
+        digest = keccak256(abi.encodePacked("\x19\x01", emptyDomainSeparator, structHash));
+        (v, r, s) = vm.sign(signerPk, digest);
+        signature = abi.encodePacked(r, s, v);
+
+        vm.expectRevert(IEspressoTEEVerifier.InvalidSignature.selector);
+        espressoTEEVerifier.verify(
+            signature, userDataHash, IEspressoTEEVerifier.TeeType.NITRO, ServiceType.BatchPoster
+        );
     }
 }
