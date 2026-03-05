@@ -7,13 +7,20 @@ import {IEspressoSGXTEEVerifier} from "./interface/IEspressoSGXTEEVerifier.sol";
 import {IEspressoNitroTEEVerifier} from "./interface/IEspressoNitroTEEVerifier.sol";
 import {IEspressoTEEVerifier} from "./interface/IEspressoTEEVerifier.sol";
 import {ServiceType} from "./types/Types.sol";
+import {
+    EIP712Upgradeable
+} from "@openzeppelin/contracts-upgradeable/utils/cryptography/EIP712Upgradeable.sol";
 
 /**
  * @title EspressoTEEVerifier
  *     @author Espresso Systems (https://espresso.systems)
- *     @notice This contract is used to resgister a signer which has been attested by the TEE
+ *     @notice This contract is used to register a signer which has been attested by the TEE
  */
-contract EspressoTEEVerifier is OwnableWithGuardiansUpgradeable, IEspressoTEEVerifier {
+contract EspressoTEEVerifier is
+    OwnableWithGuardiansUpgradeable,
+    IEspressoTEEVerifier,
+    EIP712Upgradeable
+{
     /// @custom:storage-location erc7201:espresso.storage.EspressoTEEVerifier
     struct EspressoTEEVerifierStorage {
         IEspressoSGXTEEVerifier espressoSGXTEEVerifier;
@@ -23,6 +30,9 @@ contract EspressoTEEVerifier is OwnableWithGuardiansUpgradeable, IEspressoTEEVer
     // keccak256(abi.encode(uint256(keccak256("espresso.storage.EspressoTEEVerifier")) - 1)) & ~bytes32(uint256(0xff))
     bytes32 private constant ESPRESSO_TEE_VERIFIER_STORAGE_SLOT =
         0x89639f446056f5d7661bbd94e8ab0617a80058ed7b072845818d4b93332e4800;
+
+    bytes32 private constant ESPRESSO_TEE_VERIFIER_TYPE_HASH =
+        keccak256("EspressoTEEVerifier(bytes32 commitment)");
 
     function _layout() private pure returns (EspressoTEEVerifierStorage storage $) {
         assembly {
@@ -49,6 +59,7 @@ contract EspressoTEEVerifier is OwnableWithGuardiansUpgradeable, IEspressoTEEVer
         $.espressoSGXTEEVerifier = _espressoSGXTEEVerifier;
         $.espressoNitroTEEVerifier = _espressoNitroTEEVerifier;
         __OwnableWithGuardians_init(_owner);
+        __EIP712_init("EspressoTEEVerifier", "1");
     }
 
     /**
@@ -65,7 +76,9 @@ contract EspressoTEEVerifier is OwnableWithGuardiansUpgradeable, IEspressoTEEVer
         ServiceType service
     ) external view returns (bool) {
         EspressoTEEVerifierStorage storage $ = _layout();
-        address signer = ECDSA.recover(userDataHash, signature);
+        bytes32 structHash = keccak256(abi.encode(ESPRESSO_TEE_VERIFIER_TYPE_HASH, userDataHash));
+        bytes32 digest = _hashTypedDataV4(structHash);
+        address signer = ECDSA.recover(digest, signature);
         if (teeType == TeeType.SGX) {
             // Use isSignerValid to check both registration AND hash validity
             if (!$.espressoSGXTEEVerifier.isSignerValid(signer, service)) {
