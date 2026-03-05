@@ -74,7 +74,9 @@ Afterwards the bindings should appear in bindings/go/espressogen/espressogen.go 
 
 ## TEE Verifier Deployment
 
-All TEE contracts are deployed using the **OpenZeppelin v5.x Transparent Proxy pattern**. In this pattern, each `TransparentUpgradeableProxy` automatically deploys its own `ProxyAdmin` contract internally. The `ProxyAdmin` owner controls upgrade capabilities.
+`EspressoTEEVerifier` is deployed using the **OpenZeppelin v5.x Transparent Proxy pattern**, where the `TransparentUpgradeableProxy` automatically deploys its own `ProxyAdmin` contract internally and the `ProxyAdmin` owner controls upgrade capabilities.
+
+`EspressoSGXTEEVerifier` and `EspressoNitroTEEVerifier` are deployed as plain (non-proxy) contracts. To upgrade their logic, deploy a new implementation and call `setEspressoSGXTEEVerifier` / `setEspressoNitroTEEVerifier` on the `EspressoTEEVerifier` proxy (owner-only).
 
 ### 1. Clean Build Environment
 
@@ -147,10 +149,9 @@ forge script scripts/DeployAllTEEVerifiers.s.sol:DeployAllTEEVerifiers \
 
 This script will:
 
-1. Deploy `EspressoTEEVerifier` proxy (with placeholder SGX/Nitro addresses)
-2. Deploy `EspressoSGXTEEVerifier` proxy (linked to TEEVerifier)
-3. Deploy `EspressoNitroTEEVerifier` proxy (linked to TEEVerifier)
-4. Update `EspressoTEEVerifier` with the actual SGX and Nitro addresses
+1. Deploy `EspressoSGXTEEVerifier` (plain contract, pre-linked to TEEVerifier via computed address)
+2. Deploy `EspressoNitroTEEVerifier` (plain contract, pre-linked to TEEVerifier via computed address)
+3. Deploy `EspressoTEEVerifier` proxy (with the SGX and Nitro addresses already set)
 
 #### Option B: Deploy Contracts Individually
 
@@ -199,9 +200,9 @@ If you prefer to deploy contracts separately:
        --verify --verifier etherscan --chain "$CHAIN_ID"
    ```
 
-4. **Update TEEVerifier with actual addresses**
+4. **Update TEEVerifier with actual addresses** (if TEEVerifier was deployed with placeholder addresses)
 
-   After deploying SGX and Nitro verifiers, call `setEspressoSGXTEEVerifier` and `setEspressoNitroTEEVerifier` on the TEEVerifier proxy using cast:
+   If the TEEVerifier was deployed with placeholder addresses (zero addresses), update it after deploying SGX and Nitro verifiers:
 
    ```bash
    cast send $TEE_VERIFIER_ADDRESS "setEspressoSGXTEEVerifier(address)" $SGX_VERIFIER_ADDRESS \
@@ -211,13 +212,16 @@ If you prefer to deploy contracts separately:
        --rpc-url "$RPC_URL" --private-key "$PRIVATE_KEY"
    ```
 
+   Note: This step is not needed when using `DeployAllTEEVerifiers.s.sol`, which pre-computes addresses and wires everything in a single script.
+
 ### 4. Post-Deployment
 
 - Verify all contracts on Block Explorer
 - Deployment artifacts are saved in `deployments/<chain_id>/`
 - Each deployment JSON contains:
-  - `proxy`: The proxy address (this is what users interact with)
-  - `implementation`: The implementation contract address
+  - `EspressoTEEVerifier`: `proxy` (what users interact with) and `implementation` addresses
+  - `EspressoSGXTEEVerifier`: single `sgxVerifier` address (plain contract, no proxy)
+  - `EspressoNitroTEEVerifier`: single `nitroVerifier` address (plain contract, no proxy)
 
 ### Transferring ownership of the TEEVerifier contracts to a multi-sig wallet
 
