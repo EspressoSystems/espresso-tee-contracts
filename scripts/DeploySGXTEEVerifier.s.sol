@@ -6,7 +6,7 @@ import {EspressoSGXTEEVerifier} from "@espresso-tee/EspressoSGXTEEVerifier.sol";
 
 /**
  * @title DeploySGXTEEVerifier
- * @notice Deploys EspressoSGXTEEVerifier as a plain (non-proxy) contract.
+ * @notice Deploys EspressoSGXTEEVerifier as a non-proxy contract.
  */
 contract DeploySGXTEEVerifier is Script {
     function run() external {

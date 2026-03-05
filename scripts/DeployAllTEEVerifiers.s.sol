@@ -12,12 +12,12 @@ import {TransparentUpgradeableProxy} from "@openzeppelin/contracts/proxy/transpa
 /**
  * @title DeployAllTEEVerifiers
  * @notice Deploys all three TEE verifier contracts in a single transaction batch.
- *         SGX and Nitro verifiers are plain (non-proxy) contracts.
+ *         SGX and Nitro verifiers are non-proxy contracts.
  *         EspressoTEEVerifier is deployed behind a TransparentUpgradeableProxy.
  *
  *      Deployment order:
- *      1. Deploy EspressoSGXTEEVerifier (plain) with precomputed TEEVerifier proxy address
- *      2. Deploy EspressoNitroTEEVerifier (plain) with precomputed TEEVerifier proxy address
+ *      1. Deploy EspressoSGXTEEVerifier with precomputed TEEVerifier proxy address
+ *      2. Deploy EspressoNitroTEEVerifier with precomputed TEEVerifier proxy address
  *      3. Deploy EspressoTEEVerifier proxy (with actual SGX and Nitro addresses)
  */
 contract DeployAllTEEVerifiers is Script {

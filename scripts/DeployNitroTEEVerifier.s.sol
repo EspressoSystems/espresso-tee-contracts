@@ -7,7 +7,7 @@ import {INitroEnclaveVerifier} from "aws-nitro-enclave-attestation/interfaces/IN
 
 /**
  * @title DeployNitroTEEVerifier
- * @notice Deploys EspressoNitroTEEVerifier as a plain (non-proxy) contract.
+ * @notice Deploys EspressoNitroTEEVerifier as a non-proxy contract.
  */
 contract DeployNitroTEEVerifier is Script {
     function run() external {

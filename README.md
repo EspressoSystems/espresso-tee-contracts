@@ -76,7 +76,7 @@ Afterwards the bindings should appear in bindings/go/espressogen/espressogen.go 
 
 `EspressoTEEVerifier` is deployed using the **OpenZeppelin v5.x Transparent Proxy pattern**, where the `TransparentUpgradeableProxy` automatically deploys its own `ProxyAdmin` contract internally and the `ProxyAdmin` owner controls upgrade capabilities.
 
-`EspressoSGXTEEVerifier` and `EspressoNitroTEEVerifier` are deployed as plain (non-proxy) contracts. To upgrade their logic, deploy a new implementation and call `setEspressoSGXTEEVerifier` / `setEspressoNitroTEEVerifier` on the `EspressoTEEVerifier` proxy (owner-only).
+`EspressoSGXTEEVerifier` and `EspressoNitroTEEVerifier` are deployed as non-proxy contracts. To upgrade their logic, deploy a new implementation and call `setEspressoSGXTEEVerifier` / `setEspressoNitroTEEVerifier` on the `EspressoTEEVerifier` proxy (owner-only).
 
 ### 1. Clean Build Environment
 
@@ -149,8 +149,8 @@ forge script scripts/DeployAllTEEVerifiers.s.sol:DeployAllTEEVerifiers \
 
 This script will:
 
-1. Deploy `EspressoSGXTEEVerifier` (plain contract, pre-linked to TEEVerifier via computed address)
-2. Deploy `EspressoNitroTEEVerifier` (plain contract, pre-linked to TEEVerifier via computed address)
+1. Deploy `EspressoSGXTEEVerifier` (pre-linked to TEEVerifier via computed address)
+2. Deploy `EspressoNitroTEEVerifier` (pre-linked to TEEVerifier via computed address)
 3. Deploy `EspressoTEEVerifier` proxy (with the SGX and Nitro addresses already set)
 
 #### Option B: Deploy Contracts Individually
@@ -220,8 +220,8 @@ If you prefer to deploy contracts separately:
 - Deployment artifacts are saved in `deployments/<chain_id>/`
 - Each deployment JSON contains:
   - `EspressoTEEVerifier`: `proxy` (what users interact with) and `implementation` addresses
-  - `EspressoSGXTEEVerifier`: single `sgxVerifier` address (plain contract, no proxy)
-  - `EspressoNitroTEEVerifier`: single `nitroVerifier` address (plain contract, no proxy)
+  - `EspressoSGXTEEVerifier`: single `sgxVerifier` address (no proxy)
+  - `EspressoNitroTEEVerifier`: single `nitroVerifier` address (no proxy)
 
 ### Transferring ownership of the TEEVerifier contracts to a multi-sig wallet
 
