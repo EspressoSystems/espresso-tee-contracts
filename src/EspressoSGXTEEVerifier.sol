@@ -28,8 +28,7 @@ contract EspressoSGXTEEVerifier is IEspressoSGXTEEVerifier, TEEHelper {
 
     V3QuoteVerifier private _quoteVerifier;
 
-    constructor(address teeVerifier_, address quoteVerifier_) {
-        __TEEHelper_init(teeVerifier_);
+    constructor(address teeVerifier_, address quoteVerifier_) TEEHelper(teeVerifier_) {
         _setQuoteVerifier(quoteVerifier_);
     }
 

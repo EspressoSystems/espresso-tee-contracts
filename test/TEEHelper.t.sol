@@ -7,9 +7,7 @@ import {ServiceType} from "../src/types/Types.sol";
 import {ITEEHelper} from "../src/interface/ITEEHelper.sol";
 
 contract TEEHelperImplementation is TEEHelper {
-    constructor(address teeVerifier_) {
-        __TEEHelper_init(teeVerifier_);
-    }
+    constructor(address teeVerifier_) TEEHelper(teeVerifier_) {}
 }
 
 contract TEEHelperTest is Test {

@@ -17,7 +17,7 @@ abstract contract TEEHelper is ITEEHelper {
         _;
     }
 
-    function __TEEHelper_init(address teeVerifier_) internal {
+    constructor(address teeVerifier_) {
         _setTEEVerifier(teeVerifier_);
     }
 

@@ -20,8 +20,7 @@ import {JournalValidation} from "./libraries/JournalValidation.sol";
 contract EspressoNitroTEEVerifier is IEspressoNitroTEEVerifier, TEEHelper {
     INitroEnclaveVerifier private _nitroEnclaveVerifier;
 
-    constructor(address teeVerifier_, address nitroEnclaveVerifier_) {
-        __TEEHelper_init(teeVerifier_);
+    constructor(address teeVerifier_, address nitroEnclaveVerifier_) TEEHelper(teeVerifier_) {
         _setNitroEnclaveVerifier(nitroEnclaveVerifier_);
     }
 
