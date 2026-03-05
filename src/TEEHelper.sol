@@ -5,11 +5,11 @@ import {ServiceType} from "./types/Types.sol";
 import "./interface/ITEEHelper.sol";
 
 abstract contract TEEHelper is ITEEHelper {
-    mapping(ServiceType => mapping(bytes32 enclaveHash => bool valid)) internal 
+    mapping(ServiceType => mapping(bytes32 enclaveHash => bool valid)) internal
         _registeredEnclaveHashes;
     mapping(ServiceType => mapping(address signer => bool valid)) internal _registeredServices;
     address internal _teeVerifier;
-    mapping(ServiceType => mapping(address signer => bytes32 enclaveHash)) internal 
+    mapping(ServiceType => mapping(address signer => bytes32 enclaveHash)) internal
         _signerToEnclaveHash;
 
     modifier onlyTEEVerifier() {
