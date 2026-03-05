@@ -34,13 +34,12 @@ contract EspressoNitroTEEVerifier is IEspressoNitroTEEVerifier, TEEHelper {
     function registerService(bytes calldata output, bytes calldata proofBytes, ServiceType service)
         external
     {
-        VerifierJournal memory journal = _nitroEnclaveVerifier
-            .verify(
-                output,
-                // Currently only Succinct ZK coprocessor is supported
-                ZkCoProcessorType.Succinct,
-                proofBytes
-            );
+        VerifierJournal memory journal = _nitroEnclaveVerifier.verify(
+            output,
+            // Currently only Succinct ZK coprocessor is supported
+            ZkCoProcessorType.Succinct,
+            proofBytes
+        );
 
         if (journal.result != VerificationResult.Success) {
             revert VerificationFailed(journal.result);
