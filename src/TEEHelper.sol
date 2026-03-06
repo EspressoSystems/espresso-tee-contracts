@@ -105,8 +105,10 @@ abstract contract TEEHelper is ITEEHelper {
         for (uint256 i = 0; i < enclaveHashes.length; i++) {
             bytes32 enclaveHash = enclaveHashes[i];
 
-            // Verify the hash exists before deleting
-            require(_registeredEnclaveHashes[service][enclaveHash], "Enclave hash not registered");
+            // Skip already-unregistered hashes to keep batch deletion idempotent.
+            if (!_registeredEnclaveHashes[service][enclaveHash]) {
+                continue;
+            }
 
             // Delete the hash authorization (prevents NEW registrations)
             delete _registeredEnclaveHashes[service][enclaveHash];

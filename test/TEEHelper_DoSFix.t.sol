@@ -49,15 +49,16 @@ contract TEEHelperDoSFixTest is Test {
     }
 
     /**
-     * @dev Test: Delete non-existent hash reverts
+     * @dev Test: Delete non-existent hash is a no-op (idempotent)
      */
-    function test_DeleteNonExistentHashReverts() public {
-        // Try to delete hash that was never registered
+    function test_DeleteNonExistentHashSkips() public {
         bytes32[] memory hashes = new bytes32[](1);
         hashes[0] = testHash1;
 
-        vm.expectRevert("Enclave hash not registered");
+        // hash was never registered so it is silently skipped
         verifier.deleteEnclaveHashes(hashes, ServiceType.BatchPoster);
+
+        assertFalse(verifier.registeredEnclaveHash(testHash1, ServiceType.BatchPoster));
     }
 
     /**
@@ -78,40 +79,6 @@ contract TEEHelperDoSFixTest is Test {
         // Verify both deleted
         assertFalse(verifier.registeredEnclaveHash(testHash1, ServiceType.BatchPoster));
         assertFalse(verifier.registeredEnclaveHash(testHash2, ServiceType.BatchPoster));
-    }
-
-    /**
-     * @dev Test: Delete hash that was previously disabled
-     */
-    function test_DeleteDisabledHash() public {
-        // Register then disable
-        verifier.setEnclaveHash(testHash1, true, ServiceType.BatchPoster);
-        verifier.setEnclaveHash(testHash1, false, ServiceType.BatchPoster);
-
-        // Should still be able to "delete" (though already disabled)
-        // This reverts because disabled = not in the mapping as true
-        bytes32[] memory hashes = new bytes32[](1);
-        hashes[0] = testHash1;
-
-        vm.expectRevert("Enclave hash not registered");
-        verifier.deleteEnclaveHashes(hashes, ServiceType.BatchPoster);
-    }
-
-    /**
-     * @dev Test: Cannot delete same hash twice
-     */
-    function test_CannotDeleteHashTwice() public {
-        // Register and delete
-        verifier.setEnclaveHash(testHash1, true, ServiceType.BatchPoster);
-
-        bytes32[] memory hashes = new bytes32[](1);
-        hashes[0] = testHash1;
-
-        verifier.deleteEnclaveHashes(hashes, ServiceType.BatchPoster);
-
-        // Try to delete again
-        vm.expectRevert("Enclave hash not registered");
-        verifier.deleteEnclaveHashes(hashes, ServiceType.BatchPoster);
     }
 
     /**
@@ -205,25 +172,25 @@ contract TEEHelperDoSFixTest is Test {
     }
 
     /**
-     * @dev Test: Partial failure - stops at first non-existent hash
+     * @dev Test: Unregistered hashes are skipped; registered hashes in the same batch still get deleted
      */
     function test_PartialDelete() public {
-        // Register only first hash
-        verifier.setEnclaveHash(testHash1, true, ServiceType.BatchPoster);
-        // testHash2 is NOT registered
+        // testHash2 is registered; testHash1 is not
+        verifier.setEnclaveHash(testHash2, true, ServiceType.BatchPoster);
 
         bytes32[] memory hashes = new bytes32[](2);
-        hashes[0] = testHash1;
-        hashes[1] = testHash2; // This one doesn't exist
+        hashes[0] = testHash1; // not registered — should be skipped
+        hashes[1] = testHash2; // registered — should be deleted
 
-        // Should revert when hitting non-existent hash
-        vm.expectRevert("Enclave hash not registered");
         verifier.deleteEnclaveHashes(hashes, ServiceType.BatchPoster);
 
-        // testHash1 should still be registered (atomic revert)
-        assertTrue(
+        assertFalse(
             verifier.registeredEnclaveHash(testHash1, ServiceType.BatchPoster),
-            "First hash should remain (transaction reverted)"
+            "testHash1 was never registered"
+        );
+        assertFalse(
+            verifier.registeredEnclaveHash(testHash2, ServiceType.BatchPoster),
+            "testHash2 should be deleted"
         );
     }
 
@@ -231,4 +198,3 @@ contract TEEHelperDoSFixTest is Test {
     event DeletedEnclaveHash(bytes32 indexed enclaveHash, ServiceType indexed service);
     event DeletedRegisteredService(address indexed signer, ServiceType indexed service);
 }
-
