@@ -2,7 +2,10 @@
 pragma solidity ^0.8.20;
 
 import "forge-std/Test.sol";
-import {OwnableWithGuardiansUpgradeable} from "../src/OwnableWithGuardiansUpgradeable.sol";
+import {
+    OwnableWithGuardiansUpgradeable,
+    OWNABLE_WITH_GUARDIANS_STORAGE_SLOT
+} from "../src/OwnableWithGuardiansUpgradeable.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {
     TransparentUpgradeableProxy
@@ -128,7 +131,6 @@ contract OwnableWithGuardiansUpgradeableTest is Test {
     function testInitialization() public view {
         assertEq(proxy.owner(), owner);
         assertEq(proxy.guardianCount(), 0);
-        assertTrue(proxy.hasRole(proxy.DEFAULT_ADMIN_ROLE(), owner));
     }
 
     function testCannotReinitialize() public {
@@ -310,8 +312,6 @@ contract OwnableWithGuardiansUpgradeableTest is Test {
 
         assertEq(proxy.owner(), newOwner);
         assertEq(proxy.pendingOwner(), address(0));
-        assertTrue(proxy.hasRole(proxy.DEFAULT_ADMIN_ROLE(), newOwner));
-        assertFalse(proxy.hasRole(proxy.DEFAULT_ADMIN_ROLE(), owner));
 
         vm.stopPrank();
     }
@@ -350,7 +350,6 @@ contract OwnableWithGuardiansUpgradeableTest is Test {
         proxy.renounceOwnership();
 
         assertEq(proxy.owner(), address(0));
-        assertFalse(proxy.hasRole(proxy.DEFAULT_ADMIN_ROLE(), owner));
     }
 
     // ============ Upgradeability Tests ============
@@ -416,6 +415,17 @@ contract OwnableWithGuardiansUpgradeableTest is Test {
         assertEq(upgradedProxy.guardianCount(), 2);
         assertTrue(upgradedProxy.isGuardian(guardian1));
         assertTrue(upgradedProxy.isGuardian(guardian2));
+    }
+
+    // ============ ERC-7201 Storage Slot Tests ============
+
+    function testStorageSlotIsCorrect() public pure {
+        // Recompute the ERC-7201 slot from the namespace string and verify it matches the constant.
+        bytes32 computed = keccak256(
+            abi.encode(uint256(keccak256("espresso.storage.OwnableWithGuardians")) - 1)
+        ) & ~bytes32(uint256(0xff));
+
+        assertEq(computed, OWNABLE_WITH_GUARDIANS_STORAGE_SLOT, "ERC-7201 storage slot mismatch");
     }
 
     // ============ Edge Cases ============
@@ -497,49 +507,6 @@ contract OwnableWithGuardiansUpgradeableTest is Test {
         vm.prank(guardian1);
         proxy.guardianOnlyFunction();
         assertEq(proxy.value(), 200);
-    }
-
-    function testDirectAdminRoleManipulationIsNotAllowed() public {
-        bytes32 adminRole = proxy.DEFAULT_ADMIN_ROLE();
-
-        // Non-admin user cannot grant admin role
-        vm.prank(user);
-        vm.expectRevert();
-        proxy.grantRole(adminRole, user);
-
-        // Guardian can't grant admin role either
-        vm.prank(owner);
-        proxy.addGuardian(guardian1);
-
-        vm.prank(guardian1);
-        vm.expectRevert();
-        proxy.grantRole(adminRole, guardian1);
-
-        // Only current admin (owner) can grant admin role
-        vm.prank(owner);
-        proxy.grantRole(adminRole, newOwner);
-        assertTrue(proxy.hasRole(adminRole, newOwner));
-    }
-
-    function testDirectGuardianRoleManipulationViaAccessControl() public {
-        bytes32 guardianRole = proxy.GUARDIAN_ROLE();
-        bytes32 adminRole = proxy.DEFAULT_ADMIN_ROLE();
-
-        // Owner (who has admin role) can use AccessControl's grantRole directly
-        vm.prank(owner);
-        proxy.grantRole(guardianRole, guardian1);
-        assertTrue(proxy.isGuardian(guardian1));
-
-        // Non-admin cannot grant guardian role - must use proper error encoding
-        vm.prank(user);
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                bytes4(keccak256("AccessControlUnauthorizedAccount(address,bytes32)")),
-                user,
-                adminRole
-            )
-        );
-        proxy.grantRole(guardianRole, guardian2);
     }
 
     // ============ Fuzz Tests ============
