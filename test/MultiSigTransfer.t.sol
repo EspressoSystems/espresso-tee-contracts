@@ -87,26 +87,13 @@ contract MultiSigTransferTest is Test {
     }
 
     function _deploySGX(address teeVerifier) internal returns (EspressoSGXTEEVerifier) {
-        EspressoSGXTEEVerifier impl = new EspressoSGXTEEVerifier();
-        TransparentUpgradeableProxy proxy = new TransparentUpgradeableProxy(
-            address(impl),
-            proxyAdminOwner,
-            abi.encodeCall(EspressoSGXTEEVerifier.initialize, (teeVerifier, v3QuoteVerifier))
-        );
-        return EspressoSGXTEEVerifier(address(proxy));
+        return new EspressoSGXTEEVerifier(teeVerifier, v3QuoteVerifier);
     }
 
     function _deployNitro(address teeVerifier) internal returns (EspressoNitroTEEVerifier) {
-        EspressoNitroTEEVerifier impl = new EspressoNitroTEEVerifier();
-        TransparentUpgradeableProxy proxy = new TransparentUpgradeableProxy(
-            address(impl),
-            proxyAdminOwner,
-            abi.encodeCall(
-                EspressoNitroTEEVerifier.initialize,
-                (teeVerifier, INitroEnclaveVerifier(0x2D7fbBAD6792698Ba92e67b7e180f8010B9Ec788))
-            )
+        return new EspressoNitroTEEVerifier(
+            teeVerifier, address(0x2D7fbBAD6792698Ba92e67b7e180f8010B9Ec788)
         );
-        return EspressoNitroTEEVerifier(address(proxy));
     }
 
     function _deployTEEVerifierWithPlaceholders() internal returns (EspressoTEEVerifier) {

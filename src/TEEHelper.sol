@@ -1,34 +1,16 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import {ServiceType} from "./types/Types.sol";
 import "./interface/ITEEHelper.sol";
 
-abstract contract TEEHelper is ITEEHelper, Initializable {
-    /// @custom:storage-location erc7201:espresso.storage.TEEHelper
-    struct TEEHelperStorage {
-        mapping(ServiceType => mapping(bytes32 enclaveHash => bool valid)) registeredEnclaveHashes;
-        mapping(ServiceType => mapping(address signer => bool valid)) registeredServices;
-        address teeVerifier;
-        // Track which enclave hash each signer was registered with (for automatic revocation)
-        mapping(ServiceType => mapping(address signer => bytes32 enclaveHash)) signerToEnclaveHash;
-    }
-
-    // keccak256(abi.encode(uint256(keccak256("espresso.storage.TEEHelper")) - 1)) & ~bytes32(uint256(0xff))
-    bytes32 internal constant TEE_HELPER_STORAGE_SLOT =
-        0x6c53fdf1cef7bc567e8d46761d9c42d29c5fad7063be8d47b686412bfc375800;
-
-    /**
-     * @notice Returns the ERC-7201 namespaced storage pointer for TEE helper state.
-     * @return l Storage reference for TEEHelper state variables.
-     */
-    function _layout() internal pure returns (TEEHelperStorage storage l) {
-        bytes32 slot = TEE_HELPER_STORAGE_SLOT;
-        assembly {
-            l.slot := slot
-        }
-    }
+abstract contract TEEHelper is ITEEHelper {
+    mapping(ServiceType => mapping(bytes32 enclaveHash => bool valid)) internal
+        _registeredEnclaveHashes;
+    mapping(ServiceType => mapping(address signer => bool valid)) internal _registeredServices;
+    address internal _teeVerifier;
+    mapping(ServiceType => mapping(address signer => bytes32 enclaveHash)) internal
+        _signerToEnclaveHash;
 
     modifier onlyTEEVerifier() {
         if (msg.sender != teeVerifier()) {
@@ -37,16 +19,12 @@ abstract contract TEEHelper is ITEEHelper, Initializable {
         _;
     }
 
-    constructor() {
-        _disableInitializers();
-    }
-
-    function __TEEHelper_init(address teeVerifier_) internal onlyInitializing {
+    constructor(address teeVerifier_) {
         _setTEEVerifier(teeVerifier_);
     }
 
     function teeVerifier() public view returns (address) {
-        return _layout().teeVerifier;
+        return _teeVerifier;
     }
 
     /**
@@ -63,7 +41,7 @@ abstract contract TEEHelper is ITEEHelper, Initializable {
         virtual
         onlyTEEVerifier
     {
-        _layout().registeredEnclaveHashes[service][enclaveHash] = valid;
+        _registeredEnclaveHashes[service][enclaveHash] = valid;
         emit EnclaveHashSet(enclaveHash, valid, service);
     }
 
@@ -79,15 +57,13 @@ abstract contract TEEHelper is ITEEHelper, Initializable {
         virtual
         returns (bool)
     {
-        TEEHelperStorage storage $ = _layout();
-
         // Check if signer is registered
-        if (!$.registeredServices[service][signer]) {
+        if (!_registeredServices[service][signer]) {
             return false;
         }
 
         // Check if signer's enclave hash is still approved
-        bytes32 signerHash = $.signerToEnclaveHash[service][signer];
+        bytes32 signerHash = _signerToEnclaveHash[service][signer];
 
         // If no hash recorded (shouldn't happen with new registrations), be safe and reject
         if (signerHash == bytes32(0)) {
@@ -95,7 +71,7 @@ abstract contract TEEHelper is ITEEHelper, Initializable {
         }
 
         // Check if the hash is still valid
-        return $.registeredEnclaveHashes[service][signerHash];
+        return _registeredEnclaveHashes[service][signerHash];
     }
 
     /**
@@ -110,7 +86,7 @@ abstract contract TEEHelper is ITEEHelper, Initializable {
         virtual
         returns (bool)
     {
-        return _layout().registeredEnclaveHashes[service][enclaveHash];
+        return _registeredEnclaveHashes[service][enclaveHash];
     }
 
     /**
@@ -126,15 +102,14 @@ abstract contract TEEHelper is ITEEHelper, Initializable {
         virtual
         onlyTEEVerifier
     {
-        TEEHelperStorage storage $ = _layout();
         for (uint256 i = 0; i < enclaveHashes.length; i++) {
             bytes32 enclaveHash = enclaveHashes[i];
 
             // Verify the hash exists before deleting
-            require($.registeredEnclaveHashes[service][enclaveHash], "Enclave hash not registered");
+            require(_registeredEnclaveHashes[service][enclaveHash], "Enclave hash not registered");
 
             // Delete the hash authorization (prevents NEW registrations)
-            delete $.registeredEnclaveHashes[service][enclaveHash];
+            delete _registeredEnclaveHashes[service][enclaveHash];
             emit DeletedEnclaveHash(enclaveHash, service);
 
             // NOTE: Existing signers are NOT automatically revoked from registeredServices
@@ -151,7 +126,7 @@ abstract contract TEEHelper is ITEEHelper, Initializable {
         if (newTEEVerifier == address(0)) {
             revert InvalidTEEVerifierAddress();
         }
-        _layout().teeVerifier = newTEEVerifier;
+        _teeVerifier = newTEEVerifier;
         emit TeeVerifierSet(newTEEVerifier);
     }
 }

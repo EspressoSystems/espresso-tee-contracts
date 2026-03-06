@@ -20,8 +20,6 @@ SNAPSHOT_DIR="$ROOT_DIR/.storage-layouts"
 
 UPGRADEABLE_CONTRACTS=(
     "EspressoTEEVerifier"
-    "EspressoSGXTEEVerifier"
-    "EspressoNitroTEEVerifier"
 )
 
 RED='\033[0;31m'
