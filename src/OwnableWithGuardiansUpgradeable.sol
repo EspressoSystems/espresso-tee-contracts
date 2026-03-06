@@ -27,10 +27,7 @@ bytes32 constant OWNABLE_WITH_GUARDIANS_STORAGE_SLOT =
  * Inheriting contracts must:
  *      1. Call __OwnableWithGuardians_init(initialOwner) in their initializer
  */
-abstract contract OwnableWithGuardiansUpgradeable is
-    Initializable,
-    Ownable2StepUpgradeable
-{
+abstract contract OwnableWithGuardiansUpgradeable is Initializable, Ownable2StepUpgradeable {
     using EnumerableSet for EnumerableSet.AddressSet;
 
     /// @custom:storage-location erc7201:espresso.storage.OwnableWithGuardians
@@ -53,7 +50,11 @@ abstract contract OwnableWithGuardiansUpgradeable is
     /// @notice Error thrown when trying to add zero address as guardian
     error InvalidGuardianAddress();
 
-    function _getOwnableWithGuardiansStorage() private pure returns (OwnableWithGuardiansStorage storage $) {
+    function _getOwnableWithGuardiansStorage()
+        private
+        pure
+        returns (OwnableWithGuardiansStorage storage $)
+    {
         assembly {
             $.slot := OWNABLE_WITH_GUARDIANS_STORAGE_SLOT
         }
@@ -82,7 +83,10 @@ abstract contract OwnableWithGuardiansUpgradeable is
      * @dev Useful for time-sensitive operations that can be performed by either role
      */
     modifier onlyGuardianOrOwner() {
-        if (!_getOwnableWithGuardiansStorage()._guardians.contains(msg.sender) && msg.sender != owner()) {
+        if (
+            !_getOwnableWithGuardiansStorage()._guardians.contains(msg.sender)
+                && msg.sender != owner()
+        ) {
             revert NotGuardianOrOwner(msg.sender);
         }
         _;
@@ -99,10 +103,9 @@ abstract contract OwnableWithGuardiansUpgradeable is
             revert InvalidGuardianAddress();
         }
         OwnableWithGuardiansStorage storage $ = _getOwnableWithGuardiansStorage();
-        if (!$._guardians.add(guardian)) {
-            return; // Already a guardian, no-op
+        if ($._guardians.add(guardian)) {
+            emit GuardianAdded(guardian);
         }
-        emit GuardianAdded(guardian);
     }
 
     /**
