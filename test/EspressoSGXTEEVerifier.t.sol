@@ -71,13 +71,7 @@ contract EspressoSGXTEEVerifierTest is Test {
     }
 
     function _deploySGX(address teeVerifier) internal returns (EspressoSGXTEEVerifier) {
-        EspressoSGXTEEVerifier impl = new EspressoSGXTEEVerifier();
-        TransparentUpgradeableProxy proxy = new TransparentUpgradeableProxy(
-            address(impl),
-            proxyAdminOwner,
-            abi.encodeCall(EspressoSGXTEEVerifier.initialize, (teeVerifier, v3QuoteVerifier))
-        );
-        return EspressoSGXTEEVerifier(address(proxy));
+        return new EspressoSGXTEEVerifier(teeVerifier, v3QuoteVerifier);
     }
 
     function testRegisterBatchPoster() public {
@@ -398,12 +392,6 @@ contract EspressoSGXTEEVerifierTest is Test {
         );
         espressoTEEVerifier.setQuoteVerifier(address(espressoSGXTEEVerifier));
         vm.stopPrank();
-    }
-
-    function testInitializeCannotRunTwice() public {
-        vm.prank(adminTEE);
-        vm.expectRevert(Initializable.InvalidInitialization.selector);
-        espressoSGXTEEVerifier.initialize(adminTEE, v3QuoteVerifier);
     }
 
     function testGuardianCanSetEnclaveHash() public {

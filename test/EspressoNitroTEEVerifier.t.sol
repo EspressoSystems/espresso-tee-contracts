@@ -67,16 +67,9 @@ contract EspressoNitroTEEVerifierTest is Test {
     }
 
     function _deployNitro(address teeVerifier) internal returns (EspressoNitroTEEVerifier) {
-        EspressoNitroTEEVerifier impl = new EspressoNitroTEEVerifier();
-        TransparentUpgradeableProxy proxy = new TransparentUpgradeableProxy(
-            address(impl),
-            proxyAdminOwner,
-            abi.encodeCall(
-                EspressoNitroTEEVerifier.initialize,
-                (teeVerifier, INitroEnclaveVerifier(0x2D7fbBAD6792698Ba92e67b7e180f8010B9Ec788))
-            )
+        return new EspressoNitroTEEVerifier(
+            teeVerifier, address(0x2D7fbBAD6792698Ba92e67b7e180f8010B9Ec788)
         );
-        return EspressoNitroTEEVerifier(address(proxy));
     }
 
     /**
@@ -323,14 +316,6 @@ contract EspressoNitroTEEVerifierTest is Test {
         );
         espressoTEEVerifier.setNitroEnclaveVerifier(newVerifierAddress);
         vm.stopPrank();
-    }
-
-    function testInitializeCannotRunTwice() public {
-        vm.prank(adminTEE);
-        vm.expectRevert(Initializable.InvalidInitialization.selector);
-        espressoNitroTEEVerifier.initialize(
-            adminTEE, INitroEnclaveVerifier(0x2D7fbBAD6792698Ba92e67b7e180f8010B9Ec788)
-        );
     }
 
     function testGuardianCanSetEnclaveHash() public {

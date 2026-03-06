@@ -584,6 +584,7 @@ contract OwnableWithGuardiansUpgradeableTest is Test {
     function testFuzz_NonGuardianCannotCallGuardianFunction(address notGuardian) public {
         vm.assume(notGuardian != address(0));
         vm.assume(notGuardian != owner);
+        vm.assume(notGuardian != address(proxyAdmin)); // ProxyAdmin gets ProxyDeniedAdminAccess, not NotGuardian
 
         vm.prank(owner);
         proxy.addGuardian(guardian1);

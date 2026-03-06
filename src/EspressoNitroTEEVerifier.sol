@@ -18,31 +18,10 @@ import {JournalValidation} from "./libraries/JournalValidation.sol";
  *         from `automata` to verify the proof.
  */
 contract EspressoNitroTEEVerifier is IEspressoNitroTEEVerifier, TEEHelper {
-    /// @custom:storage-location erc7201:espresso.storage.EspressoNitroTEEVerifier
-    struct EspressoNitroTEEVerifierStorage {
-        INitroEnclaveVerifier nitroEnclaveVerifier;
-    }
+    INitroEnclaveVerifier private _nitroEnclaveVerifier;
 
-    // keccak256(abi.encode(uint256(keccak256("espresso.storage.EspressoNitroTEEVerifier")) - 1)) & ~bytes32(uint256(0xff))
-    bytes32 private constant ESPRESSO_NITRO_TEE_VERIFIER_STORAGE_SLOT =
-        0x719e73d7233ff4744eafaba0d5366ca21ea408c038f043b446a24c6ec313a800;
-
-    function _nitroLayout() private pure returns (EspressoNitroTEEVerifierStorage storage $) {
-        assembly {
-            $.slot := ESPRESSO_NITRO_TEE_VERIFIER_STORAGE_SLOT
-        }
-    }
-
-    constructor() {
-        _disableInitializers();
-    }
-
-    function initialize(address teeVerifier_, INitroEnclaveVerifier nitroEnclaveVerifier_)
-        external
-        initializer
-    {
-        __TEEHelper_init(teeVerifier_);
-        _setNitroEnclaveVerifier(address(nitroEnclaveVerifier_));
+    constructor(address teeVerifier_, address nitroEnclaveVerifier_) TEEHelper(teeVerifier_) {
+        _setNitroEnclaveVerifier(nitroEnclaveVerifier_);
     }
 
     /**
@@ -55,13 +34,12 @@ contract EspressoNitroTEEVerifier is IEspressoNitroTEEVerifier, TEEHelper {
     function registerService(bytes calldata output, bytes calldata proofBytes, ServiceType service)
         external
     {
-        VerifierJournal memory journal = _nitroLayout().nitroEnclaveVerifier
-            .verify(
-                output,
-                // Currently only Succinct ZK coprocessor is supported
-                ZkCoProcessorType.Succinct,
-                proofBytes
-            );
+        VerifierJournal memory journal = _nitroEnclaveVerifier.verify(
+            output,
+            // Currently only Succinct ZK coprocessor is supported
+            ZkCoProcessorType.Succinct,
+            proofBytes
+        );
 
         if (journal.result != VerificationResult.Success) {
             revert VerificationFailed(journal.result);
@@ -77,7 +55,7 @@ contract EspressoNitroTEEVerifier is IEspressoNitroTEEVerifier, TEEHelper {
         bytes32 pcr0Hash =
             keccak256(abi.encodePacked(journal.pcrs[0].value.first, journal.pcrs[0].value.second));
 
-        if (!_layout().registeredEnclaveHashes[service][pcr0Hash]) {
+        if (!_registeredEnclaveHashes[service][pcr0Hash]) {
             revert InvalidEnclaveHash(pcr0Hash, service);
         }
 
@@ -94,12 +72,11 @@ contract EspressoNitroTEEVerifier is IEspressoNitroTEEVerifier, TEEHelper {
         address enclaveAddress = address(uint160(uint256(publicKeyHash)));
 
         // Mark the signer as registered
-        TEEHelperStorage storage $ = _layout();
-        if (!$.registeredServices[service][enclaveAddress]) {
-            $.registeredServices[service][enclaveAddress] = true;
+        if (!_registeredServices[service][enclaveAddress]) {
+            _registeredServices[service][enclaveAddress] = true;
 
             // Track which enclave hash this signer belongs to (for automatic revocation)
-            $.signerToEnclaveHash[service][enclaveAddress] = pcr0Hash;
+            _signerToEnclaveHash[service][enclaveAddress] = pcr0Hash;
 
             emit ServiceRegistered(enclaveAddress, pcr0Hash, service);
         }
@@ -117,7 +94,7 @@ contract EspressoNitroTEEVerifier is IEspressoNitroTEEVerifier, TEEHelper {
         if (nitroEnclaveVerifier_ == address(0) || nitroEnclaveVerifier_.code.length == 0) {
             revert InvalidNitroEnclaveVerifierAddress();
         }
-        _nitroLayout().nitroEnclaveVerifier = INitroEnclaveVerifier(nitroEnclaveVerifier_);
+        _nitroEnclaveVerifier = INitroEnclaveVerifier(nitroEnclaveVerifier_);
         emit NitroEnclaveVerifierSet(nitroEnclaveVerifier_);
     }
 
@@ -126,6 +103,6 @@ contract EspressoNitroTEEVerifier is IEspressoNitroTEEVerifier, TEEHelper {
      * @return The NitroEnclaveVerifier interface
      */
     function nitroEnclaveVerifier() external view returns (INitroEnclaveVerifier) {
-        return _nitroLayout().nitroEnclaveVerifier;
+        return _nitroEnclaveVerifier;
     }
 }

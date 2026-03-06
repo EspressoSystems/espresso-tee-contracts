@@ -3,10 +3,12 @@ pragma solidity ^0.8.25;
 import {Script} from "forge-std/Script.sol";
 import {console2} from "forge-std/console2.sol";
 import {EspressoNitroTEEVerifier} from "@espresso-tee/EspressoNitroTEEVerifier.sol";
-import {IEspressoNitroTEEVerifier} from "@espresso-tee/interface/IEspressoNitroTEEVerifier.sol";
 import {INitroEnclaveVerifier} from "aws-nitro-enclave-attestation/interfaces/INitroEnclaveVerifier.sol";
-import {TransparentUpgradeableProxy} from "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
 
+/**
+ * @title DeployNitroTEEVerifier
+ * @notice Deploys EspressoNitroTEEVerifier as a non-proxy contract.
+ */
 contract DeployNitroTEEVerifier is Script {
     function run() external {
         vm.startBroadcast();
@@ -25,49 +27,19 @@ contract DeployNitroTEEVerifier is Script {
             "TEE_VERIFIER_ADDRESS environment variable not set or invalid"
         );
 
-        // PROXY_ADMIN_OWNER is the address that will own the auto-deployed ProxyAdmin
-        // If not set, defaults to msg.sender
-        address proxyAdminOwner = vm.envOr("PROXY_ADMIN_OWNER", msg.sender);
-
-        // 1. Deploy NitroVerifier implementation
-        EspressoNitroTEEVerifier nitroVerifierImpl = new EspressoNitroTEEVerifier();
-        console2.log(
-            "NitroVerifier implementation deployed at:",
-            address(nitroVerifierImpl)
+        EspressoNitroTEEVerifier nitroVerifier = new EspressoNitroTEEVerifier(
+            teeVerifierAddress, nitroEnclaveVerifier
         );
-
-        // 2. Prepare initialization data
-        bytes memory initData = abi.encodeWithSelector(
-            EspressoNitroTEEVerifier.initialize.selector,
-            teeVerifierAddress,
-            INitroEnclaveVerifier(nitroEnclaveVerifier)
-        );
-
-        // 3. Deploy TransparentUpgradeableProxy (v5.x pattern)
-        // ProxyAdmin is automatically deployed internally with proxyAdminOwner as its owner
-        TransparentUpgradeableProxy proxy = new TransparentUpgradeableProxy(
-            address(nitroVerifierImpl),
-            proxyAdminOwner,
-            initData
-        );
-        console2.log("NitroVerifier proxy deployed at:", address(proxy));
+        console2.log("NitroVerifier deployed at:", address(nitroVerifier));
 
         vm.stopBroadcast();
 
         string memory chainId = vm.toString(block.chainid);
         string memory dir = string.concat(vm.projectRoot(), "/deployments");
 
-        string memory json = "nitro";
-        vm.serializeAddress(json, "implementation", address(nitroVerifierImpl));
-        string memory finalJson = vm.serializeAddress(
-            json,
-            "proxy",
-            address(proxy)
-        );
+        string memory finalJson =
+            vm.serializeAddress("nitro", "nitroVerifier", address(nitroVerifier));
 
-        vm.writeJson(
-            finalJson,
-            string.concat(dir, "/", chainId, "-nitro-verifier.json")
-        );
+        vm.writeJson(finalJson, string.concat(dir, "/", chainId, "-nitro-verifier.json"));
     }
 }

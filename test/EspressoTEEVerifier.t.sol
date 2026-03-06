@@ -37,26 +37,13 @@ contract EspressoTEEVerifierTest is Test {
     bytes32 pcr0Hash = bytes32(0x555797ae2413bb1e4c352434a901032b16d7ac9090322532a3fccb9947977e8b);
 
     function _deploySGX(address teeVerifier) internal returns (EspressoSGXTEEVerifier) {
-        EspressoSGXTEEVerifier impl = new EspressoSGXTEEVerifier();
-        TransparentUpgradeableProxy proxy = new TransparentUpgradeableProxy(
-            address(impl),
-            proxyAdminOwner,
-            abi.encodeCall(EspressoSGXTEEVerifier.initialize, (teeVerifier, v3QuoteVerifier))
-        );
-        return EspressoSGXTEEVerifier(address(proxy));
+        return new EspressoSGXTEEVerifier(teeVerifier, v3QuoteVerifier);
     }
 
     function _deployNitro(address teeVerifier) internal returns (EspressoNitroTEEVerifier) {
-        EspressoNitroTEEVerifier impl = new EspressoNitroTEEVerifier();
-        TransparentUpgradeableProxy proxy = new TransparentUpgradeableProxy(
-            address(impl),
-            proxyAdminOwner,
-            abi.encodeCall(
-                EspressoNitroTEEVerifier.initialize,
-                (teeVerifier, INitroEnclaveVerifier(0x2D7fbBAD6792698Ba92e67b7e180f8010B9Ec788))
-            )
+        return new EspressoNitroTEEVerifier(
+            teeVerifier, address(0x2D7fbBAD6792698Ba92e67b7e180f8010B9Ec788)
         );
-        return EspressoNitroTEEVerifier(address(proxy));
     }
 
     function _deployTEEVerifierWithPlaceholders() internal returns (EspressoTEEVerifier) {
@@ -657,6 +644,63 @@ contract EspressoTEEVerifierTest is Test {
             espressoTEEVerifier.registeredEnclaveHashes(
                 hashToDelete, IEspressoTEEVerifier.TeeType.NITRO, ServiceType.CaffNode
             )
+        );
+    }
+
+    function testVerifyWithEIP712() public {
+        uint256 signerPk = 0x1;
+        address signerAddr = vm.addr(signerPk);
+
+        // Mock isSignerValid on NitroVerifier
+        vm.mockCall(
+            address(espressoNitroTEEVerifier),
+            abi.encodeWithSelector(
+                ITEEHelper.isSignerValid.selector, signerAddr, ServiceType.BatchPoster
+            ),
+            abi.encode(true)
+        );
+
+        bytes32 typeHash = keccak256("EspressoTEEVerifier(bytes32 commitment)");
+
+        bytes32 userDataHash = keccak256("test data");
+        bytes32 structHash = keccak256(abi.encode(typeHash, userDataHash));
+
+        // Reconstruct EIP-712 domain separator
+        bytes32 domainSeparator = keccak256(
+            abi.encode(
+                keccak256(
+                    "EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)"
+                ),
+                keccak256("EspressoTEEVerifier"),
+                keccak256("1"),
+                block.chainid,
+                address(espressoTEEVerifier)
+            )
+        );
+
+        bytes32 digest = keccak256(abi.encodePacked("\x19\x01", domainSeparator, structHash));
+        // Sign the digest with the signer's private key
+        (uint8 v, bytes32 r, bytes32 s) = vm.sign(signerPk, digest);
+        bytes memory signature = abi.encodePacked(r, s, v);
+
+        // Call verify as the caller
+        vm.prank(signerAddr);
+        bool result = espressoTEEVerifier.verify(
+            signature, userDataHash, IEspressoTEEVerifier.TeeType.NITRO, ServiceType.BatchPoster
+        );
+        assertTrue(result);
+
+        // Test signature without EIP712 should revert
+
+        vm.prank(signerAddr);
+        bytes32 emptyDomainSeparator = bytes32(0);
+        digest = keccak256(abi.encodePacked("\x19\x01", emptyDomainSeparator, structHash));
+        (v, r, s) = vm.sign(signerPk, digest);
+        signature = abi.encodePacked(r, s, v);
+
+        vm.expectRevert(IEspressoTEEVerifier.InvalidSignature.selector);
+        espressoTEEVerifier.verify(
+            signature, userDataHash, IEspressoTEEVerifier.TeeType.NITRO, ServiceType.BatchPoster
         );
     }
 }
