@@ -443,7 +443,7 @@ contract EspressoTEEVerifierTest is Test {
         );
         vm.expectRevert(
             abi.encodeWithSelector(
-                OwnableWithGuardiansUpgradeable.NotGuardianOrOwner.selector, fakeAddress
+                OwnableUpgradeable.OwnableUnauthorizedAccount.selector, fakeAddress
             )
         );
         bytes32[] memory hashes = new bytes32[](1);
@@ -573,13 +573,7 @@ contract EspressoTEEVerifierTest is Test {
         );
     }
 
-    function testGuardianCanDeleteEnclaveHashesSGX() public {
-        address guardian = address(0x999);
-
-        // Add guardian as owner
-        vm.prank(adminTEE);
-        espressoTEEVerifier.addGuardian(guardian);
-
+    function testOwnerCanDeleteEnclaveHashesSGX() public {
         // First set a hash as owner
         bytes32 hashToDelete = bytes32(uint256(99_999));
         vm.prank(adminTEE);
@@ -594,10 +588,10 @@ contract EspressoTEEVerifierTest is Test {
             )
         );
 
-        // Guardian should be able to delete it
+        // Owner should be able to delete it
         bytes32[] memory hashes = new bytes32[](1);
         hashes[0] = hashToDelete;
-        vm.prank(guardian);
+        vm.prank(adminTEE);
         espressoTEEVerifier.deleteEnclaveHashes(
             hashes, IEspressoTEEVerifier.TeeType.SGX, ServiceType.BatchPoster
         );
@@ -610,13 +604,7 @@ contract EspressoTEEVerifierTest is Test {
         );
     }
 
-    function testGuardianCanDeleteEnclaveHashesNitro() public {
-        address guardian = address(0x999);
-
-        // Add guardian as owner
-        vm.prank(adminTEE);
-        espressoTEEVerifier.addGuardian(guardian);
-
+    function testOwnerCanDeleteEnclaveHashesNitro() public {
         // First set a hash as owner
         bytes32 hashToDelete = bytes32(uint256(88_888));
         vm.prank(adminTEE);
@@ -631,10 +619,10 @@ contract EspressoTEEVerifierTest is Test {
             )
         );
 
-        // Guardian should be able to delete it
+        // Owner should be able to delete it
         bytes32[] memory hashes = new bytes32[](1);
         hashes[0] = hashToDelete;
-        vm.prank(guardian);
+        vm.prank(adminTEE);
         espressoTEEVerifier.deleteEnclaveHashes(
             hashes, IEspressoTEEVerifier.TeeType.NITRO, ServiceType.CaffNode
         );

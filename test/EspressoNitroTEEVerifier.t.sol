@@ -336,13 +336,7 @@ contract EspressoNitroTEEVerifierTest is Test {
         assertTrue(espressoNitroTEEVerifier.registeredEnclaveHash(newHash, ServiceType.CaffNode));
     }
 
-    function testGuardianCanDeleteEnclaveHashes() public {
-        address guardian = address(0x777);
-
-        // Add guardian as owner
-        vm.prank(adminTEE);
-        espressoTEEVerifier.addGuardian(guardian);
-
+    function testOwnerCanDeleteEnclaveHashes() public {
         // First set a hash as owner
         bytes32 hashToDelete = bytes32(uint256(44_444));
         vm.prank(adminTEE);
@@ -355,10 +349,10 @@ contract EspressoNitroTEEVerifierTest is Test {
             espressoNitroTEEVerifier.registeredEnclaveHash(hashToDelete, ServiceType.CaffNode)
         );
 
-        // Guardian should be able to delete it via TEEVerifier
+        // Owner should be able to delete it via TEEVerifier
         bytes32[] memory hashes = new bytes32[](1);
         hashes[0] = hashToDelete;
-        vm.prank(guardian);
+        vm.prank(adminTEE);
         espressoTEEVerifier.deleteEnclaveHashes(
             hashes, IEspressoTEEVerifier.TeeType.NITRO, ServiceType.CaffNode
         );
