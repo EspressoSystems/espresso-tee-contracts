@@ -220,7 +220,7 @@ contract EspressoTEEVerifier is
         bytes32[] memory enclaveHashes,
         TeeType teeType,
         ServiceType service
-    ) external onlyOwner {
+    ) external onlyOwner { // Deletion is irreversible, so it requires stricter governance than setting hashes
         EspressoTEEVerifierStorage storage $ = _layout();
         if (teeType == TeeType.SGX) {
             $.espressoSGXTEEVerifier.deleteEnclaveHashes(enclaveHashes, service);
