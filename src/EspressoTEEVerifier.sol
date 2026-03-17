@@ -212,6 +212,7 @@ contract EspressoTEEVerifier is
 
     /**
      * @notice Allows the owner to delete enclave hashes
+     * @dev Deletion is irreversible, so it requires stricter governance than setting hashes (onlyOwner, not onlyGuardianOrOwner)
      * @param enclaveHashes The list of enclave hashes to delete
      * @param teeType The type of TEE
      * @param service The service type (BatchPoster or CaffNode)
@@ -220,7 +221,7 @@ contract EspressoTEEVerifier is
         bytes32[] memory enclaveHashes,
         TeeType teeType,
         ServiceType service
-    ) external onlyOwner { // Deletion is irreversible, so it requires stricter governance than setting hashes
+    ) external onlyOwner {
         EspressoTEEVerifierStorage storage $ = _layout();
         if (teeType == TeeType.SGX) {
             $.espressoSGXTEEVerifier.deleteEnclaveHashes(enclaveHashes, service);
