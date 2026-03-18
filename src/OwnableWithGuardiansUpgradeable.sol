@@ -49,7 +49,7 @@ abstract contract OwnableWithGuardiansUpgradeable is Initializable, Ownable2Step
 
     /// @notice Error thrown when trying to add zero address as guardian
     error InvalidGuardianAddress();
-    
+
     /// @notice Error thrown when trying to add owner as guardian or set guardian as an owner
     error OwnerCantBeGuardian();
 
@@ -113,7 +113,7 @@ abstract contract OwnableWithGuardiansUpgradeable is Initializable, Ownable2Step
             emit GuardianAdded(guardian);
         }
     }
-    
+
     /**
      * @dev Starts the ownership transfer of the contract to a new account. Replaces the pending transfer if there is one.
      * Can only be called by the current owner. New owner must not be a guardian.
