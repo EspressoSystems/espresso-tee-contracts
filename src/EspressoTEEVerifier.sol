@@ -212,7 +212,7 @@ contract EspressoTEEVerifier is
 
     /**
      * @notice Allows the owner to delete enclave hashes
-     * @dev Deletion is irreversible, so it requires stricter governance than setting hashes (onlyOwner, not onlyGuardianOrOwner)
+     * @dev Deleting a hash breaks services that are using it, so it requires stricter governance than setting hashes (onlyOwner, not onlyGuardianOrOwner)
      * @param enclaveHashes The list of enclave hashes to delete
      * @param teeType The type of TEE
      * @param service The service type (BatchPoster or CaffNode)
