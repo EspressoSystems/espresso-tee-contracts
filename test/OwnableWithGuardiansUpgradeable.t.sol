@@ -469,7 +469,7 @@ contract OwnableWithGuardiansUpgradeableTest is Test {
         vm.startPrank(owner);
 
         // Add 50 guardians - no limit
-        for (uint160 i = 1; i <= 50; i++) {
+        for (uint160 i = 2; i <= 51; i++) {
             proxy.addGuardian(address(i));
         }
 
@@ -478,8 +478,8 @@ contract OwnableWithGuardiansUpgradeableTest is Test {
         // getGuardians() should still work (though may be gas-intensive)
         address[] memory guardians = proxy.getGuardians();
         assertEq(guardians.length, 50);
-        assertEq(guardians[0], address(1));
-        assertEq(guardians[49], address(50));
+        assertEq(guardians[0], address(2));
+        assertEq(guardians[49], address(51));
 
         vm.stopPrank();
     }
