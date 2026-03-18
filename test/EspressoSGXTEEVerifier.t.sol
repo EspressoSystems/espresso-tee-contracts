@@ -412,13 +412,7 @@ contract EspressoSGXTEEVerifierTest is Test {
         assertTrue(espressoSGXTEEVerifier.registeredEnclaveHash(newHash, ServiceType.BatchPoster));
     }
 
-    function testGuardianCanDeleteEnclaveHashes() public {
-        address guardian = address(0x888);
-
-        // Add guardian as owner
-        vm.prank(adminTEE);
-        espressoTEEVerifier.addGuardian(guardian);
-
+    function testOwnerCanDeleteEnclaveHashes() public {
         // First set a hash as owner
         bytes32 hashToDelete = bytes32(uint256(66_666));
         vm.prank(adminTEE);
@@ -431,10 +425,10 @@ contract EspressoSGXTEEVerifierTest is Test {
             espressoSGXTEEVerifier.registeredEnclaveHash(hashToDelete, ServiceType.BatchPoster)
         );
 
-        // Guardian should be able to delete it via TEEVerifier
+        // Owner should be able to delete it via TEEVerifier
         bytes32[] memory hashes = new bytes32[](1);
         hashes[0] = hashToDelete;
-        vm.prank(guardian);
+        vm.prank(adminTEE);
         espressoTEEVerifier.deleteEnclaveHashes(
             hashes, IEspressoTEEVerifier.TeeType.SGX, ServiceType.BatchPoster
         );
