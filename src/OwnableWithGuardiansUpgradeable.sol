@@ -49,6 +49,9 @@ abstract contract OwnableWithGuardiansUpgradeable is Initializable, Ownable2Step
 
     /// @notice Error thrown when trying to add zero address as guardian
     error InvalidGuardianAddress();
+    
+    /// @notice Error thrown when trying to add owner as guardian or set guardian as an owner
+    error OwnerCantBeGuardian();
 
     function _getOwnableWithGuardiansStorage()
         private
@@ -102,10 +105,26 @@ abstract contract OwnableWithGuardiansUpgradeable is Initializable, Ownable2Step
         if (guardian == address(0)) {
             revert InvalidGuardianAddress();
         }
+        if (guardian == owner() || guardian == pendingOwner()) {
+            revert OwnerCantBeGuardian();
+        }
         OwnableWithGuardiansStorage storage $ = _getOwnableWithGuardiansStorage();
         if ($._guardians.add(guardian)) {
             emit GuardianAdded(guardian);
         }
+    }
+    
+    /**
+     * @dev Starts the ownership transfer of the contract to a new account. Replaces the pending transfer if there is one.
+     * Can only be called by the current owner. New owner must not be a guardian.
+     *
+     * Setting `newOwner` to the zero address is allowed; this can be used to cancel an initiated ownership transfer.
+     */
+    function transferOwnership(address newOwner) public virtual override onlyOwner {
+        if (_getOwnableWithGuardiansStorage()._guardians.contains(newOwner)) {
+            revert OwnerCantBeGuardian();
+        }
+        super.transferOwnership(newOwner);
     }
 
     /**
