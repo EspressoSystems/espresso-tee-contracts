@@ -21,7 +21,8 @@ import {TransparentUpgradeableProxy} from "@openzeppelin/contracts/proxy/transpa
  *      3. Deploy EspressoNitroTEEVerifier with the actual TEEVerifier proxy address
  *      4. Update EspressoTEEVerifier with the actual SGX and Nitro addresses
  *
- * @dev Guardians are not set during deployment. To add a guardian after deployment:
+ * @dev deploy() does not set guardians. run() optionally sets them via the GUARDIANS env var.
+ *      To add a guardian after deployment:
  *      cast send <TEE_VERIFIER_PROXY> "addGuardian(address)" <GUARDIAN_ADDR> \
  *        --private-key $PRIVATE_KEY --rpc-url $RPC_URL
  */
@@ -39,6 +40,7 @@ contract DeployAllTEEVerifiers is Script {
         public
         returns (address teeProxy, address teeImpl, address sgxVerifier, address nitroVerifier)
     {
+        require(proxyAdminOwner != address(0), "proxyAdminOwner cannot be zero");
         // Step 1: Deploy TEEVerifier with zero placeholder addresses for SGX/Nitro
         EspressoTEEVerifier teeVerifierImpl = new EspressoTEEVerifier();
         console2.log("TEEVerifier implementation deployed at:", address(teeVerifierImpl));
