@@ -22,25 +22,26 @@ import {TransparentUpgradeableProxy} from "@openzeppelin/contracts/proxy/transpa
  *      3. Deploy EspressoNitroTEEVerifier with the actual TEEVerifier proxy address
  *      4. Update EspressoTEEVerifier with the actual SGX and Nitro addresses
  *
- * @dev deploy() does not set guardians. run() optionally sets them via the GUARDIANS env var.
- *      To add a guardian after deployment:
- *      cast send <TEE_VERIFIER_PROXY> "addGuardian(address)" <GUARDIAN_ADDR> \
- *        --private-key $PRIVATE_KEY --rpc-url $RPC_URL
+ * @dev deploy() optionally sets guardians via the guardians array parameter.
+ *      run() reads guardian addresses from the GUARDIANS env var (comma-separated).
  */
 contract DeployAllTEEVerifiers is Script {
     /**
      * @param proxyAdminOwner      Address that will own the auto-deployed ProxyAdmin.
      * @param quoteVerifier        Address of the SGX quote verifier (from Automata).
      * @param nitroEnclaveVerifier Address of the AWS Nitro enclave verifier.
+     * @param guardians            Optional guardian addresses to register on the TEEVerifier.
      * @return teeProxy      Address of the deployed EspressoTEEVerifier proxy.
      * @return teeImpl       Address of the deployed EspressoTEEVerifier implementation.
      * @return sgxVerifier   Address of the deployed EspressoSGXTEEVerifier.
      * @return nitroVerifier Address of the deployed EspressoNitroTEEVerifier.
      */
-    function deploy(address proxyAdminOwner, address quoteVerifier, address nitroEnclaveVerifier)
-        public
-        returns (address teeProxy, address teeImpl, address sgxVerifier, address nitroVerifier)
-    {
+    function deploy(
+        address proxyAdminOwner,
+        address quoteVerifier,
+        address nitroEnclaveVerifier,
+        address[] memory guardians
+    ) public returns (address teeProxy, address teeImpl, address sgxVerifier, address nitroVerifier) {
         require(proxyAdminOwner != address(0), "proxyAdminOwner cannot be zero");
         // Step 1: Deploy TEEVerifier with zero placeholder addresses for SGX/Nitro
         EspressoTEEVerifier teeVerifierImpl = new EspressoTEEVerifier();
@@ -76,6 +77,14 @@ contract DeployAllTEEVerifiers is Script {
         EspressoTEEVerifier teeVerifier = EspressoTEEVerifier(teeProxy);
         teeVerifier.setEspressoSGXTEEVerifier(IEspressoSGXTEEVerifier(sgxVerifier));
         teeVerifier.setEspressoNitroTEEVerifier(IEspressoNitroTEEVerifier(nitroVerifier));
+
+        // Step 5: Optionally register guardians
+        for (uint256 i = 0; i < guardians.length; i++) {
+            if (guardians[i] != address(0)) {
+                teeVerifier.addGuardian(guardians[i]);
+                console2.log("Added guardian:", guardians[i]);
+            }
+        }
     }
 
     function run() external {
@@ -93,22 +102,14 @@ contract DeployAllTEEVerifiers is Script {
 
         address proxyAdminOwner = vm.envOr("PROXY_ADMIN_OWNER", msg.sender);
 
-        // Optional guardian addresses (comma-separated)
+        // Optional guardian addresses (comma-separated), e.g. GUARDIANS=0xAAA,0xBBB
         address[] memory emptyGuardians = new address[](0);
         address[] memory guardians = vm.envOr("GUARDIANS", ",", emptyGuardians);
 
         vm.startBroadcast();
 
         (address teeProxy, address teeImpl, address sgxVerifier, address nitroVerifier) =
-            deploy(proxyAdminOwner, quoteVerifierAddr, nitroEnclaveVerifier);
-
-        EspressoTEEVerifier teeVerifier = EspressoTEEVerifier(teeProxy);
-        for (uint256 i = 0; i < guardians.length; i++) {
-            if (guardians[i] != address(0)) {
-                teeVerifier.addGuardian(guardians[i]);
-                console2.log("Added guardian:", guardians[i]);
-            }
-        }
+            deploy(proxyAdminOwner, quoteVerifierAddr, nitroEnclaveVerifier, guardians);
 
         vm.stopBroadcast();
 
