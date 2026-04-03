@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 pragma solidity 0.8.25;
 
 import {Script} from "forge-std/Script.sol";
@@ -7,10 +8,47 @@ import {IEspressoSGXTEEVerifier} from "@espresso-tee/interface/IEspressoSGXTEEVe
 import {IEspressoNitroTEEVerifier} from "@espresso-tee/interface/IEspressoNitroTEEVerifier.sol";
 import {TransparentUpgradeableProxy} from "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
 
+/**
+ * @title DeployTEEVerifier
+ * @notice Deploys EspressoTEEVerifier behind a TransparentUpgradeableProxy.
+ *
+ * @dev deploy() does not set guardians. run() optionally sets them via the GUARDIANS env var.
+ *      To add a guardian after deployment:
+ *      cast send <TEE_VERIFIER_PROXY> "addGuardian(address)" <GUARDIAN_ADDR> \
+ *        --private-key $PRIVATE_KEY --rpc-url $RPC_URL
+ */
 contract DeployTEEVerifier is Script {
-    function run() external {
-        vm.startBroadcast();
+    /**
+     * @param proxyAdminOwner Address that will own the auto-deployed ProxyAdmin.
+     * @param sgxVerifier     Address of the EspressoSGXTEEVerifier (or address(0) as placeholder).
+     * @param nitroVerifier   Address of the EspressoNitroTEEVerifier (or address(0) as placeholder).
+     * @return proxy Address of the deployed TransparentUpgradeableProxy.
+     * @return impl  Address of the deployed EspressoTEEVerifier implementation.
+     */
+    function deploy(address proxyAdminOwner, address sgxVerifier, address nitroVerifier)
+        public
+        returns (address proxy, address impl)
+    {
+        require(proxyAdminOwner != address(0), "proxyAdminOwner cannot be zero");
+        EspressoTEEVerifier teeVerifierImpl = new EspressoTEEVerifier();
+        console2.log("TEEVerifier implementation deployed at:", address(teeVerifierImpl));
 
+        bytes memory initData = abi.encodeWithSelector(
+            EspressoTEEVerifier.initialize.selector,
+            proxyAdminOwner,
+            IEspressoSGXTEEVerifier(sgxVerifier),
+            IEspressoNitroTEEVerifier(nitroVerifier)
+        );
+
+        TransparentUpgradeableProxy teeProxy = new TransparentUpgradeableProxy(
+            address(teeVerifierImpl), proxyAdminOwner, initData
+        );
+        console2.log("TEEVerifier proxy deployed at:", address(teeProxy));
+
+        return (address(teeProxy), address(teeVerifierImpl));
+    }
+
+    function run() external {
         address sgxVerifierAddr = vm.envAddress("SGX_VERIFIER_ADDRESS");
         address nitroVerifierAddr = vm.envAddress("NITRO_VERIFIER_ADDRESS");
 
@@ -23,41 +61,17 @@ contract DeployTEEVerifier is Script {
             "NITRO_VERIFIER_ADDRESS environment variable not set or invalid"
         );
 
-        // PROXY_ADMIN_OWNER is the address that will own the auto-deployed ProxyAdmin
-        // If not set, defaults to msg.sender
         address proxyAdminOwner = vm.envOr("PROXY_ADMIN_OWNER", msg.sender);
 
         // Optional guardian addresses (comma-separated)
-        // Uses Forge's built-in envOr with comma delimiter to parse address arrays
         address[] memory emptyGuardians = new address[](0);
         address[] memory guardians = vm.envOr("GUARDIANS", ",", emptyGuardians);
 
-        // 1. Deploy TEEVerifier implementation
-        EspressoTEEVerifier teeVerifierImpl = new EspressoTEEVerifier();
-        console2.log(
-            "TEEVerifier implementation deployed at:",
-            address(teeVerifierImpl)
-        );
+        vm.startBroadcast();
 
-        // 2. Prepare initialization data
-        bytes memory initData = abi.encodeWithSelector(
-            EspressoTEEVerifier.initialize.selector,
-            proxyAdminOwner,
-            IEspressoSGXTEEVerifier(sgxVerifierAddr),
-            IEspressoNitroTEEVerifier(nitroVerifierAddr)
-        );
+        (address proxy, address impl) = deploy(proxyAdminOwner, sgxVerifierAddr, nitroVerifierAddr);
 
-        // 3. Deploy TransparentUpgradeableProxy (v5.x pattern)
-        // ProxyAdmin is automatically deployed internally with proxyAdminOwner as its owner
-        TransparentUpgradeableProxy proxy = new TransparentUpgradeableProxy(
-            address(teeVerifierImpl),
-            proxyAdminOwner,
-            initData
-        );
-        console2.log("TEEVerifier proxy deployed at:", address(proxy));
-
-        // Add guardians if provided
-        EspressoTEEVerifier teeVerifier = EspressoTEEVerifier(address(proxy));
+        EspressoTEEVerifier teeVerifier = EspressoTEEVerifier(proxy);
         for (uint256 i = 0; i < guardians.length; i++) {
             if (guardians[i] != address(0)) {
                 teeVerifier.addGuardian(guardians[i]);
@@ -67,22 +81,13 @@ contract DeployTEEVerifier is Script {
 
         vm.stopBroadcast();
 
-        // Save deployment artifacts (outside of broadcast to avoid gas costs)
         string memory chainId = vm.toString(block.chainid);
         string memory dir = string.concat(vm.projectRoot(), "/deployments");
 
-        // Write deployment addresses
         string memory json = "espresso_tee";
-        vm.serializeAddress(json, "implementation", address(teeVerifierImpl));
-        string memory finalJson = vm.serializeAddress(
-            json,
-            "proxy",
-            address(proxy)
-        );
+        vm.serializeAddress(json, "implementation", impl);
+        string memory finalJson = vm.serializeAddress(json, "proxy", proxy);
 
-        vm.writeJson(
-            finalJson,
-            string.concat(dir, "/", chainId, "-espresso-tee-verifier.json")
-        );
+        vm.writeJson(finalJson, string.concat(dir, "/", chainId, "-espresso-tee-verifier.json"));
     }
 }
