@@ -3,8 +3,8 @@ pragma solidity ^0.8.0;
 
 import {
     Ownable2StepUpgradeable
-} from "@openzeppelin/contracts-upgradeable/access/Ownable2StepUpgradeable.sol";
-import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+} from "@openzeppelin/contracts-upgradeable-v5/access/Ownable2StepUpgradeable.sol";
+import {Initializable} from "@openzeppelin/contracts-upgradeable-v5/proxy/utils/Initializable.sol";
 import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 
 // keccak256(abi.encode(uint256(keccak256("espresso.storage.OwnableWithGuardians")) - 1)) & ~bytes32(uint256(0xff))
