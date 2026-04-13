@@ -474,3 +474,7 @@ Before deploying to production, verify:
    - Monitor Automata contract configuration changes
    - Alert on unexpected registration patterns
    - Track signer counts per enclave hash
+
+
+## License
+Copyright (c) 2022 Espresso Systems espresso-network was developed by Espresso Systems. While we plan to adopt an open source license, we have not yet selected one. As such, all rights are reserved for the time being. Please reach out to us if you have thoughts on licensing.
