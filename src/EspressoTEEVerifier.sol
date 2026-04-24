@@ -3,10 +3,8 @@ pragma solidity ^0.8.0;
 
 import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import {OwnableWithGuardiansUpgradeable} from "./OwnableWithGuardiansUpgradeable.sol";
-import {IEspressoSGXTEEVerifier} from "./interface/IEspressoSGXTEEVerifier.sol";
 import {IEspressoNitroTEEVerifier} from "./interface/IEspressoNitroTEEVerifier.sol";
 import {IEspressoTEEVerifier} from "./interface/IEspressoTEEVerifier.sol";
-import {ServiceType} from "./types/Types.sol";
 import {
     EIP712Upgradeable
 } from "@openzeppelin/contracts-upgradeable/utils/cryptography/EIP712Upgradeable.sol";
@@ -23,7 +21,6 @@ contract EspressoTEEVerifier is
 {
     /// @custom:storage-location erc7201:espresso.storage.EspressoTEEVerifier
     struct EspressoTEEVerifierStorage {
-        IEspressoSGXTEEVerifier espressoSGXTEEVerifier;
         IEspressoNitroTEEVerifier espressoNitroTEEVerifier;
     }
 
@@ -33,6 +30,12 @@ contract EspressoTEEVerifier is
 
     bytes32 private constant ESPRESSO_TEE_VERIFIER_TYPE_HASH =
         keccak256("EspressoTEEVerifier(bytes32 commitment)");
+
+    function _requireNitroTeeType(TeeType teeType) private pure {
+        if (teeType != TeeType.NITRO) {
+            revert UnsupportedTeeType(teeType);
+        }
+    }
 
     function _layout() private pure returns (EspressoTEEVerifierStorage storage $) {
         assembly {
@@ -47,16 +50,13 @@ contract EspressoTEEVerifier is
     /**
      * @notice Initializes verifier contracts and ownership for this proxy instance.
      * @param _owner The owner address that can manage verifier configuration.
-     * @param _espressoSGXTEEVerifier The SGX verifier used for SGX-based attestations.
      * @param _espressoNitroTEEVerifier The Nitro verifier used for Nitro-based attestations.
      */
-    function initialize(
-        address _owner,
-        IEspressoSGXTEEVerifier _espressoSGXTEEVerifier,
-        IEspressoNitroTEEVerifier _espressoNitroTEEVerifier
-    ) public initializer {
+    function initialize(address _owner, IEspressoNitroTEEVerifier _espressoNitroTEEVerifier)
+        public
+        initializer
+    {
         EspressoTEEVerifierStorage storage $ = _layout();
-        $.espressoSGXTEEVerifier = _espressoSGXTEEVerifier;
         $.espressoNitroTEEVerifier = _espressoNitroTEEVerifier;
         __OwnableWithGuardians_init(_owner);
         __EIP712_init("EspressoTEEVerifier", "1");
@@ -67,28 +67,21 @@ contract EspressoTEEVerifier is
      * @param signature The signature of the user data
      * @param userDataHash The hash of the user data
      * @param teeType The type of TEE
-     * @param service The type of service
      */
-    function verify(
-        bytes memory signature,
-        bytes32 userDataHash,
-        TeeType teeType,
-        ServiceType service
-    ) external view returns (bool) {
+    function verify(bytes memory signature, bytes32 userDataHash, TeeType teeType)
+        external
+        view
+        returns (bool)
+    {
+        _requireNitroTeeType(teeType);
+
         EspressoTEEVerifierStorage storage $ = _layout();
         bytes32 structHash = keccak256(abi.encode(ESPRESSO_TEE_VERIFIER_TYPE_HASH, userDataHash));
         bytes32 digest = _hashTypedDataV4(structHash);
         address signer = ECDSA.recover(digest, signature);
-        if (teeType == TeeType.SGX) {
-            // Use isSignerValid to check both registration AND hash validity
-            if (!$.espressoSGXTEEVerifier.isSignerValid(signer, service)) {
-                revert InvalidSignature();
-            }
-        } else {
-            // Use isSignerValid to check both registration AND hash validity
-            if (!$.espressoNitroTEEVerifier.isSignerValid(signer, service)) {
-                revert InvalidSignature();
-            }
+        // Use isSignerValid to check both registration AND hash validity
+        if (!$.espressoNitroTEEVerifier.isSignerValid(signer)) {
+            revert InvalidSignature();
         }
         return true;
     }
@@ -100,41 +93,26 @@ contract EspressoTEEVerifier is
      *     which can be any additional data that is required for registering a signer with
      *     that particular tee type
      *     @param teeType The type of TEE
-     *     @param service The type of service being registered potentially affects the behavior of registration.
      */
-    function registerService(
-        bytes calldata verificationData,
-        bytes calldata data,
-        TeeType teeType,
-        ServiceType service
-    ) external {
+    function registerService(bytes calldata verificationData, bytes calldata data, TeeType teeType)
+        external
+    {
+        _requireNitroTeeType(teeType);
+
         EspressoTEEVerifierStorage storage $ = _layout();
-        if (teeType == TeeType.SGX) {
-            $.espressoSGXTEEVerifier.registerService(verificationData, data, service);
-            return;
-        } else {
-            $.espressoNitroTEEVerifier.registerService(verificationData, data, service);
-            return;
-        }
+        $.espressoNitroTEEVerifier.registerService(verificationData, data);
     }
 
     /**
-     * @notice This function checks if a signer is valid for a given TEE type and service
+     * @notice This function checks if a signer is valid for a given TEE type
      * @param signer The address of the signer
      * @param teeType The type of TEE
-     * @param serviceType The service type (BatchPoster or CaffNode)
      */
-    function isSignerValid(address signer, TeeType teeType, ServiceType serviceType)
-        external
-        view
-        returns (bool)
-    {
+    function isSignerValid(address signer, TeeType teeType) external view returns (bool) {
+        _requireNitroTeeType(teeType);
+
         EspressoTEEVerifierStorage storage $ = _layout();
-        if (teeType == TeeType.SGX) {
-            return $.espressoSGXTEEVerifier.isSignerValid(signer, serviceType);
-        } else {
-            return $.espressoNitroTEEVerifier.isSignerValid(signer, serviceType);
-        }
+        return $.espressoNitroTEEVerifier.isSignerValid(signer);
     }
 
     /**
@@ -142,35 +120,15 @@ contract EspressoTEEVerifier is
      *     @param enclaveHash The hash of the enclave
      *     @param teeType The type of TEE
      */
-    function registeredEnclaveHashes(bytes32 enclaveHash, TeeType teeType, ServiceType service)
+    function registeredEnclaveHashes(bytes32 enclaveHash, TeeType teeType)
         external
         view
         returns (bool)
     {
-        EspressoTEEVerifierStorage storage $ = _layout();
-        if (teeType == TeeType.SGX) {
-            return $.espressoSGXTEEVerifier.registeredEnclaveHash(enclaveHash, service);
-        } else {
-            return $.espressoNitroTEEVerifier.registeredEnclaveHash(enclaveHash, service);
-        }
-    }
+        _requireNitroTeeType(teeType);
 
-    /**
-     *     @notice Set the EspressoSGXTEEVerifier
-     *     @param _espressoSGXTEEVerifier The address of the EspressoSGXTEEVerifier
-     */
-    function setEspressoSGXTEEVerifier(IEspressoSGXTEEVerifier _espressoSGXTEEVerifier)
-        public
-        onlyOwner
-    {
-        if (address(_espressoSGXTEEVerifier) == address(0)) {
-            revert InvalidVerifierAddress();
-        }
         EspressoTEEVerifierStorage storage $ = _layout();
-        address oldVerifier = address($.espressoSGXTEEVerifier);
-        address newVerifier = address(_espressoSGXTEEVerifier);
-        $.espressoSGXTEEVerifier = _espressoSGXTEEVerifier;
-        emit EspressoSGXTEEVerifierSet(oldVerifier, newVerifier);
+        return $.espressoNitroTEEVerifier.registeredEnclaveHash(enclaveHash);
     }
 
     /**
@@ -196,18 +154,15 @@ contract EspressoTEEVerifier is
      * @param enclaveHash The enclave hash to set
      * @param valid Whether the enclave hash is valid or not
      * @param teeType The type of TEE
-     * @param service The service type (BatchPoster or CaffNode)
      */
-    function setEnclaveHash(bytes32 enclaveHash, bool valid, TeeType teeType, ServiceType service)
+    function setEnclaveHash(bytes32 enclaveHash, bool valid, TeeType teeType)
         external
         onlyGuardianOrOwner
     {
+        _requireNitroTeeType(teeType);
+
         EspressoTEEVerifierStorage storage $ = _layout();
-        if (teeType == TeeType.SGX) {
-            $.espressoSGXTEEVerifier.setEnclaveHash(enclaveHash, valid, service);
-        } else {
-            $.espressoNitroTEEVerifier.setEnclaveHash(enclaveHash, valid, service);
-        }
+        $.espressoNitroTEEVerifier.setEnclaveHash(enclaveHash, valid);
     }
 
     /**
@@ -215,27 +170,15 @@ contract EspressoTEEVerifier is
      * @dev Deleting a hash breaks services that are using it, so it requires stricter governance than setting hashes (onlyOwner, not onlyGuardianOrOwner)
      * @param enclaveHashes The list of enclave hashes to delete
      * @param teeType The type of TEE
-     * @param service The service type (BatchPoster or CaffNode)
      */
-    function deleteEnclaveHashes(
-        bytes32[] memory enclaveHashes,
-        TeeType teeType,
-        ServiceType service
-    ) external onlyOwner {
-        EspressoTEEVerifierStorage storage $ = _layout();
-        if (teeType == TeeType.SGX) {
-            $.espressoSGXTEEVerifier.deleteEnclaveHashes(enclaveHashes, service);
-        } else {
-            $.espressoNitroTEEVerifier.deleteEnclaveHashes(enclaveHashes, service);
-        }
-    }
+    function deleteEnclaveHashes(bytes32[] memory enclaveHashes, TeeType teeType)
+        external
+        onlyOwner
+    {
+        _requireNitroTeeType(teeType);
 
-    /**
-     * @notice Set the quote verifier for SGX TEEs
-     * @param quoteVerifier The address of the quote verifier
-     */
-    function setQuoteVerifier(address quoteVerifier) external onlyOwner {
-        _layout().espressoSGXTEEVerifier.setQuoteVerifier(quoteVerifier);
+        EspressoTEEVerifierStorage storage $ = _layout();
+        $.espressoNitroTEEVerifier.deleteEnclaveHashes(enclaveHashes);
     }
 
     /**
@@ -244,14 +187,6 @@ contract EspressoTEEVerifier is
      */
     function setNitroEnclaveVerifier(address nitroVerifier) external onlyOwner {
         _layout().espressoNitroTEEVerifier.setNitroEnclaveVerifier(nitroVerifier);
-    }
-
-    /**
-     * @notice Get the EspressoSGXTEEVerifier address
-     * @return The EspressoSGXTEEVerifier interface
-     */
-    function espressoSGXTEEVerifier() external view returns (IEspressoSGXTEEVerifier) {
-        return _layout().espressoSGXTEEVerifier;
     }
 
     /**

@@ -2,7 +2,6 @@
 pragma solidity ^0.8.0;
 
 import {IEspressoNitroTEEVerifier} from "./interface/IEspressoNitroTEEVerifier.sol";
-import {ServiceType} from "./types/Types.sol";
 import {
     INitroEnclaveVerifier,
     VerifierJournal,
@@ -29,11 +28,8 @@ contract EspressoNitroTEEVerifier is IEspressoNitroTEEVerifier, TEEHelper {
      * The signer is not the caller of the function but the address which was generated inside the TEE.
      * @param output The public output of the ZK proof
      * @param proofBytes The cryptographic proof bytes over attestation
-     * @param service The service type (BatchPoster or CaffNode)
      */
-    function registerService(bytes calldata output, bytes calldata proofBytes, ServiceType service)
-        external
-    {
+    function registerService(bytes calldata output, bytes calldata proofBytes) external {
         VerifierJournal memory journal = _nitroEnclaveVerifier.verify(
             output,
             // Currently only Succinct ZK coprocessor is supported
@@ -55,8 +51,8 @@ contract EspressoNitroTEEVerifier is IEspressoNitroTEEVerifier, TEEHelper {
         bytes32 pcr0Hash =
             keccak256(abi.encodePacked(journal.pcrs[0].value.first, journal.pcrs[0].value.second));
 
-        if (!_registeredEnclaveHashes[service][pcr0Hash]) {
-            revert InvalidEnclaveHash(pcr0Hash, service);
+        if (!_registeredEnclaveHashes[pcr0Hash]) {
+            revert InvalidEnclaveHash(pcr0Hash);
         }
 
         // The publicKey's first byte 0x04 byte followed which only determine if the public key is compressed or not.
@@ -72,13 +68,13 @@ contract EspressoNitroTEEVerifier is IEspressoNitroTEEVerifier, TEEHelper {
         address enclaveAddress = address(uint160(uint256(publicKeyHash)));
 
         // Mark the signer as registered
-        if (!_registeredServices[service][enclaveAddress]) {
-            _registeredServices[service][enclaveAddress] = true;
+        if (!_registeredServices[enclaveAddress]) {
+            _registeredServices[enclaveAddress] = true;
 
             // Track which enclave hash this signer belongs to (for automatic revocation)
-            _signerToEnclaveHash[service][enclaveAddress] = pcr0Hash;
+            _signerToEnclaveHash[enclaveAddress] = pcr0Hash;
 
-            emit ServiceRegistered(enclaveAddress, pcr0Hash, service);
+            emit ServiceRegistered(enclaveAddress, pcr0Hash);
         }
     }
 

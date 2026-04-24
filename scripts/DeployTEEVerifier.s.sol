@@ -4,7 +4,6 @@ pragma solidity 0.8.25;
 import {Script} from "forge-std/Script.sol";
 import {console2} from "forge-std/console2.sol";
 import {EspressoTEEVerifier} from "@espresso-tee/EspressoTEEVerifier.sol";
-import {IEspressoSGXTEEVerifier} from "@espresso-tee/interface/IEspressoSGXTEEVerifier.sol";
 import {IEspressoNitroTEEVerifier} from "@espresso-tee/interface/IEspressoNitroTEEVerifier.sol";
 import {TransparentUpgradeableProxy} from "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
 
@@ -20,12 +19,11 @@ import {TransparentUpgradeableProxy} from "@openzeppelin/contracts/proxy/transpa
 contract DeployTEEVerifier is Script {
     /**
      * @param proxyAdminOwner Address that will own the auto-deployed ProxyAdmin.
-     * @param sgxVerifier     Address of the EspressoSGXTEEVerifier (or address(0) as placeholder).
      * @param nitroVerifier   Address of the EspressoNitroTEEVerifier (or address(0) as placeholder).
      * @return proxy Address of the deployed TransparentUpgradeableProxy.
      * @return impl  Address of the deployed EspressoTEEVerifier implementation.
      */
-    function deploy(address proxyAdminOwner, address sgxVerifier, address nitroVerifier)
+    function deploy(address proxyAdminOwner, address nitroVerifier)
         public
         returns (address proxy, address impl)
     {
@@ -36,7 +34,6 @@ contract DeployTEEVerifier is Script {
         bytes memory initData = abi.encodeWithSelector(
             EspressoTEEVerifier.initialize.selector,
             proxyAdminOwner,
-            IEspressoSGXTEEVerifier(sgxVerifier),
             IEspressoNitroTEEVerifier(nitroVerifier)
         );
 
@@ -49,13 +46,8 @@ contract DeployTEEVerifier is Script {
     }
 
     function run() external {
-        address sgxVerifierAddr = vm.envAddress("SGX_VERIFIER_ADDRESS");
         address nitroVerifierAddr = vm.envAddress("NITRO_VERIFIER_ADDRESS");
 
-        require(
-            sgxVerifierAddr != address(0),
-            "SGX_VERIFIER_ADDRESS environment variable not set or invalid"
-        );
         require(
             nitroVerifierAddr != address(0),
             "NITRO_VERIFIER_ADDRESS environment variable not set or invalid"
@@ -69,7 +61,7 @@ contract DeployTEEVerifier is Script {
 
         vm.startBroadcast();
 
-        (address proxy, address impl) = deploy(proxyAdminOwner, sgxVerifierAddr, nitroVerifierAddr);
+        (address proxy, address impl) = deploy(proxyAdminOwner, nitroVerifierAddr);
 
         EspressoTEEVerifier teeVerifier = EspressoTEEVerifier(proxy);
         for (uint256 i = 0; i < guardians.length; i++) {

@@ -3,7 +3,6 @@ pragma solidity ^0.8.20;
 
 import "forge-std/Test.sol";
 import {TEEHelper} from "../src/TEEHelper.sol";
-import {ServiceType} from "../src/types/Types.sol";
 import {ITEEHelper} from "../src/interface/ITEEHelper.sol";
 
 contract TEEHelperImplementation is TEEHelper {
@@ -22,12 +21,12 @@ contract TEEHelperTest is Test {
 
     function testOnlyTEEVerifierCanSetEnclaveHash() public {
         vm.prank(initialTEEVerifier);
-        helper.setEnclaveHash(bytes32(uint256(1)), true, ServiceType.BatchPoster);
-        assertTrue(helper.registeredEnclaveHash(bytes32(uint256(1)), ServiceType.BatchPoster));
+        helper.setEnclaveHash(bytes32(uint256(1)), true);
+        assertTrue(helper.registeredEnclaveHash(bytes32(uint256(1))));
 
         vm.prank(rando);
         vm.expectRevert(abi.encodeWithSelector(ITEEHelper.UnauthorizedTEEVerifier.selector, rando));
-        helper.setEnclaveHash(bytes32(uint256(2)), true, ServiceType.BatchPoster);
+        helper.setEnclaveHash(bytes32(uint256(2)), true);
     }
 
     function testInitializeZeroAddressReverts() public {

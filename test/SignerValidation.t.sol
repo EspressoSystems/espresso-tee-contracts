@@ -6,7 +6,6 @@ import {
     TransparentUpgradeableProxy
 } from "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
 import {EspressoNitroTEEVerifier} from "../src/EspressoNitroTEEVerifier.sol";
-import {ServiceType} from "../src/types/Types.sol";
 import {
     INitroEnclaveVerifier
 } from "aws-nitro-enclave-attestation/interfaces/INitroEnclaveVerifier.sol";
@@ -31,7 +30,7 @@ contract SignerValidationTest is Test {
         );
 
         vm.prank(adminTEE);
-        espressoNitroTEEVerifier.setEnclaveHash(pcr0Hash, true, ServiceType.BatchPoster);
+        espressoNitroTEEVerifier.setEnclaveHash(pcr0Hash, true);
     }
 
     /**
@@ -47,12 +46,12 @@ contract SignerValidationTest is Test {
         bytes memory output = vm.parseJsonBytes(json, ".raw_proof.journal");
         bytes memory proofBytes = vm.parseJsonBytes(json, ".onchain_proof");
 
-        espressoNitroTEEVerifier.registerService(output, proofBytes, ServiceType.BatchPoster);
+        espressoNitroTEEVerifier.registerService(output, proofBytes);
 
         address signer = 0xF8463E0aF00C1910402D2A51B3a8CecD0dC1c3fE;
 
         // Signer should be valid
-        assertTrue(espressoNitroTEEVerifier.isSignerValid(signer, ServiceType.BatchPoster));
+        assertTrue(espressoNitroTEEVerifier.isSignerValid(signer));
 
         vm.stopPrank();
     }
@@ -71,21 +70,21 @@ contract SignerValidationTest is Test {
         bytes memory output = vm.parseJsonBytes(json, ".raw_proof.journal");
         bytes memory proofBytes = vm.parseJsonBytes(json, ".onchain_proof");
 
-        espressoNitroTEEVerifier.registerService(output, proofBytes, ServiceType.BatchPoster);
+        espressoNitroTEEVerifier.registerService(output, proofBytes);
 
         address signer = 0xF8463E0aF00C1910402D2A51B3a8CecD0dC1c3fE;
 
         // Before deletion - signer should be valid
-        assertTrue(espressoNitroTEEVerifier.isSignerValid(signer, ServiceType.BatchPoster));
+        assertTrue(espressoNitroTEEVerifier.isSignerValid(signer));
 
         // Delete the hash
         bytes32[] memory hashes = new bytes32[](1);
         hashes[0] = pcr0Hash;
-        espressoNitroTEEVerifier.deleteEnclaveHashes(hashes, ServiceType.BatchPoster);
+        espressoNitroTEEVerifier.deleteEnclaveHashes(hashes);
 
         // After deletion - signer is NOT valid (automatic revocation!)
         // Note: Signer remains in internal mapping but isSignerValid() returns false
-        assertFalse(espressoNitroTEEVerifier.isSignerValid(signer, ServiceType.BatchPoster));
+        assertFalse(espressoNitroTEEVerifier.isSignerValid(signer));
 
         vm.stopPrank();
     }
@@ -104,19 +103,19 @@ contract SignerValidationTest is Test {
         bytes memory output = vm.parseJsonBytes(json, ".raw_proof.journal");
         bytes memory proofBytes = vm.parseJsonBytes(json, ".onchain_proof");
 
-        espressoNitroTEEVerifier.registerService(output, proofBytes, ServiceType.BatchPoster);
+        espressoNitroTEEVerifier.registerService(output, proofBytes);
         address signer = 0xF8463E0aF00C1910402D2A51B3a8CecD0dC1c3fE;
 
         // Signer is valid
-        assertTrue(espressoNitroTEEVerifier.isSignerValid(signer, ServiceType.BatchPoster));
+        assertTrue(espressoNitroTEEVerifier.isSignerValid(signer));
 
         // Vulnerability discovered! Delete hash
         bytes32[] memory hashes = new bytes32[](1);
         hashes[0] = pcr0Hash;
-        espressoNitroTEEVerifier.deleteEnclaveHashes(hashes, ServiceType.BatchPoster);
+        espressoNitroTEEVerifier.deleteEnclaveHashes(hashes);
 
         // Signer is now AUTOMATICALLY invalid (no zombies!)
-        assertFalse(espressoNitroTEEVerifier.isSignerValid(signer, ServiceType.BatchPoster));
+        assertFalse(espressoNitroTEEVerifier.isSignerValid(signer));
 
         vm.stopPrank();
     }
@@ -126,33 +125,6 @@ contract SignerValidationTest is Test {
      */
     function test_IsSignerValid_UnregisteredSigner() public view {
         address randomSigner = address(0x999);
-        assertFalse(espressoNitroTEEVerifier.isSignerValid(randomSigner, ServiceType.BatchPoster));
-    }
-
-    /**
-     * @dev Test: Service type isolation in isSignerValid
-     */
-    function test_IsSignerValid_ServiceIsolation() public {
-        vm.startPrank(adminTEE);
-        vm.warp(1_764_889_188);
-
-        // Register for BatchPoster only
-        string memory proofPath = "/test/configs/proof.json";
-        string memory inputFile = string.concat(vm.projectRoot(), proofPath);
-        string memory json = vm.readFile(inputFile);
-        bytes memory output = vm.parseJsonBytes(json, ".raw_proof.journal");
-        bytes memory proofBytes = vm.parseJsonBytes(json, ".onchain_proof");
-
-        espressoNitroTEEVerifier.registerService(output, proofBytes, ServiceType.BatchPoster);
-        address signer = 0xF8463E0aF00C1910402D2A51B3a8CecD0dC1c3fE;
-
-        // Valid for BatchPoster
-        assertTrue(espressoNitroTEEVerifier.isSignerValid(signer, ServiceType.BatchPoster));
-
-        // NOT valid for CaffNode
-        assertFalse(espressoNitroTEEVerifier.isSignerValid(signer, ServiceType.CaffNode));
-
-        vm.stopPrank();
+        assertFalse(espressoNitroTEEVerifier.isSignerValid(randomSigner));
     }
 }
-

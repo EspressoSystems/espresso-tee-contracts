@@ -5,7 +5,6 @@ import {
     INitroEnclaveVerifier,
     VerificationResult
 } from "aws-nitro-enclave-attestation/interfaces/INitroEnclaveVerifier.sol";
-import {ServiceType} from "../types/Types.sol";
 import "./ITEEHelper.sol";
 
 interface IEspressoNitroTEEVerifier is ITEEHelper {
@@ -20,10 +19,8 @@ interface IEspressoNitroTEEVerifier is ITEEHelper {
      * The signer is not the caller of the function but the address which was generated inside the TEE.
      * @param output The public output of the ZK proof
      * @param proofBytes The cryptographic proof bytes over attestation
-     * @param service The service type (BatchPoster or CaffNode)
      */
-    function registerService(bytes calldata output, bytes calldata proofBytes, ServiceType service)
-        external;
+    function registerService(bytes calldata output, bytes calldata proofBytes) external;
 
     /*
      * @notice This function sets the NitroEnclaveVerifier contract address
