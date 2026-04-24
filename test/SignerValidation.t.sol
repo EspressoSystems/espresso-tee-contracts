@@ -2,9 +2,13 @@
 pragma solidity ^0.8.20;
 
 import "forge-std/Test.sol";
-import {TransparentUpgradeableProxy} from "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
+import {
+    TransparentUpgradeableProxy
+} from "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
 import {EspressoNitroTEEVerifier} from "../src/EspressoNitroTEEVerifier.sol";
-import {INitroEnclaveVerifier} from "aws-nitro-enclave-attestation/interfaces/INitroEnclaveVerifier.sol";
+import {
+    INitroEnclaveVerifier
+} from "aws-nitro-enclave-attestation/interfaces/INitroEnclaveVerifier.sol";
 
 /**
  * @title Tests for isSignerValid() - Automatic Zombie Prevention
@@ -14,10 +18,7 @@ contract SignerValidationTest is Test {
     address proxyAdminOwner = address(140);
     address adminTEE = address(141);
     EspressoNitroTEEVerifier espressoNitroTEEVerifier;
-    bytes32 pcr0Hash =
-        bytes32(
-            0x555797ae2413bb1e4c352434a901032b16d7ac9090322532a3fccb9947977e8b
-        );
+    bytes32 pcr0Hash = bytes32(0x555797ae2413bb1e4c352434a901032b16d7ac9090322532a3fccb9947977e8b);
 
     function setUp() public {
         vm.createSelectFork(
@@ -25,8 +26,7 @@ contract SignerValidationTest is Test {
         );
 
         espressoNitroTEEVerifier = new EspressoNitroTEEVerifier(
-            adminTEE,
-            address(0x2D7fbBAD6792698Ba92e67b7e180f8010B9Ec788)
+            adminTEE, address(0x2D7fbBAD6792698Ba92e67b7e180f8010B9Ec788)
         );
 
         vm.prank(adminTEE);

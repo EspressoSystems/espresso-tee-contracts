@@ -2,15 +2,21 @@
 pragma solidity ^0.8.20;
 
 import "forge-std/Test.sol";
-import {TransparentUpgradeableProxy} from "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
+import {
+    TransparentUpgradeableProxy
+} from "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
 import {Initializable} from "@openzeppelin/contracts/proxy/utils/Initializable.sol";
-import {OwnableUpgradeable} from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import {
+    OwnableUpgradeable
+} from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import {EspressoNitroTEEVerifier} from "../src/EspressoNitroTEEVerifier.sol";
 import {EspressoTEEVerifier} from "../src/EspressoTEEVerifier.sol";
 import {IEspressoNitroTEEVerifier} from "../src/interface/IEspressoNitroTEEVerifier.sol";
 import {IEspressoTEEVerifier} from "../src/interface/IEspressoTEEVerifier.sol";
 import {ITEEHelper} from "../src/interface/ITEEHelper.sol";
-import {INitroEnclaveVerifier} from "aws-nitro-enclave-attestation/interfaces/INitroEnclaveVerifier.sol";
+import {
+    INitroEnclaveVerifier
+} from "aws-nitro-enclave-attestation/interfaces/INitroEnclaveVerifier.sol";
 
 contract EspressoNitroTEEVerifierTest is Test {
     // Owner of the ProxyAdmin contracts that get auto-created by TransparentUpgradeableProxy
@@ -20,10 +26,7 @@ contract EspressoNitroTEEVerifierTest is Test {
 
     EspressoTEEVerifier espressoTEEVerifier;
     EspressoNitroTEEVerifier espressoNitroTEEVerifier;
-    bytes32 pcr0Hash =
-        bytes32(
-            0x555797ae2413bb1e4c352434a901032b16d7ac9090322532a3fccb9947977e8b
-        );
+    bytes32 pcr0Hash = bytes32(0x555797ae2413bb1e4c352434a901032b16d7ac9090322532a3fccb9947977e8b);
 
     function setUp() public {
         vm.createSelectFork(
@@ -35,18 +38,11 @@ contract EspressoNitroTEEVerifierTest is Test {
         espressoTEEVerifier.setEspressoNitroTEEVerifier(
             IEspressoNitroTEEVerifier(address(espressoNitroTEEVerifier))
         );
-        espressoTEEVerifier.setEnclaveHash(
-            pcr0Hash,
-            true,
-            IEspressoTEEVerifier.TeeType.NITRO
-        );
+        espressoTEEVerifier.setEnclaveHash(pcr0Hash, true, IEspressoTEEVerifier.TeeType.NITRO);
         vm.stopPrank();
     }
 
-    function _deployTEEVerifierWithPlaceholders()
-        internal
-        returns (EspressoTEEVerifier)
-    {
+    function _deployTEEVerifierWithPlaceholders() internal returns (EspressoTEEVerifier) {
         EspressoTEEVerifier impl = new EspressoTEEVerifier();
         TransparentUpgradeableProxy proxy = new TransparentUpgradeableProxy(
             address(impl),
@@ -59,14 +55,10 @@ contract EspressoNitroTEEVerifierTest is Test {
         return EspressoTEEVerifier(address(proxy));
     }
 
-    function _deployNitro(
-        address teeVerifier
-    ) internal returns (EspressoNitroTEEVerifier) {
-        return
-            new EspressoNitroTEEVerifier(
-                teeVerifier,
-                address(0x2D7fbBAD6792698Ba92e67b7e180f8010B9Ec788)
-            );
+    function _deployNitro(address teeVerifier) internal returns (EspressoNitroTEEVerifier) {
+        return new EspressoNitroTEEVerifier(
+            teeVerifier, address(0x2D7fbBAD6792698Ba92e67b7e180f8010B9Ec788)
+        );
     }
 
     /**
@@ -98,22 +90,10 @@ contract EspressoNitroTEEVerifierTest is Test {
         bytes memory proofBytes = vm.parseJsonBytes(json, ".onchain_proof");
 
         // Disable pcr0 hash
-        espressoTEEVerifier.setEnclaveHash(
-            pcr0Hash,
-            false,
-            IEspressoTEEVerifier.TeeType.NITRO
-        );
-        assertEq(
-            espressoNitroTEEVerifier.registeredEnclaveHash(pcr0Hash),
-            false
-        );
+        espressoTEEVerifier.setEnclaveHash(pcr0Hash, false, IEspressoTEEVerifier.TeeType.NITRO);
+        assertEq(espressoNitroTEEVerifier.registeredEnclaveHash(pcr0Hash), false);
 
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                ITEEHelper.InvalidEnclaveHash.selector,
-                pcr0Hash
-            )
-        );
+        vm.expectRevert(abi.encodeWithSelector(ITEEHelper.InvalidEnclaveHash.selector, pcr0Hash));
         espressoNitroTEEVerifier.registerService(output, proofBytes);
         vm.stopPrank();
     }
@@ -152,32 +132,15 @@ contract EspressoNitroTEEVerifierTest is Test {
     // Tee verifier is the admin; non-tee verifier cannot set hashes
     function testSetNitroEnclaveHash() public {
         vm.prank(adminTEE);
-        espressoTEEVerifier.setEnclaveHash(
-            pcr0Hash,
-            true,
-            IEspressoTEEVerifier.TeeType.NITRO
-        );
-        assertEq(
-            espressoNitroTEEVerifier.registeredEnclaveHash(pcr0Hash),
-            true
-        );
+        espressoTEEVerifier.setEnclaveHash(pcr0Hash, true, IEspressoTEEVerifier.TeeType.NITRO);
+        assertEq(espressoNitroTEEVerifier.registeredEnclaveHash(pcr0Hash), true);
         vm.prank(adminTEE);
-        espressoTEEVerifier.setEnclaveHash(
-            pcr0Hash,
-            false,
-            IEspressoTEEVerifier.TeeType.NITRO
-        );
-        assertEq(
-            espressoNitroTEEVerifier.registeredEnclaveHash(pcr0Hash),
-            false
-        );
+        espressoTEEVerifier.setEnclaveHash(pcr0Hash, false, IEspressoTEEVerifier.TeeType.NITRO);
+        assertEq(espressoNitroTEEVerifier.registeredEnclaveHash(pcr0Hash), false);
 
         vm.prank(fakeAddress);
         vm.expectRevert(
-            abi.encodeWithSelector(
-                ITEEHelper.UnauthorizedTEEVerifier.selector,
-                fakeAddress
-            )
+            abi.encodeWithSelector(ITEEHelper.UnauthorizedTEEVerifier.selector, fakeAddress)
         );
         espressoNitroTEEVerifier.setEnclaveHash(pcr0Hash, true);
     }
@@ -209,10 +172,7 @@ contract EspressoNitroTEEVerifierTest is Test {
 
         // verify we cant delete
         vm.expectRevert(
-            abi.encodeWithSelector(
-                ITEEHelper.UnauthorizedTEEVerifier.selector,
-                fakeAddress
-            )
+            abi.encodeWithSelector(ITEEHelper.UnauthorizedTEEVerifier.selector, fakeAddress)
         );
         espressoNitroTEEVerifier.deleteEnclaveHashes(enclaveHashes);
 
@@ -221,17 +181,11 @@ contract EspressoNitroTEEVerifierTest is Test {
         vm.startPrank(adminTEE);
 
         // delete hash (automatically invalidates signer via isSignerValid)
-        espressoTEEVerifier.deleteEnclaveHashes(
-            enclaveHashes,
-            IEspressoTEEVerifier.TeeType.NITRO
-        );
+        espressoTEEVerifier.deleteEnclaveHashes(enclaveHashes, IEspressoTEEVerifier.TeeType.NITRO);
 
         // Signer is NOT valid (hash deleted, automatic revocation)
         assertFalse(espressoNitroTEEVerifier.isSignerValid(signer));
-        assertEq(
-            espressoNitroTEEVerifier.registeredEnclaveHash(pcr0Hash),
-            false
-        );
+        assertEq(espressoNitroTEEVerifier.registeredEnclaveHash(pcr0Hash), false);
     }
 
     function testDeleteEnclaveHashes() public {
@@ -251,14 +205,8 @@ contract EspressoNitroTEEVerifierTest is Test {
 
         bytes32[] memory enclaveHashes = new bytes32[](1);
         enclaveHashes[0] = pcr0Hash;
-        espressoTEEVerifier.deleteEnclaveHashes(
-            enclaveHashes,
-            IEspressoTEEVerifier.TeeType.NITRO
-        );
-        assertEq(
-            espressoNitroTEEVerifier.registeredEnclaveHash(pcr0Hash),
-            false
-        );
+        espressoTEEVerifier.deleteEnclaveHashes(enclaveHashes, IEspressoTEEVerifier.TeeType.NITRO);
+        assertEq(espressoNitroTEEVerifier.registeredEnclaveHash(pcr0Hash), false);
         // NOTE: Signers remain in registeredServices (not cleaned to avoid DoS)
         // But isSignerValid() checks if their hash is still approved (automatic revocation!)
         assertFalse(espressoNitroTEEVerifier.isSignerValid(signer));
@@ -275,8 +223,7 @@ contract EspressoNitroTEEVerifierTest is Test {
         vm.startPrank(fakeAddress);
         vm.expectRevert(
             abi.encodeWithSelector(
-                OwnableUpgradeable.OwnableUnauthorizedAccount.selector,
-                fakeAddress
+                OwnableUpgradeable.OwnableUnauthorizedAccount.selector, fakeAddress
             )
         );
         espressoTEEVerifier.setNitroEnclaveVerifier(newVerifierAddress);
@@ -293,11 +240,7 @@ contract EspressoNitroTEEVerifierTest is Test {
         // Guardian should be able to set enclave hash via TEEVerifier
         bytes32 newHash = bytes32(uint256(55_555));
         vm.prank(guardian);
-        espressoTEEVerifier.setEnclaveHash(
-            newHash,
-            true,
-            IEspressoTEEVerifier.TeeType.NITRO
-        );
+        espressoTEEVerifier.setEnclaveHash(newHash, true, IEspressoTEEVerifier.TeeType.NITRO);
 
         // Verify the hash was set
         assertTrue(espressoNitroTEEVerifier.registeredEnclaveHash(newHash));
@@ -307,29 +250,18 @@ contract EspressoNitroTEEVerifierTest is Test {
         // First set a hash as owner
         bytes32 hashToDelete = bytes32(uint256(44_444));
         vm.prank(adminTEE);
-        espressoTEEVerifier.setEnclaveHash(
-            hashToDelete,
-            true,
-            IEspressoTEEVerifier.TeeType.NITRO
-        );
+        espressoTEEVerifier.setEnclaveHash(hashToDelete, true, IEspressoTEEVerifier.TeeType.NITRO);
 
         // Verify it's set
-        assertTrue(
-            espressoNitroTEEVerifier.registeredEnclaveHash(hashToDelete)
-        );
+        assertTrue(espressoNitroTEEVerifier.registeredEnclaveHash(hashToDelete));
 
         // Owner should be able to delete it via TEEVerifier
         bytes32[] memory hashes = new bytes32[](1);
         hashes[0] = hashToDelete;
         vm.prank(adminTEE);
-        espressoTEEVerifier.deleteEnclaveHashes(
-            hashes,
-            IEspressoTEEVerifier.TeeType.NITRO
-        );
+        espressoTEEVerifier.deleteEnclaveHashes(hashes, IEspressoTEEVerifier.TeeType.NITRO);
 
         // Verify it's deleted
-        assertFalse(
-            espressoNitroTEEVerifier.registeredEnclaveHash(hashToDelete)
-        );
+        assertFalse(espressoNitroTEEVerifier.registeredEnclaveHash(hashToDelete));
     }
 }

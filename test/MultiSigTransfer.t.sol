@@ -5,10 +5,16 @@ import "forge-std/Test.sol";
 import {console2} from "forge-std/console2.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {Ownable2Step} from "@openzeppelin/contracts/access/Ownable2Step.sol";
-import {OwnableUpgradeable} from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import {
+    OwnableUpgradeable
+} from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
-import {TransparentUpgradeableProxy} from "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
-import {INitroEnclaveVerifier} from "aws-nitro-enclave-attestation/interfaces/INitroEnclaveVerifier.sol";
+import {
+    TransparentUpgradeableProxy
+} from "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
+import {
+    INitroEnclaveVerifier
+} from "aws-nitro-enclave-attestation/interfaces/INitroEnclaveVerifier.sol";
 
 import {EspressoTEEVerifier} from "../src/EspressoTEEVerifier.sol";
 import {EspressoNitroTEEVerifier} from "../src/EspressoNitroTEEVerifier.sol";
@@ -39,10 +45,7 @@ contract MultiSigTransferTest is Test {
     // TEE contract global variables for the tests.
     EspressoTEEVerifier espressoTEEVerifier;
     EspressoNitroTEEVerifier espressoNitroTEEVerifier;
-    bytes32 pcr0Hash =
-        bytes32(
-            0x555797ae2413bb1e4c352434a901032b16d7ac9090322532a3fccb9947977e8b
-        );
+    bytes32 pcr0Hash = bytes32(0x555797ae2413bb1e4c352434a901032b16d7ac9090322532a3fccb9947977e8b);
     // Owner of the ProxyAdmin contracts that get auto-created by TransparentUpgradeableProxy.
     // Must differ from the contract owner so it can forward calls to the implementation during tests.
     address proxyAdminOwner = address(1000);
@@ -72,20 +75,13 @@ contract MultiSigTransferTest is Test {
         multiSigTransfer = new MultiSigTransfer();
     }
 
-    function _deployNitro(
-        address teeVerifier
-    ) internal returns (EspressoNitroTEEVerifier) {
-        return
-            new EspressoNitroTEEVerifier(
-                teeVerifier,
-                address(0x2D7fbBAD6792698Ba92e67b7e180f8010B9Ec788)
-            );
+    function _deployNitro(address teeVerifier) internal returns (EspressoNitroTEEVerifier) {
+        return new EspressoNitroTEEVerifier(
+            teeVerifier, address(0x2D7fbBAD6792698Ba92e67b7e180f8010B9Ec788)
+        );
     }
 
-    function _deployTEEVerifierWithPlaceholders()
-        internal
-        returns (EspressoTEEVerifier)
-    {
+    function _deployTEEVerifierWithPlaceholders() internal returns (EspressoTEEVerifier) {
         EspressoTEEVerifier impl = new EspressoTEEVerifier();
         TransparentUpgradeableProxy proxy = new TransparentUpgradeableProxy(
             address(impl),
@@ -105,8 +101,7 @@ contract MultiSigTransferTest is Test {
         vm.startPrank(originalOwner);
         console2.log("original owner:", originalOwner);
         console2.log(
-            "original owner according to contract:",
-            Ownable(address(espressoTEEVerifier)).owner()
+            "original owner according to contract:", Ownable(address(espressoTEEVerifier)).owner()
         );
 
         multiSigTransfer.transferTestEntrypoint();
@@ -115,10 +110,7 @@ contract MultiSigTransferTest is Test {
         // Expect emitted event from script, and initiate transfers.
         vm.startPrank(newOwner);
         console2.log("new owner:", newOwner);
-        console2.log(
-            "pending owner:",
-            Ownable2Step(address(espressoTEEVerifier)).pendingOwner()
-        );
+        console2.log("pending owner:", Ownable2Step(address(espressoTEEVerifier)).pendingOwner());
         espressoTEEVerifier.acceptOwnership();
         assertEq(Ownable(address(espressoTEEVerifier)).owner(), newOwner);
 
@@ -131,8 +123,7 @@ contract MultiSigTransferTest is Test {
         vm.startPrank(originalOwner);
         console2.log("original owner:", originalOwner);
         console2.log(
-            "original owner according to contract:",
-            Ownable(address(espressoTEEVerifier)).owner()
+            "original owner according to contract:", Ownable(address(espressoTEEVerifier)).owner()
         );
         multiSigTransfer.transferTestEntrypoint();
 
@@ -140,14 +131,10 @@ contract MultiSigTransferTest is Test {
         // Expect emitted event from script, and initiate transfers.
         vm.startPrank(badNewOwner);
         console2.log("bad new owner:", badNewOwner);
-        console2.log(
-            "pending owner:",
-            Ownable2Step(address(espressoTEEVerifier)).pendingOwner()
-        );
+        console2.log("pending owner:", Ownable2Step(address(espressoTEEVerifier)).pendingOwner());
         vm.expectRevert(
             abi.encodeWithSelector(
-                OwnableUpgradeable.OwnableUnauthorizedAccount.selector,
-                badNewOwner
+                OwnableUpgradeable.OwnableUnauthorizedAccount.selector, badNewOwner
             )
         );
         espressoTEEVerifier.acceptOwnership();

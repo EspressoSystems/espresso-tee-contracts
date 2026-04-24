@@ -19,8 +19,7 @@ contract TEEHelperDoSFixTest is Test {
         );
         // address(this) is the teeVerifier so test functions can call setEnclaveHash/deleteEnclaveHashes
         verifier = new EspressoNitroTEEVerifier(
-            address(this),
-            address(0x2D7fbBAD6792698Ba92e67b7e180f8010B9Ec788)
+            address(this), address(0x2D7fbBAD6792698Ba92e67b7e180f8010B9Ec788)
         );
     }
 
@@ -30,10 +29,7 @@ contract TEEHelperDoSFixTest is Test {
     function test_DeleteExistingHash() public {
         // Register a hash
         verifier.setEnclaveHash(testHash1, true);
-        assertTrue(
-            verifier.registeredEnclaveHash(testHash1),
-            "Hash should be registered"
-        );
+        assertTrue(verifier.registeredEnclaveHash(testHash1), "Hash should be registered");
 
         // Delete it
         bytes32[] memory hashes = new bytes32[](1);
@@ -42,10 +38,7 @@ contract TEEHelperDoSFixTest is Test {
         verifier.deleteEnclaveHashes(hashes);
 
         // Verify deleted
-        assertFalse(
-            verifier.registeredEnclaveHash(testHash1),
-            "Hash should be deleted"
-        );
+        assertFalse(verifier.registeredEnclaveHash(testHash1), "Hash should be deleted");
     }
 
     /**
@@ -117,12 +110,7 @@ contract TEEHelperDoSFixTest is Test {
 
         address nonOwner = address(0x999);
         vm.prank(nonOwner);
-        vm.expectRevert(
-            abi.encodeWithSignature(
-                "UnauthorizedTEEVerifier(address)",
-                nonOwner
-            )
-        );
+        vm.expectRevert(abi.encodeWithSignature("UnauthorizedTEEVerifier(address)", nonOwner));
         verifier.deleteEnclaveHashes(hashes);
     }
 
@@ -164,14 +152,8 @@ contract TEEHelperDoSFixTest is Test {
 
         verifier.deleteEnclaveHashes(hashes);
 
-        assertFalse(
-            verifier.registeredEnclaveHash(testHash1),
-            "testHash1 was never registered"
-        );
-        assertFalse(
-            verifier.registeredEnclaveHash(testHash2),
-            "testHash2 should be deleted"
-        );
+        assertFalse(verifier.registeredEnclaveHash(testHash1), "testHash1 was never registered");
+        assertFalse(verifier.registeredEnclaveHash(testHash2), "testHash2 should be deleted");
     }
 
     // Events
