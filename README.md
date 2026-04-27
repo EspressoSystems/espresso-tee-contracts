@@ -253,7 +253,7 @@ NOTE: you will need to prepend the `m/` to this path for foundry to correctly lo
 - MULTISIG_CONTRACT_ADDRESS: The address of your Multi-sig wallet on the chain you wish this transaction to occurr on.
 
 - TEE_VERIFIER_ADDRESS: The address of the outer EspressoTEEVerifier contract.
-  Note: this must be the outer TEEVerifier contract that owns the Nitro verifier wiring.
+  Note: this must be the outer TEEVerifier contract that owns the Nitro verifier contract.
 
 - PROPOSER_ADDRESS: The address used to propose the transaction to the multi-sig wallet.
   Note: This must be the address associated with the account located at the wallets provided derivation path.
@@ -337,7 +337,7 @@ forge script scripts/MultiSigTransfer.s.sol:MultiSigTransfer --rpc-url "$RPC_URL
 2. **ZK Configuration Control**
    - Each Nitro verifier dependency has its own ZK verifier configuration
    - You validate against specific verifier IDs per chain
-   - Shared verifier dependencies would create a single point of failure across all chains
+   - The Automata NitroEnclaveVerifier dependencies would create a single point of failure across all chains
 
 3. **Security Isolation**
    - Different chains may have different threat models
