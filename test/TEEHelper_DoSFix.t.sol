@@ -158,5 +158,4 @@ contract TEEHelperDoSFixTest is Test {
 
     // Events
     event DeletedEnclaveHash(bytes32 indexed enclaveHash);
-    event DeletedRegisteredService(address indexed signer);
 }

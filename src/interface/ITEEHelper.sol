@@ -9,15 +9,9 @@ interface ITEEHelper {
     // Thrown when an invalid enclave hash is provided
     // function signature: 0x94f1e6f9
     error InvalidEnclaveHash(bytes32 enclaveHash);
-    // Thrown when an invalid signer address is provided
-    // function signature: 0x4501a919
-    error InvalidSignerAddress();
 
     // Emitted when an enclave hash is deleted
     event DeletedEnclaveHash(bytes32 indexed enclaveHash);
-
-    // Emitted when a registered service is deleted
-    event DeletedRegisteredService(address indexed signer);
 
     // Emitted when a service is registered
     event ServiceRegistered(address indexed signer, bytes32 indexed enclaveHash);
