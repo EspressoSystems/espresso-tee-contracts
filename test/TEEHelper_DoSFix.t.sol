@@ -3,7 +3,6 @@ pragma solidity ^0.8.20;
 
 import "forge-std/Test.sol";
 import {EspressoNitroTEEVerifier} from "../src/EspressoNitroTEEVerifier.sol";
-import {ServiceType} from "../src/types/Types.sol";
 
 /**
  * @title Tests for DoS Fix in TEEHelper
@@ -16,7 +15,7 @@ contract TEEHelperDoSFixTest is Test {
 
     function setUp() public {
         vm.createSelectFork(
-            "https://rpc.ankr.com/eth_sepolia/10a56026b3c20655c1dab931446156dea4d63d87d1261934c82a1b8045885923"
+            "https://rpc.ankr.com/eth_sepolia/b4eb7cd43eb25061e06a5d07ecd191433c3a28988f14dd9bfb6be6a122355023"
         );
         // address(this) is the teeVerifier so test functions can call setEnclaveHash/deleteEnclaveHashes
         verifier = new EspressoNitroTEEVerifier(
@@ -29,23 +28,17 @@ contract TEEHelperDoSFixTest is Test {
      */
     function test_DeleteExistingHash() public {
         // Register a hash
-        verifier.setEnclaveHash(testHash1, true, ServiceType.BatchPoster);
-        assertTrue(
-            verifier.registeredEnclaveHash(testHash1, ServiceType.BatchPoster),
-            "Hash should be registered"
-        );
+        verifier.setEnclaveHash(testHash1, true);
+        assertTrue(verifier.registeredEnclaveHash(testHash1), "Hash should be registered");
 
         // Delete it
         bytes32[] memory hashes = new bytes32[](1);
         hashes[0] = testHash1;
 
-        verifier.deleteEnclaveHashes(hashes, ServiceType.BatchPoster);
+        verifier.deleteEnclaveHashes(hashes);
 
         // Verify deleted
-        assertFalse(
-            verifier.registeredEnclaveHash(testHash1, ServiceType.BatchPoster),
-            "Hash should be deleted"
-        );
+        assertFalse(verifier.registeredEnclaveHash(testHash1), "Hash should be deleted");
     }
 
     /**
@@ -56,9 +49,9 @@ contract TEEHelperDoSFixTest is Test {
         hashes[0] = testHash1;
 
         // hash was never registered so it is silently skipped
-        verifier.deleteEnclaveHashes(hashes, ServiceType.BatchPoster);
+        verifier.deleteEnclaveHashes(hashes);
 
-        assertFalse(verifier.registeredEnclaveHash(testHash1, ServiceType.BatchPoster));
+        assertFalse(verifier.registeredEnclaveHash(testHash1));
     }
 
     /**
@@ -66,44 +59,19 @@ contract TEEHelperDoSFixTest is Test {
      */
     function test_DeleteMultipleHashes() public {
         // Register multiple hashes
-        verifier.setEnclaveHash(testHash1, true, ServiceType.BatchPoster);
-        verifier.setEnclaveHash(testHash2, true, ServiceType.BatchPoster);
+        verifier.setEnclaveHash(testHash1, true);
+        verifier.setEnclaveHash(testHash2, true);
 
         // Delete both
         bytes32[] memory hashes = new bytes32[](2);
         hashes[0] = testHash1;
         hashes[1] = testHash2;
 
-        verifier.deleteEnclaveHashes(hashes, ServiceType.BatchPoster);
+        verifier.deleteEnclaveHashes(hashes);
 
         // Verify both deleted
-        assertFalse(verifier.registeredEnclaveHash(testHash1, ServiceType.BatchPoster));
-        assertFalse(verifier.registeredEnclaveHash(testHash2, ServiceType.BatchPoster));
-    }
-
-    /**
-     * @dev Test: Delete is service-specific
-     */
-    function test_DeleteIsServiceSpecific() public {
-        // Register hash for both services
-        verifier.setEnclaveHash(testHash1, true, ServiceType.BatchPoster);
-        verifier.setEnclaveHash(testHash1, true, ServiceType.CaffNode);
-
-        // Delete only from BatchPoster
-        bytes32[] memory hashes = new bytes32[](1);
-        hashes[0] = testHash1;
-
-        verifier.deleteEnclaveHashes(hashes, ServiceType.BatchPoster);
-
-        // Verify only BatchPoster deleted
-        assertFalse(
-            verifier.registeredEnclaveHash(testHash1, ServiceType.BatchPoster),
-            "BatchPoster should be deleted"
-        );
-        assertTrue(
-            verifier.registeredEnclaveHash(testHash1, ServiceType.CaffNode),
-            "CaffNode should still exist"
-        );
+        assertFalse(verifier.registeredEnclaveHash(testHash1));
+        assertFalse(verifier.registeredEnclaveHash(testHash2));
     }
 
     /**
@@ -115,14 +83,14 @@ contract TEEHelperDoSFixTest is Test {
         // even if the hash has many signers (which we can't easily create in test)
         // The key is that we NO LONGER iterate through signers
 
-        verifier.setEnclaveHash(testHash1, true, ServiceType.BatchPoster);
+        verifier.setEnclaveHash(testHash1, true);
 
         bytes32[] memory hashes = new bytes32[](1);
         hashes[0] = testHash1;
 
         // Measure gas
         uint256 gasBefore = gasleft();
-        verifier.deleteEnclaveHashes(hashes, ServiceType.BatchPoster);
+        verifier.deleteEnclaveHashes(hashes);
         uint256 gasUsed = gasBefore - gasleft();
 
         // Should use minimal gas (no loop over signers)
@@ -135,7 +103,7 @@ contract TEEHelperDoSFixTest is Test {
      * @dev Test: Only owner can delete hashes
      */
     function test_OnlyOwnerCanDelete() public {
-        verifier.setEnclaveHash(testHash1, true, ServiceType.BatchPoster);
+        verifier.setEnclaveHash(testHash1, true);
 
         bytes32[] memory hashes = new bytes32[](1);
         hashes[0] = testHash1;
@@ -143,22 +111,22 @@ contract TEEHelperDoSFixTest is Test {
         address nonOwner = address(0x999);
         vm.prank(nonOwner);
         vm.expectRevert(abi.encodeWithSignature("UnauthorizedTEEVerifier(address)", nonOwner));
-        verifier.deleteEnclaveHashes(hashes, ServiceType.BatchPoster);
+        verifier.deleteEnclaveHashes(hashes);
     }
 
     /**
      * @dev Test: Events are emitted correctly
      */
     function test_DeleteEmitsEvent() public {
-        verifier.setEnclaveHash(testHash1, true, ServiceType.BatchPoster);
+        verifier.setEnclaveHash(testHash1, true);
 
         bytes32[] memory hashes = new bytes32[](1);
         hashes[0] = testHash1;
 
-        vm.expectEmit(true, true, false, false);
-        emit DeletedEnclaveHash(testHash1, ServiceType.BatchPoster);
+        vm.expectEmit(true, false, false, false);
+        emit DeletedEnclaveHash(testHash1);
 
-        verifier.deleteEnclaveHashes(hashes, ServiceType.BatchPoster);
+        verifier.deleteEnclaveHashes(hashes);
     }
 
     /**
@@ -168,7 +136,7 @@ contract TEEHelperDoSFixTest is Test {
         bytes32[] memory hashes = new bytes32[](0);
 
         // Should succeed without doing anything
-        verifier.deleteEnclaveHashes(hashes, ServiceType.BatchPoster);
+        verifier.deleteEnclaveHashes(hashes);
     }
 
     /**
@@ -176,25 +144,18 @@ contract TEEHelperDoSFixTest is Test {
      */
     function test_PartialDelete() public {
         // testHash2 is registered; testHash1 is not
-        verifier.setEnclaveHash(testHash2, true, ServiceType.BatchPoster);
+        verifier.setEnclaveHash(testHash2, true);
 
         bytes32[] memory hashes = new bytes32[](2);
         hashes[0] = testHash1; // not registered — should be skipped
         hashes[1] = testHash2; // registered — should be deleted
 
-        verifier.deleteEnclaveHashes(hashes, ServiceType.BatchPoster);
+        verifier.deleteEnclaveHashes(hashes);
 
-        assertFalse(
-            verifier.registeredEnclaveHash(testHash1, ServiceType.BatchPoster),
-            "testHash1 was never registered"
-        );
-        assertFalse(
-            verifier.registeredEnclaveHash(testHash2, ServiceType.BatchPoster),
-            "testHash2 should be deleted"
-        );
+        assertFalse(verifier.registeredEnclaveHash(testHash1), "testHash1 was never registered");
+        assertFalse(verifier.registeredEnclaveHash(testHash2), "testHash2 should be deleted");
     }
 
     // Events
-    event DeletedEnclaveHash(bytes32 indexed enclaveHash, ServiceType indexed service);
-    event DeletedRegisteredService(address indexed signer, ServiceType indexed service);
+    event DeletedEnclaveHash(bytes32 indexed enclaveHash);
 }

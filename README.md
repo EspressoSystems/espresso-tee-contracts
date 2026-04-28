@@ -1,6 +1,6 @@
 # Espresso TEE Contracts
 
-This repository contains Solidity contracts for verifying attestations from Trusted Execution Environments (TEEs), including AWS Nitro Enclaves and Intel SGX. It is used in our integration projects including [optimism-espresso-integration](https://github.com/EspressoSystems/optimism-espresso-integration) and [nitro-espresso-integration](https://github.com/EspressoSystems/nitro-espresso-integration).
+This repository contains Solidity contracts for verifying attestations from AWS Nitro Enclaves. It is used in our integration projects including [optimism-espresso-integration](https://github.com/EspressoSystems/optimism-espresso-integration) and [nitro-espresso-integration](https://github.com/EspressoSystems/nitro-espresso-integration).
 
 ## Foundry
 
@@ -76,7 +76,7 @@ Afterwards the bindings should appear in bindings/go/espressogen/espressogen.go 
 
 `EspressoTEEVerifier` is deployed using the **OpenZeppelin v5.x Transparent Proxy pattern**, where the `TransparentUpgradeableProxy` automatically deploys its own `ProxyAdmin` contract internally and the `ProxyAdmin` owner controls upgrade capabilities.
 
-`EspressoSGXTEEVerifier` and `EspressoNitroTEEVerifier` are deployed as non-proxy contracts. To upgrade their logic, deploy a new implementation and call `setEspressoSGXTEEVerifier` / `setEspressoNitroTEEVerifier` on the `EspressoTEEVerifier` proxy (owner-only).
+`EspressoNitroTEEVerifier` is deployed as a non-proxy contract. To upgrade its logic, deploy a new implementation and call `setEspressoNitroTEEVerifier` on the `EspressoTEEVerifier` proxy (owner-only).
 
 ### 1. Clean Build Environment
 
@@ -111,18 +111,15 @@ Deploy the verifier contract to your target network:
 This script navigates into `lib/aws-nitro-enclave-attestation/contracts/` and runs both `deployVerifier()` and `deploySP1Verifier()` from the `NitroEnclaveVerifier.s.sol` forge script. It requires `RPC_URL` and `PRIVATE_KEY` to be set in your environment.
 
 
-### 4. **Environment Setup** after deployment
+### 4. **Environment Setup** after NitroEnclaveVerifier deployment
 
 ```
-
 # Variables for deployment
-SGX_QUOTE_VERIFIER_ADDRESS=<quote_verifier_address_from_automata>  # From: https://github.com/automata-network/automata-dcap-attestation/tree/main/rust-crates/libraries/network-registry/deployment/current
 NITRO_ENCLAVE_VERIFIER=<nitro_enclave_verifier_address>
 
-# To be updated after individual deployment (not needed for DeployAllTEEVerifiers)
+# To be updated after deployment (not needed before running DeployAllTEEVerifiers)
 TEE_VERIFIER_ADDRESS=""
 NITRO_VERIFIER_ADDRESS=""
-SGX_VERIFIER_ADDRESS=""
 ```
 
 Save the file then source it:
@@ -131,13 +128,13 @@ Save the file then source it:
 source .env
 ```
 
-### 3. **Deployment Options**
+### 5. **Deployment Options**
 
-You can deploy the TEE contracts in two ways:
+You can deploy the verifier contracts in two ways:
 
 #### Option A: Deploy All Contracts Together (Recommended)
 
-This deploys all three TEE verifier contracts in a single script, handling the circular dependency automatically:
+This deploys the full Nitro verifier stack in a single script, handling the circular dependency automatically:
 
 ```bash
 forge script scripts/DeployAllTEEVerifiers.s.sol:DeployAllTEEVerifiers \
@@ -149,24 +146,19 @@ forge script scripts/DeployAllTEEVerifiers.s.sol:DeployAllTEEVerifiers \
 
 This script will:
 
-1. Deploy `EspressoTEEVerifier` proxy (with zero placeholder addresses for SGX/Nitro)
-2. Deploy `EspressoSGXTEEVerifier` (linked to TEEVerifier)
-3. Deploy `EspressoNitroTEEVerifier` (linked to TEEVerifier)
-4. Update `EspressoTEEVerifier` with the actual SGX and Nitro addresses
+1. Deploy `EspressoTEEVerifier` proxy (with a zero placeholder Nitro verifier address)
+2. Deploy `EspressoNitroTEEVerifier` (linked to `EspressoTEEVerifier`)
+3. Update `EspressoTEEVerifier` with the actual Nitro verifier address
 
 #### Option B: Deploy Contracts Individually
 
-If you prefer to deploy contracts separately:
+If you prefer to deploy contracts separately, use the standalone scripts once the other side of the dependency is already known:
 
-1. **Deploy Espresso TEE Verifier First**
+1. **Deploy Espresso TEE Verifier**
 
-   First, deploy the main TEEVerifier with placeholder addresses:
+   Use this when you already know the Nitro verifier address and have set `NITRO_VERIFIER_ADDRESS` in your environment:
 
    ```bash
-   # Set placeholder addresses for individual deployment
-   export SGX_VERIFIER_ADDRESS=0x0000000000000000000000000000000000000000
-   export NITRO_VERIFIER_ADDRESS=0x0000000000000000000000000000000000000000
-
    forge script scripts/DeployTEEVerifier.s.sol:DeployTEEVerifier \
        --rpc-url "$RPC_URL" \
        --private-key "$PRIVATE_KEY" \
@@ -180,18 +172,9 @@ If you prefer to deploy contracts separately:
    TEE_VERIFIER_ADDRESS=<deployed_tee_verifier_proxy>
    ```
 
-2. **Deploy SGX Verifier**
+2. **Deploy Nitro Verifier**
 
-   ```bash
-   source .env
-   FOUNDRY_PROFILE=sgx forge script scripts/DeploySGXTEEVerifier.s.sol:DeploySGXTEEVerifier \
-       --rpc-url "$RPC_URL" \
-       --private-key "$PRIVATE_KEY" \
-       --broadcast \
-       --verify --verifier etherscan --chain "$CHAIN_ID"
-   ```
-
-3. **Deploy Nitro Verifier**
+   Use this when `TEE_VERIFIER_ADDRESS` already points to a deployed `EspressoTEEVerifier` proxy:
 
    ```bash
    FOUNDRY_PROFILE=nitro forge script scripts/DeployNitroTEEVerifier.s.sol:DeployNitroTEEVerifier \
@@ -201,27 +184,23 @@ If you prefer to deploy contracts separately:
        --verify --verifier etherscan --chain "$CHAIN_ID"
    ```
 
-4. **Update TEEVerifier with actual addresses** (if TEEVerifier was deployed with placeholder addresses)
+3. **Update `EspressoTEEVerifier` with the actual Nitro verifier address**
 
-   If the TEEVerifier was deployed with placeholder addresses (zero addresses), update it after deploying SGX and Nitro verifiers:
+   If `EspressoTEEVerifier` was deployed before the Nitro verifier was wired, update it with:
 
    ```bash
-   cast send $TEE_VERIFIER_ADDRESS "setEspressoSGXTEEVerifier(address)" $SGX_VERIFIER_ADDRESS \
-       --rpc-url "$RPC_URL" --private-key "$PRIVATE_KEY"
-
    cast send $TEE_VERIFIER_ADDRESS "setEspressoNitroTEEVerifier(address)" $NITRO_VERIFIER_ADDRESS \
        --rpc-url "$RPC_URL" --private-key "$PRIVATE_KEY"
    ```
 
-   Note: This step is not needed when using `DeployAllTEEVerifiers.s.sol`, which pre-computes addresses and wires everything in a single script.
+   Note: This step is not needed when using `DeployAllTEEVerifiers.s.sol`, which wires everything in a single script.
 
-### 4. Post-Deployment
+### 6. Post-Deployment
 
 - Verify all contracts on Block Explorer
 - Deployment artifacts are saved in `deployments/<chain_id>/`
 - Each deployment JSON contains:
   - `EspressoTEEVerifier`: `proxy` (what users interact with) and `implementation` addresses
-  - `EspressoSGXTEEVerifier`: single `sgxVerifier` address (no proxy)
   - `EspressoNitroTEEVerifier`: single `nitroVerifier` address (no proxy)
 
 ### Transferring ownership of the TEEVerifier contracts to a multi-sig wallet
@@ -274,7 +253,7 @@ NOTE: you will need to prepend the `m/` to this path for foundry to correctly lo
 - MULTISIG_CONTRACT_ADDRESS: The address of your Multi-sig wallet on the chain you wish this transaction to occurr on.
 
 - TEE_VERIFIER_ADDRESS: The address of the outer EspressoTEEVerifier contract.
-  Note: this must be the outer TEEVerifier contract. The script locates the inner contracts by calling espressoNitroVerifier and espressoSGXVerifier on the outer contract.
+  Note: this must be the outer TEEVerifier contract that owns the Nitro verifier contract.
 
 - PROPOSER_ADDRESS: The address used to propose the transaction to the multi-sig wallet.
   Note: This must be the address associated with the account located at the wallets provided derivation path.
@@ -346,9 +325,7 @@ forge script scripts/MultiSigTransfer.s.sol:MultiSigTransfer --rpc-url "$RPC_URL
 
 1. **`EspressoTEEVerifier`** - Your main TEE verifier contract
 2. **`EspressoNitroTEEVerifier`** - Nitro-specific verifier
-3. **`EspressoSGXTEEVerifier`** - SGX-specific verifier
-4. **Automata `NitroEnclaveVerifier`** - ⚠️ **MUST be chain-specific!**
-5. **Automata `V3QuoteVerifier`** (for SGX) - ⚠️ **MUST be chain-specific!**
+3. **Automata `NitroEnclaveVerifier`** - ⚠️ **MUST be chain-specific!**
 
 **Why separate deployments are CRITICAL:**
 
@@ -358,9 +335,9 @@ forge script scripts/MultiSigTransfer.s.sol:MultiSigTransfer --rpc-url "$RPC_URL
    - Revoking a hash on one chain does NOT affect other chains
 
 2. **ZK Configuration Control**
-   - Each Automata contract has its own ZK verifier configuration
+   - Each Nitro verifier dependency has its own ZK verifier configuration
    - You validate against specific verifier IDs per chain
-   - Shared Automata contracts would create single point of failure across all chains
+   - The Automata NitroEnclaveVerifier dependencies would create a single point of failure across all chains
 
 3. **Security Isolation**
    - Different chains may have different threat models
@@ -383,11 +360,6 @@ For Nitro TEE:
   ✅ Chain A: NitroEnclaveVerifier at 0xAAA...
   ✅ Chain B: NitroEnclaveVerifier at 0xBBB... (different!)
   ❌ DO NOT: Use same NitroEnclaveVerifier on both chains
-
-For SGX TEE:
-  ✅ Chain A: V3QuoteVerifier at 0xCCC...
-  ✅ Chain B: V3QuoteVerifier at 0xDDD... (different!)
-  ❌ DO NOT: Use same V3QuoteVerifier on both chains
 ```
 
 **Why this matters:**
@@ -402,7 +374,6 @@ For SGX TEE:
 Check Automata's documentation for chain-specific addresses:
 
 - Nitro: https://github.com/automata-network/aws-nitro-enclave-attestation
-- SGX: https://github.com/automata-network/automata-dcap-attestation
 
 **Example: Current Mainnet Deployments**
 
@@ -426,13 +397,11 @@ Before deploying to production, verify:
 - [ ] **External dependencies verified:**
   - [ ] Automata `NitroEnclaveVerifier` address confirmed for target chain
   - [ ] ⚠️ **Verify NitroEnclaveVerifier is DIFFERENT for each chain** (do not reuse!)
-  - [ ] Automata `V3QuoteVerifier` address confirmed for target chain (SGX)
-  - [ ] ⚠️ **Verify V3QuoteVerifier is DIFFERENT for each chain** (do not reuse!)
   - [ ] Verify external contracts on block explorer
   - [ ] Check Automata contract owner and governance model
 
 - [ ] **Initial configuration prepared:**
-  - [ ] SGX mrEnclave hashes computed and documented
+  - [ ] Nitro PCR0 hashes computed and documented
   - [ ] Initial approved hashes ready
 
 - [ ] **Governance setup:**

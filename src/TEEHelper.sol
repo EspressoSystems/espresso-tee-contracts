@@ -1,16 +1,13 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {ServiceType} from "./types/Types.sol";
 import "./interface/ITEEHelper.sol";
 
 abstract contract TEEHelper is ITEEHelper {
-    mapping(ServiceType => mapping(bytes32 enclaveHash => bool valid)) internal
-        _registeredEnclaveHashes;
-    mapping(ServiceType => mapping(address signer => bool valid)) internal _registeredServices;
+    mapping(bytes32 enclaveHash => bool valid) internal _registeredEnclaveHashes;
+    mapping(address signer => bool valid) internal _registeredServices;
     address internal _teeVerifier;
-    mapping(ServiceType => mapping(address signer => bytes32 enclaveHash)) internal
-        _signerToEnclaveHash;
+    mapping(address signer => bytes32 enclaveHash) internal _signerToEnclaveHash;
 
     modifier onlyTEEVerifier() {
         if (msg.sender != teeVerifier()) {
@@ -34,36 +31,25 @@ abstract contract TEEHelper is ITEEHelper {
      * hash from registering a signer.
      * @param enclaveHash The hash of the enclave
      * @param valid Whether the enclave hash is valid or not
-     * @param service The service type (BatchPoster or CaffNode)
      */
-    function setEnclaveHash(bytes32 enclaveHash, bool valid, ServiceType service)
-        external
-        virtual
-        onlyTEEVerifier
-    {
-        _registeredEnclaveHashes[service][enclaveHash] = valid;
-        emit EnclaveHashSet(enclaveHash, valid, service);
+    function setEnclaveHash(bytes32 enclaveHash, bool valid) external virtual onlyTEEVerifier {
+        _registeredEnclaveHashes[enclaveHash] = valid;
+        emit EnclaveHashSet(enclaveHash, valid);
     }
 
     /**
      * @notice Validates if a signer is registered AND its enclave hash is still valid
      * @param signer The address of the signer
-     * @param service The service type (BatchPoster or CaffNode)
      * @return bool True if signer is registered AND its enclave hash is still approved
      */
-    function isSignerValid(address signer, ServiceType service)
-        external
-        view
-        virtual
-        returns (bool)
-    {
+    function isSignerValid(address signer) external view virtual returns (bool) {
         // Check if signer is registered
-        if (!_registeredServices[service][signer]) {
+        if (!_registeredServices[signer]) {
             return false;
         }
 
         // Check if signer's enclave hash is still approved
-        bytes32 signerHash = _signerToEnclaveHash[service][signer];
+        bytes32 signerHash = _signerToEnclaveHash[signer];
 
         // If no hash recorded (shouldn't happen with new registrations), be safe and reject
         if (signerHash == bytes32(0)) {
@@ -71,22 +57,16 @@ abstract contract TEEHelper is ITEEHelper {
         }
 
         // Check if the hash is still valid
-        return _registeredEnclaveHashes[service][signerHash];
+        return _registeredEnclaveHashes[signerHash];
     }
 
     /**
      * @notice This function retrieves whether an enclave hash is registered or not
      * @param enclaveHash The hash of the enclave
-     * @param service The service type (BatchPoster or CaffNode)
      * @return bool True if the enclave hash is registered, false otherwise
      */
-    function registeredEnclaveHash(bytes32 enclaveHash, ServiceType service)
-        external
-        view
-        virtual
-        returns (bool)
-    {
-        return _registeredEnclaveHashes[service][enclaveHash];
+    function registeredEnclaveHash(bytes32 enclaveHash) external view virtual returns (bool) {
+        return _registeredEnclaveHashes[enclaveHash];
     }
 
     /**
@@ -95,24 +75,19 @@ abstract contract TEEHelper is ITEEHelper {
      * @dev NOTE: This only removes the hash authorization, existing signers remain in registeredServices
      * @dev To fully revoke signers, use isSignerValid() which checks hash validity
      * @param enclaveHashes The list of enclave hashes to be deleted
-     * @param service The service type (BatchPoster or CaffNode)
      */
-    function deleteEnclaveHashes(bytes32[] memory enclaveHashes, ServiceType service)
-        external
-        virtual
-        onlyTEEVerifier
-    {
+    function deleteEnclaveHashes(bytes32[] memory enclaveHashes) external virtual onlyTEEVerifier {
         for (uint256 i = 0; i < enclaveHashes.length; i++) {
             bytes32 enclaveHash = enclaveHashes[i];
 
             // Skip already-unregistered hashes to keep batch deletion idempotent.
-            if (!_registeredEnclaveHashes[service][enclaveHash]) {
+            if (!_registeredEnclaveHashes[enclaveHash]) {
                 continue;
             }
 
             // Delete the hash authorization (prevents NEW registrations)
-            delete _registeredEnclaveHashes[service][enclaveHash];
-            emit DeletedEnclaveHash(enclaveHash, service);
+            delete _registeredEnclaveHashes[enclaveHash];
+            emit DeletedEnclaveHash(enclaveHash);
 
             // NOTE: Existing signers are NOT automatically revoked from registeredServices
             // They remain in the mapping to avoid unbounded loop DoS

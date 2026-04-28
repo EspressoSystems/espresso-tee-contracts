@@ -19,7 +19,7 @@ deployments/
 
 # IDEs
 .idea
+.zed
 
 # Storage layout temp files (snapshots are committed)
 .storage-layouts/*.current.json
-

@@ -12,20 +12,6 @@ fs_permissions = [
     { access='read-write', path='./deployments/' }
 ]
 
-[profile.sgx]
-src = 'src/'
-out = 'out'
-libs = [ 'lib']
-optimizer = true
-optimizer_runs = 1
-optimizer_details = { yul = true }
-via_ir = false
-solc_version = '0.8.25'
-fs_permissions = [
-    { access = "read", path = "./"},
-    { access='read-write', path='./deployments/' }
-]
-
 [profile.default]
 src = 'src/'
 out = 'out'

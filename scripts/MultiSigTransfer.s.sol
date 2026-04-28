@@ -10,7 +10,6 @@ import {Safe} from "safe-utils/Safe.sol";
 import {Enum} from "safe-smart-account/common/Enum.sol";
 
 import {IEspressoTEEVerifier} from "@espresso-tee/interface/IEspressoTEEVerifier.sol";
-import {IEspressoNitroTEEVerifier} from "@espresso-tee/interface/IEspressoNitroTEEVerifier.sol";
 
 contract MultiSigTransfer is Script {
     using Safe for *;

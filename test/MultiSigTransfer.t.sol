@@ -17,9 +17,7 @@ import {
 } from "aws-nitro-enclave-attestation/interfaces/INitroEnclaveVerifier.sol";
 
 import {EspressoTEEVerifier} from "../src/EspressoTEEVerifier.sol";
-import {EspressoSGXTEEVerifier} from "../src/EspressoSGXTEEVerifier.sol";
 import {EspressoNitroTEEVerifier} from "../src/EspressoNitroTEEVerifier.sol";
-import {IEspressoSGXTEEVerifier} from "../src/interface/IEspressoSGXTEEVerifier.sol";
 import {IEspressoNitroTEEVerifier} from "../src/interface/IEspressoNitroTEEVerifier.sol";
 
 import {MultiSigTransfer} from "../scripts/MultiSigTransfer.s.sol";
@@ -46,12 +44,7 @@ contract MultiSigTransferTest is Test {
 
     // TEE contract global variables for the tests.
     EspressoTEEVerifier espressoTEEVerifier;
-    EspressoSGXTEEVerifier espressoSGXTEEVerifier;
     EspressoNitroTEEVerifier espressoNitroTEEVerifier;
-    bytes32 enclaveHash =
-        bytes32(0x01f7290cb6bbaa427eca3daeb25eecccb87c4b61259b1ae2125182c4d77169c0);
-    //  Address of the automata V3QuoteVerifier deployed on sepolia
-    address v3QuoteVerifier = address(0x6E64769A13617f528a2135692484B681Ee1a7169);
     bytes32 pcr0Hash = bytes32(0x555797ae2413bb1e4c352434a901032b16d7ac9090322532a3fccb9947977e8b);
     // Owner of the ProxyAdmin contracts that get auto-created by TransparentUpgradeableProxy.
     // Must differ from the contract owner so it can forward calls to the implementation during tests.
@@ -63,16 +56,12 @@ contract MultiSigTransferTest is Test {
         vm.stopPrank();
         // fork an eth sepolia network to populate the quote verifier contract code.
         vm.createSelectFork(
-            "https://rpc.ankr.com/eth_sepolia/10a56026b3c20655c1dab931446156dea4d63d87d1261934c82a1b8045885923"
+            "https://rpc.ankr.com/eth_sepolia/b4eb7cd43eb25061e06a5d07ecd191433c3a28988f14dd9bfb6be6a122355023"
         );
 
         espressoTEEVerifier = _deployTEEVerifierWithPlaceholders();
-        espressoSGXTEEVerifier = _deploySGX(address(espressoTEEVerifier));
         espressoNitroTEEVerifier = _deployNitro(address(espressoTEEVerifier));
         vm.startPrank(originalOwner);
-        espressoTEEVerifier.setEspressoSGXTEEVerifier(
-            IEspressoSGXTEEVerifier(address(espressoSGXTEEVerifier))
-        );
         espressoTEEVerifier.setEspressoNitroTEEVerifier(
             IEspressoNitroTEEVerifier(address(espressoNitroTEEVerifier))
         );
@@ -84,10 +73,6 @@ contract MultiSigTransferTest is Test {
         vm.setEnv(teeVerifierEnv, teeVerifierAddress);
 
         multiSigTransfer = new MultiSigTransfer();
-    }
-
-    function _deploySGX(address teeVerifier) internal returns (EspressoSGXTEEVerifier) {
-        return new EspressoSGXTEEVerifier(teeVerifier, v3QuoteVerifier);
     }
 
     function _deployNitro(address teeVerifier) internal returns (EspressoNitroTEEVerifier) {
@@ -103,11 +88,7 @@ contract MultiSigTransferTest is Test {
             proxyAdminOwner,
             abi.encodeCall(
                 EspressoTEEVerifier.initialize,
-                (
-                    originalOwner,
-                    IEspressoSGXTEEVerifier(address(0xDEAD)),
-                    IEspressoNitroTEEVerifier(address(0xBEEF))
-                )
+                (originalOwner, IEspressoNitroTEEVerifier(address(0xBEEF)))
             )
         );
         return EspressoTEEVerifier(address(proxy));
@@ -139,10 +120,6 @@ contract MultiSigTransferTest is Test {
     // testInvalidTransfer tests accepting transfers to a non valid address by attempting to accept ownership with the bad new owner address
     // populated via `vm.setEnv`
     function testInvalidTransfer() public {
-        // set environment variables for the transfer script.
-        // vm.setEnv(newOwnerEnv, newOwnerString);
-        // vm.setEnv(teeVerifierEnv, teeVerifierAddress);
-
         vm.startPrank(originalOwner);
         console2.log("original owner:", originalOwner);
         console2.log(

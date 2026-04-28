@@ -1,10 +1,4 @@
 {
-  "lib/automata-dcap-attestation": {
-    "branch": {
-      "name": "espresso-nitro",
-      "rev": "85baefeaa162b733a39df46a43ec2f9480fb27dc"
-    }
-  },
   "lib/aws-nitro-enclave-attestation": {
     "rev": "faa9fcb126bd0d03d39e76e59d79b4be2ab122c8"
   },

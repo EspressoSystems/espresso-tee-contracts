@@ -4,9 +4,7 @@ pragma solidity ^0.8.25;
 import {Script} from "forge-std/Script.sol";
 import {console2} from "forge-std/console2.sol";
 import {EspressoTEEVerifierMock} from "@espresso-tee/mocks/EspressoTEEVerifier.sol";
-import {EspressoSGXTEEVerifierMock} from "@espresso-tee/mocks/EspressoSGXTEEVerifierMock.sol";
 import {EspressoNitroTEEVerifierMock} from "@espresso-tee/mocks/EspressoNitroTEEVerifierMock.sol";
-import {IEspressoSGXTEEVerifier} from "@espresso-tee/interface/IEspressoSGXTEEVerifier.sol";
 import {IEspressoNitroTEEVerifier} from "@espresso-tee/interface/IEspressoNitroTEEVerifier.sol";
 
 /**
@@ -25,30 +23,18 @@ contract DeployMockTEEVerifiers is Script {
     function run() external {
         vm.startBroadcast();
 
-        // 1. Deploy SGX Mock Verifier
-        EspressoSGXTEEVerifierMock sgxMock = new EspressoSGXTEEVerifierMock();
-        console2.log("EspressoSGXTEEVerifierMock deployed at:", address(sgxMock));
-
-        // 2. Deploy Nitro Mock Verifier
+        // 1. Deploy Nitro Mock Verifier
         EspressoNitroTEEVerifierMock nitroMock = new EspressoNitroTEEVerifierMock();
         console2.log("EspressoNitroTEEVerifierMock deployed at:", address(nitroMock));
 
-        // 3. Deploy main TEE Verifier Mock with references to SGX and Nitro mocks
-        EspressoTEEVerifierMock teeVerifierMock = new EspressoTEEVerifierMock(
-            IEspressoSGXTEEVerifier(address(sgxMock)),
-            IEspressoNitroTEEVerifier(address(nitroMock))
-        );
+        // 2. Deploy main TEE Verifier Mock with reference to Nitro mock
+        EspressoTEEVerifierMock teeVerifierMock =
+            new EspressoTEEVerifierMock(IEspressoNitroTEEVerifier(address(nitroMock)));
         console2.log("EspressoTEEVerifierMock deployed at:", address(teeVerifierMock));
 
         // Save deployment artifacts
         string memory chainId = vm.toString(block.chainid);
         string memory dir = string.concat(vm.projectRoot(), "/deployments");
-
-        // Write SGX Mock address
-        vm.writeJson(
-            vm.serializeAddress("", "EspressoSGXTEEVerifierMock", address(sgxMock)),
-            string.concat(dir, "/", chainId, "-sgx-verifier-mock.json")
-        );
 
         // Write Nitro Mock address
         vm.writeJson(
