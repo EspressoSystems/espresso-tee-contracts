@@ -64,7 +64,7 @@ echo ""
 echo "=== Step 2: Deploying SP1Verifier (chain ${CHAIN_ID}) ==="
 
 SP1_OUTPUT=$(forge create \
-    lib/sp1-contracts/contracts/src/v5.0.0/SP1VerifierGroth16.sol:SP1Verifier \
+    lib/sp1-contracts/contracts/src/v6.1.0/SP1VerifierGroth16.sol:SP1Verifier \
     --rpc-url "$RPC_URL" \
     --private-key "$PRIVATE_KEY" \
     --broadcast \
