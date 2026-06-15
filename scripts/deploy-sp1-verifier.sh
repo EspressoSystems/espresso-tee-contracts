@@ -21,7 +21,19 @@ fi
 : "${CHAIN_ID:?CHAIN_ID is not set. Add it to .env or export it.}"
 : "${ETHERSCAN_API_KEY:?ETHERSCAN_API_KEY is not set. Add it to .env or export it.}"
 
+if [ ! -d "$CONTRACTS_DIR" ]; then
+    echo "Error: aws-nitro-enclave-attestation submodule not found at $CONTRACTS_DIR"
+    echo "Run: git submodule update --init --recursive"
+    exit 1
+fi
+
 cd "$CONTRACTS_DIR"
+
+RESOLVED_CHAIN_ID=$(cast chain-id --rpc-url "$RPC_URL")
+if [ "$RESOLVED_CHAIN_ID" != "$CHAIN_ID" ]; then
+    echo "Error: CHAIN_ID ($CHAIN_ID) does not match RPC chain ($RESOLVED_CHAIN_ID)"
+    exit 1
+fi
 
 OUTPUT=$(forge create \
     lib/sp1-contracts/contracts/src/v6.1.0/SP1VerifierGroth16.sol:SP1Verifier \
@@ -32,4 +44,9 @@ OUTPUT=$(forge create \
     --chain "$CHAIN_ID")
 
 ADDR=$(echo "$OUTPUT" | grep 'Deployed to:' | awk '{print $3}')
+if [ -z "$ADDR" ]; then
+    echo "Error: Could not extract deployed address from forge output"
+    echo "$OUTPUT"
+    exit 1
+fi
 echo "SP1Verifier deployed at: $ADDR"

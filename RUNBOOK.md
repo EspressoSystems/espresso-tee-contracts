@@ -124,7 +124,7 @@ Only when Case A's bytecode check fails or you've lost the owner key. Affects ev
 1. Deploy both inner verifiers. The script prints addresses on its last two lines:
    ```bash
    forge clean
-   ./scripts/deploy-nitro-enclave-verifier.sh --force | tee /tmp/deploy.log
+   ./scripts/deploy-nitro-enclave-verifier.sh | tee /tmp/deploy.log
    NEW_NITRO=$(awk -F': ' '/NitroEnclaveVerifier: /{print $2}' /tmp/deploy.log | tail -1)
    NEW_SP1=$(awk -F': '   '/SP1Verifier: /{print $2}'         /tmp/deploy.log | tail -1)
    echo "$NEW_NITRO $NEW_SP1"
@@ -145,10 +145,11 @@ Only when Case A's bytecode check fails or you've lost the owner key. Affects ev
 
 Confirms prover ↔ on-chain version pair actually verifies. ~0.5 PROVE per run.
 
-Set the addresses you're testing against. `$NITRO` is the `NitroEnclaveVerifier` (Case C → `$NEW_NITRO`; A/B → the parent's existing one). `$SP1` is the inner SP1Verifier (Case A/C → `$NEW_SP1`; B → read the `zkVerifier` field from `getZkConfig(2)` on `$NITRO`):
+Set the addresses you're testing against. `$NITRO` is the `NitroEnclaveVerifier` (Case C → `$NEW_NITRO`; A/B → the parent's existing one). `$SP1` is the inner SP1Verifier (Case A/C → `$NEW_SP1`; B → falls back to whatever `$NITRO` currently has wired in `getZkConfig(2)`):
 ```bash
 NITRO="${NEW_NITRO:-$NITRO}"
-SP1="${NEW_SP1:?set NEW_SP1 to the on-chain SP1Verifier address}"
+SP1="${NEW_SP1:-$(cast call "$NITRO" "getZkConfig(uint8)(bytes32,bytes32,address)" 2 --rpc-url "$RPC_URL" | tail -1)}"
+echo "smoke-testing against NITRO=$NITRO  SP1=$SP1"
 ```
 
 1. Run the prover service locally pointed at the deployment under test. `$NETWORK_PRIVATE_KEY` is the Succinct prover-network key (separate from `$PRIVATE_KEY`):
