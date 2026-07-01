@@ -101,20 +101,39 @@ CHAIN_ID=<your-chain-id>
 ETHERSCAN_API_KEY=<your-etherscan-v2-api-key>
 ```
 
-### 3. Deploying NitroEnclaveVerifier required for AWS Nitro
-Deploy the verifier contract to your target network:
+### 3. NitroEnclaveVerifier (AWS Nitro attestation verifier)
+
+The `EspressoNitroTEEVerifier` deployed below must point at a `NitroEnclaveVerifier` — the AWS Nitro attestation / SP1 proof verifier. This is **not chain-specific**: Espresso deploys and maintains one canonical `NitroEnclaveVerifier` per settlement layer and upgrades it as the proof system changes (e.g. the Succinct v6 migration).
+
+**Use the canonical address for your settlement layer** — do not deploy your own unless none exists for your network. Pointing at a missing or outdated verifier makes batch posters fail to register at startup.
+
+| Settlement layer | NitroEnclaveVerifier |
+| --- | --- |
+| Ethereum Sepolia (devnets + testnets) | `0x50a24cc21Fa35054179Ebcc7611CC8E29fd70aDB` |
+| Arbitrum Sepolia (testnets) | `0xe8Ad5DAE5508adb3f52e689Ce77abEeE2C8D16c1` |
+| Ethereum Mainnet / Arbitrum One | `0x1b467761E7a125381c4f654e11B397023Fc53DD8` |
+
+> These addresses change when the proof system is upgraded. Confirm the current value with the Espresso team before deploying to production.
+
+Set `NITRO_ENCLAVE_VERIFIER` to this address in step 4 and continue to step 5.
+
+<details>
+<summary>Deploying your own NitroEnclaveVerifier (only if none exists for your settlement layer)</summary>
 
 ```bash
 ./scripts/deploy-nitro-enclave-verifier.sh --force
 ```
 
-This script navigates into `lib/aws-nitro-enclave-attestation/contracts/` and runs both `deployVerifier()` and `deploySP1Verifier()` from the `NitroEnclaveVerifier.s.sol` forge script. It requires `RPC_URL` and `PRIVATE_KEY` to be set in your environment.
+This script navigates into `lib/aws-nitro-enclave-attestation/contracts/` and runs both `deployVerifier()` and `deploySP1Verifier()` from the `NitroEnclaveVerifier.s.sol` forge script. It requires `RPC_URL` and `PRIVATE_KEY` to be set in your environment. Use the deployed address as `NITRO_ENCLAVE_VERIFIER` below.
+
+</details>
 
 
-### 4. **Environment Setup** after NitroEnclaveVerifier deployment
+### 4. **Environment Setup**
 
 ```
-# Variables for deployment
+# Variables for deployment — the canonical NitroEnclaveVerifier for your
+# settlement layer (see the table in step 3), or your own if you deployed one.
 NITRO_ENCLAVE_VERIFIER=<nitro_enclave_verifier_address>
 
 # To be updated after deployment (not needed before running DeployAllTEEVerifiers)
