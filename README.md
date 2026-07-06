@@ -101,20 +101,42 @@ CHAIN_ID=<your-chain-id>
 ETHERSCAN_API_KEY=<your-etherscan-v2-api-key>
 ```
 
-### 3. Deploying NitroEnclaveVerifier required for AWS Nitro
-Deploy the verifier contract to your target network:
+### 3. NitroEnclaveVerifier (AWS Nitro attestation verifier)
+
+The `EspressoNitroTEEVerifier` deployed below must point at a `NitroEnclaveVerifier` — the AWS Nitro attestation / SP1 proof verifier. This is **not chain-specific**: Espresso deploys and maintains one canonical `NitroEnclaveVerifier` per settlement layer and upgrades it as the proof system changes (e.g. the Succinct v6 migration).
+
+**Use the canonical address for your settlement layer** — do not deploy your own unless none exists for your network. Pointing at a missing or outdated verifier makes batch posters fail to register at startup.
+
+| Settlement layer | NitroEnclaveVerifier |
+| --- | --- |
+| Ethereum Sepolia (devnets + testnets) | `0x50a24cc21Fa35054179Ebcc7611CC8E29fd70aDB` |
+| Arbitrum Sepolia (testnets) | `0xe8Ad5DAE5508adb3f52e689Ce77abEeE2C8D16c1` |
+| Ethereum Mainnet | `0x1b467761E7a125381c4f654e11B397023Fc53DD8` |
+| Arbitrum One | `0x1b467761E7a125381c4f654e11B397023Fc53DD8` |
+
+> Mainnet and Arbitrum One share the same address because they were deployed from the same account at the same nonce (deterministic address); they are still separate deployments, one per chain.
+>
+> These addresses change when the proof system is upgraded. Confirm the current value with the Espresso team before deploying to production.
+
+Set `NITRO_ENCLAVE_VERIFIER` to this address in step 4 and continue to step 5.
+
+<details>
+<summary>Deploying your own NitroEnclaveVerifier (only if none exists for your settlement layer)</summary>
 
 ```bash
 ./scripts/deploy-nitro-enclave-verifier.sh --force
 ```
 
-This script navigates into `lib/aws-nitro-enclave-attestation/contracts/` and runs both `deployVerifier()` and `deploySP1Verifier()` from the `NitroEnclaveVerifier.s.sol` forge script. It requires `RPC_URL` and `PRIVATE_KEY` to be set in your environment.
+This script navigates into `lib/aws-nitro-enclave-attestation/contracts/` and runs both `deployVerifier()` and `deploySP1Verifier()` from the `NitroEnclaveVerifier.s.sol` forge script. It requires `RPC_URL` and `PRIVATE_KEY` to be set in your environment. Use the deployed address as `NITRO_ENCLAVE_VERIFIER` below.
+
+</details>
 
 
-### 4. **Environment Setup** after NitroEnclaveVerifier deployment
+### 4. **Environment Setup** — TEE Deployment Variables
 
 ```
-# Variables for deployment
+# Variables for deployment — the canonical NitroEnclaveVerifier for your
+# settlement layer (see the table in step 3), or your own if you deployed one.
 NITRO_ENCLAVE_VERIFIER=<nitro_enclave_verifier_address>
 
 # To be updated after deployment (not needed before running DeployAllTEEVerifiers)
@@ -319,55 +341,50 @@ forge script scripts/MultiSigTransfer.s.sol:MultiSigTransfer --rpc-url "$RPC_URL
 
 #### Cross-Chain Security
 
-⚠️ **CRITICAL: Each chain MUST have its own separate contract deployments.**
+⚠️ **CRITICAL: `EspressoTEEVerifier` and `EspressoNitroTEEVerifier` MUST be deployed per chain.**
 
-**Required separate deployments per chain:**
+**Chain-specific (deploy one per chain):**
 
 1. **`EspressoTEEVerifier`** - Your main TEE verifier contract
 2. **`EspressoNitroTEEVerifier`** - Nitro-specific verifier
-3. **Automata `NitroEnclaveVerifier`** - ⚠️ **MUST be chain-specific!**
 
-**Why separate deployments are CRITICAL:**
+**Shared per settlement layer (do NOT deploy your own):**
+
+3. **`NitroEnclaveVerifier`** - the AWS Nitro attestation / SP1 proof verifier. Espresso maintains one canonical deployment per settlement layer (see the table in step 3) and upgrades it centrally. Point your `EspressoNitroTEEVerifier` at that address.
+
+**Why `EspressoTEEVerifier` / `EspressoNitroTEEVerifier` must be chain-specific:**
 
 1. **Independent State Management**
    - Each contract maintains on-chain state (approved enclave hashes, registered signers)
    - State is NOT synchronized across chains
    - Revoking a hash on one chain does NOT affect other chains
 
-2. **ZK Configuration Control**
-   - Each Nitro verifier dependency has its own ZK verifier configuration
-   - You validate against specific verifier IDs per chain
-   - The Automata NitroEnclaveVerifier dependencies would create a single point of failure across all chains
-
-3. **Security Isolation**
+2. **Security Isolation**
    - Different chains may have different threat models
    - Security policies can be chain-specific
    - Compromise on one chain should NOT affect others
    - Prevents cross-chain authorization bypass
 
-4. **Governance Independence**
+3. **Governance Independence**
    - Each chain can have different owners/multisigs
    - Approval workflows can differ per chain
    - No single entity controls all chains
    - Distributed trust model
 
-**⚠️ IMPORTANT: Automata Dependencies Must Be Chain-Specific**
+**⚠️ IMPORTANT: `NitroEnclaveVerifier` is shared per settlement layer**
 
-Do NOT use the same Automata contract across multiple chains! Each chain needs:
+Use Espresso's canonical `NitroEnclaveVerifier` for your settlement layer (see the table in step 3) — do not deploy your own:
 
 ```bash
-For Nitro TEE:
-  ✅ Chain A: NitroEnclaveVerifier at 0xAAA...
-  ✅ Chain B: NitroEnclaveVerifier at 0xBBB... (different!)
-  ❌ DO NOT: Use same NitroEnclaveVerifier on both chains
+For Nitro TEE (chains settling on the same layer):
+  ✅ Point EspressoNitroTEEVerifier at Espresso's canonical NitroEnclaveVerifier for that layer
+  ❌ DO NOT deploy your own or pin a stale address (batch posters fail to register)
 ```
 
-**Why this matters:**
+**Why sharing is safe here:**
 
-- Each Automata contract has mutable ZK configuration
-- Your security validation caches the expected config per deployment
-- Shared Automata = single point of configuration control across chains
-- Separate Automata = isolated security boundaries
+- `NitroEnclaveVerifier` is a stateless proof verifier — it holds no chain-specific authorization state (enclave hashes / signers live in the per-chain `EspressoNitroTEEVerifier`)
+- Espresso manages its ZK configuration centrally, so every chain on the layer verifies against the same, up-to-date proof system (e.g. the Succinct v6 upgrade)
 
 **Verify Automata deployments:**
 
@@ -386,8 +403,8 @@ EspressoTEEVerifier Contracts (Our Deployments):
   Rufus:                 0xFcb6371757DE81DeaDbE8c13e36bFD7A261dD263
   T3rn:                  0xf252DDe41C679B2959d7C3a2Ea0bC2fA9dE7Eab7
 
-✅ Each chain has unique address (correct!)
-✅ Each references chain-specific Automata contracts
+✅ Each chain has a unique EspressoTEEVerifier address (correct!)
+✅ Each points at Espresso's shared NitroEnclaveVerifier for its settlement layer
 ```
 
 ### Pre-Deployment Checklist
@@ -395,8 +412,7 @@ EspressoTEEVerifier Contracts (Our Deployments):
 Before deploying to production, verify:
 
 - [ ] **External dependencies verified:**
-  - [ ] Automata `NitroEnclaveVerifier` address confirmed for target chain
-  - [ ] ⚠️ **Verify NitroEnclaveVerifier is DIFFERENT for each chain** (do not reuse!)
+  - [ ] `NitroEnclaveVerifier` set to Espresso's canonical address for your settlement layer (see step 3)
   - [ ] Verify external contracts on block explorer
   - [ ] Check Automata contract owner and governance model
 
