@@ -278,6 +278,40 @@ contract EspressoTEEVerifierTest is Test {
         );
     }
 
+    function testGuardianCannotDisableEnclaveHashNitro() public {
+        address guardian = address(0x999);
+
+        // Add guardian and have the owner enable a hash
+        vm.prank(adminTEE);
+        espressoTEEVerifier.addGuardian(guardian);
+
+        bytes32 hash = bytes32(uint256(54_321));
+        vm.prank(adminTEE);
+        espressoTEEVerifier.setEnclaveHash(hash, true, IEspressoTEEVerifier.TeeType.NITRO);
+
+        // Guardian must not be able to disable a hash via setEnclaveHash(hash, false),
+        // since that has the same service-breaking effect as deleteEnclaveHashes (onlyOwner).
+        vm.prank(guardian);
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                OwnableUpgradeable.OwnableUnauthorizedAccount.selector, guardian
+            )
+        );
+        espressoTEEVerifier.setEnclaveHash(hash, false, IEspressoTEEVerifier.TeeType.NITRO);
+
+        // Hash is still registered.
+        assertTrue(
+            espressoTEEVerifier.registeredEnclaveHashes(hash, IEspressoTEEVerifier.TeeType.NITRO)
+        );
+
+        // Owner can disable it.
+        vm.prank(adminTEE);
+        espressoTEEVerifier.setEnclaveHash(hash, false, IEspressoTEEVerifier.TeeType.NITRO);
+        assertFalse(
+            espressoTEEVerifier.registeredEnclaveHashes(hash, IEspressoTEEVerifier.TeeType.NITRO)
+        );
+    }
+
     function testOwnerCanDeleteEnclaveHashesNitro() public {
         // First set a hash as owner
         bytes32 hashToDelete = bytes32(uint256(88_888));
