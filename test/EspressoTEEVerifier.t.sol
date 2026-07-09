@@ -293,9 +293,7 @@ contract EspressoTEEVerifierTest is Test {
         // since that has the same service-breaking effect as deleteEnclaveHashes (onlyOwner).
         vm.prank(guardian);
         vm.expectRevert(
-            abi.encodeWithSelector(
-                OwnableUpgradeable.OwnableUnauthorizedAccount.selector, guardian
-            )
+            abi.encodeWithSelector(OwnableUpgradeable.OwnableUnauthorizedAccount.selector, guardian)
         );
         espressoTEEVerifier.setEnclaveHash(hash, false, IEspressoTEEVerifier.TeeType.NITRO);
 
