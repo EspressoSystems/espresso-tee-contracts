@@ -150,7 +150,10 @@ contract EspressoTEEVerifier is
     }
 
     /**
-     * @notice Allows the owner or guardian to set enclave hashes
+     * @notice Allows the owner or guardian to enable enclave hashes, and the owner to disable them
+     * @dev Enabling a hash (valid == true) is allowed for owner or guardian. Disabling a hash
+     *     (valid == false) breaks services that are using it, so it is restricted to the owner,
+     *     matching the stricter governance applied to deleteEnclaveHashes.
      * @param enclaveHash The enclave hash to set
      * @param valid Whether the enclave hash is valid or not
      * @param teeType The type of TEE
@@ -159,6 +162,12 @@ contract EspressoTEEVerifier is
         external
         onlyGuardianOrOwner
     {
+        // Disabling a hash has the same service-breaking effect as deleteEnclaveHashes,
+        // so it requires the stricter onlyOwner authority rather than onlyGuardianOrOwner.
+        if (!valid) {
+            _checkOwner();
+        }
+
         _requireNitroTeeType(teeType);
 
         EspressoTEEVerifierStorage storage $ = _layout();
