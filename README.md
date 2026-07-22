@@ -74,6 +74,8 @@ Afterwards the bindings should appear in bindings/go/espressogen/espressogen.go 
 
 ## TEE Verifier Deployment
 
+> **Onboarding / ops:** see [`RUNBOOK.md`](./RUNBOOK.md) for the step-by-step deploy + upgrade flow (SP1 version bumps, new chains, smoke tests, troubleshooting, and how this repo wires into `attestation-verifier-deploy`).
+
 `EspressoTEEVerifier` is deployed using the **OpenZeppelin v5.x Transparent Proxy pattern**, where the `TransparentUpgradeableProxy` automatically deploys its own `ProxyAdmin` contract internally and the `ProxyAdmin` owner controls upgrade capabilities.
 
 `EspressoNitroTEEVerifier` is deployed as a non-proxy contract. To upgrade its logic, deploy a new implementation and call `setEspressoNitroTEEVerifier` on the `EspressoTEEVerifier` proxy (owner-only).
