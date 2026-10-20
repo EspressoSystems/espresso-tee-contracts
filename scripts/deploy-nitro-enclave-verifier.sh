@@ -137,5 +137,3 @@ echo "Deployed contracts:"
 echo "  NitroEnclaveVerifier: $VERIFIER_ADDRESS"
 echo "  SP1Verifier:          $SP1_ADDRESS"
 echo ""
-
-"

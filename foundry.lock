@@ -1,6 +1,6 @@
 {
   "lib/aws-nitro-enclave-attestation": {
-    "rev": "faa9fcb126bd0d03d39e76e59d79b4be2ab122c8"
+    "rev": "65c4a4233029ea3bbe16110a80731fcfd47cf300"
   },
   "lib/forge-std": {
     "rev": "6853b9ec7df5dc0c213b05ae67785ad4f4baa0ea"
