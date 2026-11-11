@@ -6,20 +6,23 @@ on:
   pull_request:
     branches: [main]
 
+permissions:
+  contents: read
+
 jobs:
   analyze:
     runs-on: "ubuntu-latest"
     steps:
       - name: "Check out the repo"
-        uses: "actions/checkout@v4"
+        uses: "actions/checkout@v4.4.0"
         with:
           submodules: "recursive"
 
       - name: "Install Foundry"
-        uses: "foundry-rs/foundry-toolchain@v1"
+        uses: "foundry-rs/foundry-toolchain@v1.9.2"
 
       - name: "Set up Python"
-        uses: "actions/setup-python@v5"
+        uses: "actions/setup-python@v5.6.0"
         with:
           python-version: "3.12"
 
