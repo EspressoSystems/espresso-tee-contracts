@@ -76,7 +76,7 @@ Afterwards the bindings should appear in bindings/go/espressogen/espressogen.go 
 
 Every action used in `.github/workflows/` is pinned to a commit SHA in `.github/workflows/actions.lock`, and CI fails if a workflow and the lockfile disagree. To add or upgrade an action:
 
-1. Install the extension once: `gh extension install github/gh-actions-lock`
+1. Install the extension once, at the version CI uses (see `.github/workflows/actions-lock.yml`): `gh extension install github/gh-actions-lock --pin v0.4.1`
 2. Edit the `uses:` ref in the workflow (prefer a full release tag such as `v4.4.0` over `v4`).
 3. Run `gh actions-lock` to update the lockfile.
 4. Commit both the workflow and `.github/workflows/actions.lock`.
