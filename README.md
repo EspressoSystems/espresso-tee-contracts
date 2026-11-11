@@ -72,6 +72,15 @@ This utility uses the bind v2 implementation from github.com/ethereum/go-ethereu
 To generate these bindings for use in a go project, simply run `go run bindings/gen.go` from the root of this repo.
 Afterwards the bindings should appear in bindings/go/espressogen/espressogen.go and can be linked into your project easily if you are using this repo as a git submodule.
 
+### GitHub Actions dependencies
+
+Every action used in `.github/workflows/` is pinned to a commit SHA in `.github/workflows/actions.lock`, and CI fails if a workflow and the lockfile disagree. To add or upgrade an action:
+
+1. Install the extension once: `gh extension install github/gh-actions-lock`
+2. Edit the `uses:` ref in the workflow (prefer a full release tag such as `v4.4.0` over `v4`).
+3. Run `gh actions-lock` to update the lockfile.
+4. Commit both the workflow and `.github/workflows/actions.lock`.
+
 ## TEE Verifier Deployment
 
 `EspressoTEEVerifier` is deployed using the **OpenZeppelin v5.x Transparent Proxy pattern**, where the `TransparentUpgradeableProxy` automatically deploys its own `ProxyAdmin` contract internally and the `ProxyAdmin` owner controls upgrade capabilities.
