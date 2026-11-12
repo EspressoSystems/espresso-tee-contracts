@@ -146,6 +146,9 @@ contract EspressoTEEVerifier is
         address oldVerifier = address($.espressoNitroTEEVerifier);
         address newVerifier = address(_espressoNitroTEEVerifier);
         $.espressoNitroTEEVerifier = _espressoNitroTEEVerifier;
+        // False positive: the lint treats the slot assignment in _layout()'s assembly as a
+        // possible external call. No external call precedes this emit.
+        // forge-lint: disable-next-line(reentrancy-events)
         emit EspressoNitroTEEVerifierSet(oldVerifier, newVerifier);
     }
 

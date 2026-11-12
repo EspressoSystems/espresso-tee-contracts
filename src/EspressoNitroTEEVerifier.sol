@@ -74,6 +74,11 @@ contract EspressoNitroTEEVerifier is IEspressoNitroTEEVerifier, TEEHelper {
             // Track which enclave hash this signer belongs to (for automatic revocation)
             _signerToEnclaveHash[enclaveAddress] = pcr0Hash;
 
+            // True positive, accepted: verify() is a state-changing call to the owner-set
+            // NitroEnclaveVerifier and must come first (its journal supplies these values).
+            // The writes above stay adjacent to this emit, so log order matches state order even
+            // under reentrancy.
+            // forge-lint: disable-next-line(reentrancy-events)
             emit ServiceRegistered(enclaveAddress, pcr0Hash);
         }
     }
