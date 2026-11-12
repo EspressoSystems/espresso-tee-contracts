@@ -19,7 +19,7 @@ contract TEEHelperDoSFixTest is Test {
         );
         // address(this) is the teeVerifier so test functions can call setEnclaveHash/deleteEnclaveHashes
         verifier = new EspressoNitroTEEVerifier(
-            address(this), address(0x2D7fbBAD6792698Ba92e67b7e180f8010B9Ec788)
+            address(this), address(0x50a24cc21Fa35054179Ebcc7611CC8E29fd70aDB)
         );
     }
 
