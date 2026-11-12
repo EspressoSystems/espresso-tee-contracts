@@ -87,7 +87,7 @@ Claude reviews non-draft PRs from branches in this repo when they are opened, re
 
 - `@claude <question>` (owners, members and collaborators): Claude replies in the thread. It never edits code, commits or pushes.
 - `/review` (owners and members): re-runs the review on the PR's current head.
-- `/code-review [low|medium|high|xhigh|max] [opus|sonnet|haiku|fable]` (owners and members): runs Claude Code's built-in code review.
+- `/code-review [low|medium|high|xhigh|max] [opus|sonnet|haiku|fable|claude-<id>]` (owners and members): runs Claude Code's built-in code review. Defaults: `high`, `opus`.
 
 Comments are posted as `github-actions[bot]`. See [`.github/claude/README.md`](.github/claude/README.md) for how it works, and edit [`.github/claude/review-standard.md`](.github/claude/review-standard.md) to change what the review checks.
 
