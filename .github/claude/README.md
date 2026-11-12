@@ -3,7 +3,9 @@
 Ported from `EspressoSystems/espresso-network` (`.github/claude` at commit `51254487`). `claude_gh.py`, `mention.md`,
 `code-review.md`, `pyproject.toml` and `uv.lock` are unchanged copies, so fixes there can be copied over directly.
 `review-standard.md` and the severity list in `review.md` are written for this repo's contracts. Backport review mode
-and the offline eval were left out.
+and the offline eval were left out. `claude_gh.py` still picks `review-backport.md` (not shipped here) when
+`<workdir>/tmp/is-backport` exists. That branch is unreachable only because `claude-job.yml` runs `rm -rf pr/tmp`
+before the review, so keep that step.
 
 ## Files
 
