@@ -1,4 +1,182 @@
 {
-  "storage": [],
-  "types": {}
+  "storage": [
+    {
+      "astId": 512,
+      "contract": "lib/openzeppelin-contracts-upgradeable/contracts/proxy/utils/Initializable.sol:Initializable",
+      "label": "openzeppelin.storage.Initializable._initialized",
+      "offset": 0,
+      "slot": "108904022758810753673719992590105913556127789646572562039383141376366747609600",
+      "type": "erc7201(openzeppelin.storage.Initializable)::t_uint64"
+    },
+    {
+      "astId": 513,
+      "contract": "lib/openzeppelin-contracts-upgradeable/contracts/proxy/utils/Initializable.sol:Initializable",
+      "label": "openzeppelin.storage.Initializable._initializing",
+      "offset": 8,
+      "slot": "108904022758810753673719992590105913556127789646572562039383141376366747609600",
+      "type": "erc7201(openzeppelin.storage.Initializable)::t_bool"
+    },
+    {
+      "astId": 514,
+      "contract": "lib/openzeppelin-contracts-upgradeable/contracts/access/OwnableUpgradeable.sol:OwnableUpgradeable",
+      "label": "openzeppelin.storage.Ownable._owner",
+      "offset": 0,
+      "slot": "65173360639460082030725920392146925864023520599682862633725751242436743107328",
+      "type": "erc7201(openzeppelin.storage.Ownable)::t_address"
+    },
+    {
+      "astId": 515,
+      "contract": "lib/openzeppelin-contracts-upgradeable/contracts/access/Ownable2StepUpgradeable.sol:Ownable2StepUpgradeable",
+      "label": "openzeppelin.storage.Ownable2Step._pendingOwner",
+      "offset": 0,
+      "slot": "16053720875717120191110171845200109550086765943194951757191984851604933389312",
+      "type": "erc7201(openzeppelin.storage.Ownable2Step)::t_address"
+    },
+    {
+      "astId": 520,
+      "contract": "src/OwnableWithGuardiansUpgradeable.sol:OwnableWithGuardiansUpgradeable",
+      "label": "espresso.storage.OwnableWithGuardians._guardians",
+      "offset": 0,
+      "slot": "6916824368187270674514747402626214590119147063044587051374131715198666174208",
+      "type": "erc7201(espresso.storage.OwnableWithGuardians)::t_struct(AddressSet)1904_storage"
+    },
+    {
+      "astId": 516,
+      "contract": "lib/openzeppelin-contracts-upgradeable/contracts/utils/cryptography/EIP712Upgradeable.sol:EIP712Upgradeable",
+      "label": "openzeppelin.storage.EIP712._hashedName",
+      "offset": 0,
+      "slot": "73010143390315934406010559831118728393600729754696197287367516085911467577600",
+      "type": "erc7201(openzeppelin.storage.EIP712)::t_bytes32"
+    },
+    {
+      "astId": 517,
+      "contract": "lib/openzeppelin-contracts-upgradeable/contracts/utils/cryptography/EIP712Upgradeable.sol:EIP712Upgradeable",
+      "label": "openzeppelin.storage.EIP712._hashedVersion",
+      "offset": 0,
+      "slot": "73010143390315934406010559831118728393600729754696197287367516085911467577601",
+      "type": "erc7201(openzeppelin.storage.EIP712)::t_bytes32"
+    },
+    {
+      "astId": 518,
+      "contract": "lib/openzeppelin-contracts-upgradeable/contracts/utils/cryptography/EIP712Upgradeable.sol:EIP712Upgradeable",
+      "label": "openzeppelin.storage.EIP712._name",
+      "offset": 0,
+      "slot": "73010143390315934406010559831118728393600729754696197287367516085911467577602",
+      "type": "erc7201(openzeppelin.storage.EIP712)::t_string_storage"
+    },
+    {
+      "astId": 519,
+      "contract": "lib/openzeppelin-contracts-upgradeable/contracts/utils/cryptography/EIP712Upgradeable.sol:EIP712Upgradeable",
+      "label": "openzeppelin.storage.EIP712._version",
+      "offset": 0,
+      "slot": "73010143390315934406010559831118728393600729754696197287367516085911467577603",
+      "type": "erc7201(openzeppelin.storage.EIP712)::t_string_storage"
+    },
+    {
+      "astId": 521,
+      "contract": "src/EspressoTEEVerifier.sol:EspressoTEEVerifier",
+      "label": "espresso.storage.EspressoTEEVerifier.espressoNitroTEEVerifier",
+      "offset": 0,
+      "slot": "62142877336411821721725166715672754149668285746653085042296428913028047456256",
+      "type": "erc7201(espresso.storage.EspressoTEEVerifier)::t_contract(IEspressoNitroTEEVerifier)22"
+    }
+  ],
+  "types": {
+    "erc7201(espresso.storage.EspressoTEEVerifier)::t_contract(IEspressoNitroTEEVerifier)22": {
+      "encoding": "inplace",
+      "label": "contract IEspressoNitroTEEVerifier",
+      "numberOfBytes": "20"
+    },
+    "erc7201(espresso.storage.OwnableWithGuardians)::t_array(t_bytes32)dyn_storage": {
+      "encoding": "dynamic_array",
+      "label": "bytes32[]",
+      "numberOfBytes": "32",
+      "base": "erc7201(espresso.storage.OwnableWithGuardians)::t_bytes32"
+    },
+    "erc7201(espresso.storage.OwnableWithGuardians)::t_bytes32": {
+      "encoding": "inplace",
+      "label": "bytes32",
+      "numberOfBytes": "32"
+    },
+    "erc7201(espresso.storage.OwnableWithGuardians)::t_mapping(t_bytes32,t_uint256)": {
+      "encoding": "mapping",
+      "key": "erc7201(espresso.storage.OwnableWithGuardians)::t_bytes32",
+      "label": "mapping(bytes32 => uint256)",
+      "numberOfBytes": "32",
+      "value": "erc7201(espresso.storage.OwnableWithGuardians)::t_uint256"
+    },
+    "erc7201(espresso.storage.OwnableWithGuardians)::t_struct(AddressSet)1904_storage": {
+      "encoding": "inplace",
+      "label": "struct EnumerableSet.AddressSet",
+      "numberOfBytes": "64",
+      "members": [
+        {
+          "astId": 506,
+          "contract": "src/OwnableWithGuardiansUpgradeable.sol:OwnableWithGuardiansUpgradeable",
+          "label": "_inner",
+          "offset": 0,
+          "slot": "0",
+          "type": "erc7201(espresso.storage.OwnableWithGuardians)::t_struct(Set)1901_storage"
+        }
+      ]
+    },
+    "erc7201(espresso.storage.OwnableWithGuardians)::t_struct(Set)1901_storage": {
+      "encoding": "inplace",
+      "label": "struct EnumerableSet.Set",
+      "numberOfBytes": "64",
+      "members": [
+        {
+          "astId": 502,
+          "contract": "src/OwnableWithGuardiansUpgradeable.sol:OwnableWithGuardiansUpgradeable",
+          "label": "_values",
+          "offset": 0,
+          "slot": "0",
+          "type": "erc7201(espresso.storage.OwnableWithGuardians)::t_array(t_bytes32)dyn_storage"
+        },
+        {
+          "astId": 503,
+          "contract": "src/OwnableWithGuardiansUpgradeable.sol:OwnableWithGuardiansUpgradeable",
+          "label": "_positions",
+          "offset": 0,
+          "slot": "1",
+          "type": "erc7201(espresso.storage.OwnableWithGuardians)::t_mapping(t_bytes32,t_uint256)"
+        }
+      ]
+    },
+    "erc7201(espresso.storage.OwnableWithGuardians)::t_uint256": {
+      "encoding": "inplace",
+      "label": "uint256",
+      "numberOfBytes": "32"
+    },
+    "erc7201(openzeppelin.storage.EIP712)::t_bytes32": {
+      "encoding": "inplace",
+      "label": "bytes32",
+      "numberOfBytes": "32"
+    },
+    "erc7201(openzeppelin.storage.EIP712)::t_string_storage": {
+      "encoding": "bytes",
+      "label": "string",
+      "numberOfBytes": "32"
+    },
+    "erc7201(openzeppelin.storage.Initializable)::t_bool": {
+      "encoding": "inplace",
+      "label": "bool",
+      "numberOfBytes": "1"
+    },
+    "erc7201(openzeppelin.storage.Initializable)::t_uint64": {
+      "encoding": "inplace",
+      "label": "uint64",
+      "numberOfBytes": "8"
+    },
+    "erc7201(openzeppelin.storage.Ownable)::t_address": {
+      "encoding": "inplace",
+      "label": "address",
+      "numberOfBytes": "20"
+    },
+    "erc7201(openzeppelin.storage.Ownable2Step)::t_address": {
+      "encoding": "inplace",
+      "label": "address",
+      "numberOfBytes": "20"
+    }
+  }
 }
