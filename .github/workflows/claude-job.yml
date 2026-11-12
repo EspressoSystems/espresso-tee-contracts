@@ -98,11 +98,10 @@ jobs:
         run: |
           set -euo pipefail
           pr=$(gh pr view "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" \
-            --json headRefOid,baseRefOid,headRefName -q '"\(.headRefOid) \(.baseRefOid) \(.headRefName)"')
-          read -r head base ref <<< "$pr"
+            --json headRefOid,baseRefOid -q '"\(.headRefOid) \(.baseRefOid)"')
+          read -r head base <<< "$pr"
           echo "head-sha=$head" >> "$GITHUB_OUTPUT"
           echo "base-sha=$base" >> "$GITHUB_OUTPUT"
-          echo "head-ref=$ref" >> "$GITHUB_OUTPUT"
 
       # Claude's cwd for review: the PR head. The diff and inline lines are against it.
       - uses: actions/checkout@v7.0.1

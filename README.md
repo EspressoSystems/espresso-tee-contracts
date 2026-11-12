@@ -81,6 +81,16 @@ Every action used in `.github/workflows/` is pinned to a commit SHA in `.github/
 3. Run `gh actions-lock` to update the lockfile.
 4. Commit both the workflow and `.github/workflows/actions.lock`.
 
+### Claude on PRs and issues
+
+Claude reviews non-draft PRs from branches in this repo when they are opened, reopened or marked ready for review. Org members can also comment:
+
+- `@claude <question>` (owners, members and collaborators): Claude replies in the thread. It never edits code, commits or pushes.
+- `/review` (owners and members): re-runs the review on the PR's current head.
+- `/code-review [low|medium|high|xhigh|max] [opus|sonnet|haiku|fable]` (owners and members): runs Claude Code's built-in code review.
+
+Comments are posted as `github-actions[bot]`. See [`.github/claude/README.md`](.github/claude/README.md) for how it works, and edit [`.github/claude/review-standard.md`](.github/claude/review-standard.md) to change what the review checks.
+
 ## TEE Verifier Deployment
 
 `EspressoTEEVerifier` is deployed using the **OpenZeppelin v5.x Transparent Proxy pattern**, where the `TransparentUpgradeableProxy` automatically deploys its own `ProxyAdmin` contract internally and the `ProxyAdmin` owner controls upgrade capabilities.

@@ -49,8 +49,11 @@ Goal: find every real defect in the PR. Recall over precision.
 8. Deploy and ops scripts (`scripts/*.s.sol`, `scripts/*.sh`): contracts initialized in the same transaction as
    deployment, owner and guardians set to the intended addresses, verifier addresses match the chain (see the README's
    canonical `NitroEnclaveVerifier` table), no private keys or RPC secrets printed or committed.
-9. Tests. Would any test fail without the change? Changed behavior without a test that pins it: candidate. Access
-   control and revert paths need negative tests, not only the happy path.
+9. Tests and docs.
+   - Would any test fail without the change? Changed behavior without a test that pins it: candidate. Access control
+     and revert paths need negative tests, not only the happy path.
+   - NatSpec on new or changed public and external functions, events and errors matches their behavior (who may call
+     it, what it reverts on, what it emits). Missing or now wrong: candidate.
 10. Cleanup, only with a concrete cost: code duplicating an existing helper (name it); dead code; redundant storage
     reads or writes in a frequently called function; a special case where fixing the shared mechanism is simpler (name
     the change). Also `.github/`: PR controlled content (titles, branch names, bodies, files) reaching a shell or a
