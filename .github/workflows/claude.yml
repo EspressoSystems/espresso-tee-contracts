@@ -35,11 +35,16 @@ jobs:
       job: mention
 
   # `/review` on a PR re-runs the runbook review on the current head.
+  # Only a bare `/review` first line starts the job, matching start's check in claude_gh.py
+  # (anything else would fail there before any comment is posted). Expressions have no string
+  # escapes, so fromJSON builds the newline; web UI comments use \r\n.
   review:
     if: |
       github.event_name == 'issue_comment' &&
       github.event.issue.pull_request &&
-      startsWith(github.event.comment.body, '/review') &&
+      (github.event.comment.body == '/review' ||
+        startsWith(github.event.comment.body, fromJSON('"/review\n"')) ||
+        startsWith(github.event.comment.body, fromJSON('"/review\r\n"'))) &&
       contains(fromJSON('["OWNER", "MEMBER"]'), github.event.comment.author_association)
     uses: ./.github/workflows/claude-job.yml
     permissions:
