@@ -12,10 +12,12 @@ set -euo pipefail
 # excluded. Team members are trusted because they already have the same
 # GitHub permissions as the AI reviewer.
 #
-# Other workflows here post PR-controlled output (test, bench, build logs) as
-# github-actions after a fixed header, so the PR cannot put the marker first.
-# The marker keeps those comments out; it does not authenticate. It must match
-# MARKER in .github/claude/claude_gh.py.
+# The marker does not authenticate: any workflow posting as github-actions can
+# write it. Today only the Claude workflows post as github-actions. Any future
+# workflow that does must not let PR-controlled text (logs, test output) open
+# the comment body, or the PR could put the marker first. Start such comments
+# with a fixed header. The marker must match MARKER in
+# .github/claude/claude_gh.py.
 #
 # The AI reviewer reads the saved file instead of fetching comments
 # directly, so it cannot access excluded comments.
