@@ -8,7 +8,6 @@ import {
     ZkCoProcessorType,
     VerificationResult
 } from "aws-nitro-enclave-attestation/interfaces/INitroEnclaveVerifier.sol";
-import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import {TEEHelper} from "./TEEHelper.sol";
 import {JournalValidation} from "./libraries/JournalValidation.sol";
 
@@ -17,7 +16,7 @@ import {JournalValidation} from "./libraries/JournalValidation.sol";
  * @notice Contains the logic to verify zk proof of the attestation on-chain. It uses the EspressoNitroTEEVerifier contract
  *         from `automata` to verify the proof.
  */
-contract EspressoNitroTEEVerifier is IEspressoNitroTEEVerifier, TEEHelper, ReentrancyGuard {
+contract EspressoNitroTEEVerifier is IEspressoNitroTEEVerifier, TEEHelper {
     INitroEnclaveVerifier private _nitroEnclaveVerifier;
 
     constructor(address teeVerifier_, address nitroEnclaveVerifier_) TEEHelper(teeVerifier_) {
@@ -30,10 +29,7 @@ contract EspressoNitroTEEVerifier is IEspressoNitroTEEVerifier, TEEHelper, Reent
      * @param output The public output of the ZK proof
      * @param proofBytes The cryptographic proof bytes over attestation
      */
-    function registerService(bytes calldata output, bytes calldata proofBytes)
-        external
-        nonReentrant
-    {
+    function registerService(bytes calldata output, bytes calldata proofBytes) external {
         VerifierJournal memory journal = _nitroEnclaveVerifier.verify(
             output,
             // Currently only Succinct ZK coprocessor is supported
@@ -78,7 +74,7 @@ contract EspressoNitroTEEVerifier is IEspressoNitroTEEVerifier, TEEHelper, Reent
             // Track which enclave hash this signer belongs to (for automatic revocation)
             _signerToEnclaveHash[enclaveAddress] = pcr0Hash;
 
-            // Safe: emitted after the external verify() call, but registerService is nonReentrant.
+            // Accepted: verify() must run first, and the verifier is trusted.
             // forge-lint: disable-next-line(reentrancy-events)
             emit ServiceRegistered(enclaveAddress, pcr0Hash);
         }
