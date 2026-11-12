@@ -110,9 +110,7 @@ abstract contract OwnableWithGuardiansUpgradeable is Initializable, Ownable2Step
         }
         OwnableWithGuardiansStorage storage $ = _getOwnableWithGuardiansStorage();
         if ($._guardians.add(guardian)) {
-            // False positive: the lint treats the slot assignment in
-            // _getOwnableWithGuardiansStorage()'s assembly as a possible external call.
-            // No external call precedes this emit.
+            // False positive: no external call; the lint flags storage-slot assembly.
             // forge-lint: disable-next-line(reentrancy-events)
             emit GuardianAdded(guardian);
         }
@@ -141,9 +139,7 @@ abstract contract OwnableWithGuardiansUpgradeable is Initializable, Ownable2Step
         if (!$._guardians.remove(guardian)) {
             return; // Not a guardian, no-op
         }
-        // False positive: the lint treats the slot assignment in
-        // _getOwnableWithGuardiansStorage()'s assembly as a possible external call.
-        // No external call precedes this emit.
+        // False positive: no external call; the lint flags storage-slot assembly.
         // forge-lint: disable-next-line(reentrancy-events)
         emit GuardianRemoved(guardian);
     }

@@ -8,6 +8,7 @@ import {
     ZkCoProcessorType,
     VerificationResult
 } from "aws-nitro-enclave-attestation/interfaces/INitroEnclaveVerifier.sol";
+import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import {TEEHelper} from "./TEEHelper.sol";
 import {JournalValidation} from "./libraries/JournalValidation.sol";
 
@@ -16,7 +17,7 @@ import {JournalValidation} from "./libraries/JournalValidation.sol";
  * @notice Contains the logic to verify zk proof of the attestation on-chain. It uses the EspressoNitroTEEVerifier contract
  *         from `automata` to verify the proof.
  */
-contract EspressoNitroTEEVerifier is IEspressoNitroTEEVerifier, TEEHelper {
+contract EspressoNitroTEEVerifier is IEspressoNitroTEEVerifier, TEEHelper, ReentrancyGuard {
     INitroEnclaveVerifier private _nitroEnclaveVerifier;
 
     constructor(address teeVerifier_, address nitroEnclaveVerifier_) TEEHelper(teeVerifier_) {
@@ -29,7 +30,10 @@ contract EspressoNitroTEEVerifier is IEspressoNitroTEEVerifier, TEEHelper {
      * @param output The public output of the ZK proof
      * @param proofBytes The cryptographic proof bytes over attestation
      */
-    function registerService(bytes calldata output, bytes calldata proofBytes) external {
+    function registerService(bytes calldata output, bytes calldata proofBytes)
+        external
+        nonReentrant
+    {
         VerifierJournal memory journal = _nitroEnclaveVerifier.verify(
             output,
             // Currently only Succinct ZK coprocessor is supported
@@ -74,10 +78,7 @@ contract EspressoNitroTEEVerifier is IEspressoNitroTEEVerifier, TEEHelper {
             // Track which enclave hash this signer belongs to (for automatic revocation)
             _signerToEnclaveHash[enclaveAddress] = pcr0Hash;
 
-            // True positive, accepted: verify() is a state-changing call to the owner-set
-            // NitroEnclaveVerifier and must come first (its journal supplies these values).
-            // The writes above stay adjacent to this emit, so log order matches state order even
-            // under reentrancy.
+            // Safe: emitted after the external verify() call, but registerService is nonReentrant.
             // forge-lint: disable-next-line(reentrancy-events)
             emit ServiceRegistered(enclaveAddress, pcr0Hash);
         }
