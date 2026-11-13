@@ -23,3 +23,9 @@ deployments/
 
 # Storage layout temp files (snapshots are committed)
 .storage-layouts/*.current.json
+
+# Python (.github/claude)
+__pycache__/
+.pytest_cache/
+.ruff_cache/
+.venv/

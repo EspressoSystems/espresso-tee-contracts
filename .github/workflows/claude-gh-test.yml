@@ -1,0 +1,44 @@
+name: Claude CLI tests
+
+# claude_gh.py runs with write tokens in claude-job.yml's start and apply, so its tests and lint
+# run on every change to it.
+on:
+  pull_request:
+    paths:
+      - .github/claude/**
+      - .github/workflows/claude-gh-test.yml
+  push:
+    branches: [main]
+    paths:
+      - .github/claude/**
+      - .github/workflows/claude-gh-test.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: pytest and ruff
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: .github/claude
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: astral-sh/setup-uv@v10.3.2
+        with:
+          cache-dependency-glob: .github/claude/uv.lock
+
+      - name: pytest
+        run: uv run --locked pytest
+
+      - name: ruff check
+        run: uv run --locked ruff check
+
+      - name: ruff format
+        run: uv run --locked ruff format --check
