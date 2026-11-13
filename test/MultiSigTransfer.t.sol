@@ -45,7 +45,7 @@ contract MultiSigTransferTest is Test {
     // TEE contract global variables for the tests.
     EspressoTEEVerifier espressoTEEVerifier;
     EspressoNitroTEEVerifier espressoNitroTEEVerifier;
-    bytes32 pcr0Hash = bytes32(0x555797ae2413bb1e4c352434a901032b16d7ac9090322532a3fccb9947977e8b);
+    bytes32 pcr0Hash = bytes32(0x0cdbf7a27799c3849a59c9e281ce87b1775fe1695e781692d2689f837f6c5ba6);
     // Owner of the ProxyAdmin contracts that get auto-created by TransparentUpgradeableProxy.
     // Must differ from the contract owner so it can forward calls to the implementation during tests.
     address proxyAdminOwner = address(1000);
@@ -77,7 +77,7 @@ contract MultiSigTransferTest is Test {
 
     function _deployNitro(address teeVerifier) internal returns (EspressoNitroTEEVerifier) {
         return new EspressoNitroTEEVerifier(
-            teeVerifier, address(0x2D7fbBAD6792698Ba92e67b7e180f8010B9Ec788)
+            teeVerifier, address(0x50a24cc21Fa35054179Ebcc7611CC8E29fd70aDB)
         );
     }
 

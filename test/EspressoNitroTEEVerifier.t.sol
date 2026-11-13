@@ -15,7 +15,8 @@ import {IEspressoNitroTEEVerifier} from "../src/interface/IEspressoNitroTEEVerif
 import {IEspressoTEEVerifier} from "../src/interface/IEspressoTEEVerifier.sol";
 import {ITEEHelper} from "../src/interface/ITEEHelper.sol";
 import {
-    INitroEnclaveVerifier
+    INitroEnclaveVerifier,
+    VerificationResult
 } from "aws-nitro-enclave-attestation/interfaces/INitroEnclaveVerifier.sol";
 
 contract EspressoNitroTEEVerifierTest is Test {
@@ -26,7 +27,7 @@ contract EspressoNitroTEEVerifierTest is Test {
 
     EspressoTEEVerifier espressoTEEVerifier;
     EspressoNitroTEEVerifier espressoNitroTEEVerifier;
-    bytes32 pcr0Hash = bytes32(0x555797ae2413bb1e4c352434a901032b16d7ac9090322532a3fccb9947977e8b);
+    bytes32 pcr0Hash = bytes32(0x0cdbf7a27799c3849a59c9e281ce87b1775fe1695e781692d2689f837f6c5ba6);
 
     function setUp() public {
         vm.createSelectFork(
@@ -57,7 +58,7 @@ contract EspressoNitroTEEVerifierTest is Test {
 
     function _deployNitro(address teeVerifier) internal returns (EspressoNitroTEEVerifier) {
         return new EspressoNitroTEEVerifier(
-            teeVerifier, address(0x2D7fbBAD6792698Ba92e67b7e180f8010B9Ec788)
+            teeVerifier, address(0x50a24cc21Fa35054179Ebcc7611CC8E29fd70aDB)
         );
     }
 
@@ -66,7 +67,7 @@ contract EspressoNitroTEEVerifierTest is Test {
      */
     function testRegisterBatchPoster() public {
         vm.startPrank(adminTEE);
-        vm.warp(1_764_889_188);
+        vm.warp(1_794_492_072);
         string memory proofPath = "/test/configs/proof.json";
         string memory inputFile = string.concat(vm.projectRoot(), proofPath);
         string memory json = vm.readFile(inputFile);
@@ -82,7 +83,7 @@ contract EspressoNitroTEEVerifierTest is Test {
      */
     function testRegisterBatchPosterInvalidPCR0Hash() public {
         vm.startPrank(adminTEE);
-        vm.warp(1_764_889_188);
+        vm.warp(1_794_492_072);
         string memory proofPath = "/test/configs/proof.json";
         string memory inputFile = string.concat(vm.projectRoot(), proofPath);
         string memory json = vm.readFile(inputFile);
@@ -118,13 +119,19 @@ contract EspressoNitroTEEVerifierTest is Test {
      */
     function testExpiredProof() public {
         vm.startPrank(adminTEE);
-        vm.warp(1_433_353_188);
-        string memory proofPath = "/test/configs/expired_proof.json";
+        // Valid proof, but past the verifier's 3-hour (maxTimeDiff) window.
+        vm.warp(1_794_492_072 + 3 hours + 1);
+        string memory proofPath = "/test/configs/proof.json";
         string memory inputFile = string.concat(vm.projectRoot(), proofPath);
         string memory json = vm.readFile(inputFile);
         bytes memory output = vm.parseJsonBytes(json, ".raw_proof.journal");
         bytes memory proofBytes = vm.parseJsonBytes(json, ".onchain_proof");
-        vm.expectRevert();
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                IEspressoNitroTEEVerifier.VerificationFailed.selector,
+                VerificationResult.InvalidTimestamp
+            )
+        );
         espressoNitroTEEVerifier.registerService(output, proofBytes);
         vm.stopPrank();
     }
@@ -151,7 +158,7 @@ contract EspressoNitroTEEVerifierTest is Test {
     function testDeleteRegisterBatchPosterOwnership() public {
         // register signer
         vm.startPrank(adminTEE);
-        vm.warp(1_764_889_188);
+        vm.warp(1_794_492_072);
         string memory proofPath = "/test/configs/proof.json";
         string memory inputFile = string.concat(vm.projectRoot(), proofPath);
         string memory json = vm.readFile(inputFile);
@@ -161,7 +168,7 @@ contract EspressoNitroTEEVerifierTest is Test {
         // register and verify signer exists
         espressoNitroTEEVerifier.registerService(output, proofBytes);
 
-        address signer = 0xF8463E0aF00C1910402D2A51B3a8CecD0dC1c3fE;
+        address signer = 0x4D62fA8A2085f521f59D7bc7C30b64a46031dDaB;
         assertTrue(espressoNitroTEEVerifier.isSignerValid(signer));
 
         // start with incorrect admin address
@@ -190,7 +197,7 @@ contract EspressoNitroTEEVerifierTest is Test {
 
     function testDeleteEnclaveHashes() public {
         vm.startPrank(adminTEE);
-        vm.warp(1_764_889_188);
+        vm.warp(1_794_492_072);
         string memory proofPath = "/test/configs/proof.json";
         string memory inputFile = string.concat(vm.projectRoot(), proofPath);
         string memory json = vm.readFile(inputFile);
@@ -199,7 +206,7 @@ contract EspressoNitroTEEVerifierTest is Test {
 
         espressoNitroTEEVerifier.registerService(output, proofBytes);
 
-        address signer = 0xF8463E0aF00C1910402D2A51B3a8CecD0dC1c3fE;
+        address signer = 0x4D62fA8A2085f521f59D7bc7C30b64a46031dDaB;
         // Verify signer is valid after registration
         assertTrue(espressoNitroTEEVerifier.isSignerValid(signer));
 
@@ -216,7 +223,7 @@ contract EspressoNitroTEEVerifierTest is Test {
     function testSetNitroEnclaveVerifierAddress() public {
         vm.startPrank(adminTEE);
         // Use the actual Sepolia Nitro Enclave Verifier address which has deployed code
-        address newVerifierAddress = 0x2D7fbBAD6792698Ba92e67b7e180f8010B9Ec788;
+        address newVerifierAddress = 0x50a24cc21Fa35054179Ebcc7611CC8E29fd70aDB;
         espressoTEEVerifier.setNitroEnclaveVerifier(newVerifierAddress);
         vm.stopPrank();
         // Check that only tee verifier can set the address
