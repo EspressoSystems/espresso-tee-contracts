@@ -57,6 +57,8 @@ class FakeGitHub:
     compares: list[tuple[str, str]] = field(default_factory=list)
     edit_max: int | None = None  # edits longer than this raise
     pr: dict = field(default_factory=lambda: dict(SAME_REPO_PR))
+    comments: list[dict] = field(default_factory=list)
+    comment_fetches: int = 0
 
     async def pr_diff(self, pr: int) -> str:
         self.live_diffs += 1
@@ -108,6 +110,10 @@ class FakeGitHub:
 
     async def resolve_thread(self, thread_id: str) -> None:
         self.resolved.append(thread_id)
+
+    async def review_comments(self, pr: int) -> list[dict]:
+        self.comment_fetches += 1
+        return self.comments
 
 
 def make_result(**kw: Any) -> ResultMessage:
@@ -520,6 +526,46 @@ def test_mention_review_event_uses_review_author():
     m = cg.mention_from_event("pull_request_review", event)
     assert m.context["author"] == "amy" and m.context["review_body"] == "@claude look"
     assert m.reply_to is None
+
+
+def review_comment(id: int, reply_to: int | None, body: str) -> dict:
+    return {"id": id, "in_reply_to_id": reply_to, "author": "claude", "body": body}
+
+
+def test_thread_history_keeps_earlier_thread_comments_oldest_first():
+    comments = [
+        review_comment(6, 4, "second"),
+        review_comment(4, None, "finding"),
+        review_comment(5, None, "other thread"),
+        review_comment(9, 5, "other reply"),
+        review_comment(11, 4, "@claude explain"),
+        review_comment(12, 4, "Working"),  # start's status, posted after the mention
+    ]
+    assert cg.thread_history(comments, 4, 11) == [
+        {"author": "claude", "body": "finding"},
+        {"author": "claude", "body": "second"},
+    ]
+
+
+def test_amain_run_mention_reply_includes_thread(tmp_path):
+    gh = FakeGitHub(comments=[review_comment(4, None, "the finding")])
+    runner = FakeRunner([], make_result())
+    event = comment_event(in_reply_to_id=4)
+    amain(
+        tmp_path, ["run", "mention"], "pull_request_review_comment", event, gh, runner
+    )
+    [job] = runner.jobs
+    assert '"thread": [' in job.prompt and '"body": "the finding"' in job.prompt
+
+
+def test_amain_run_mention_top_level_skips_thread(tmp_path):
+    gh = FakeGitHub()
+    runner = FakeRunner([], make_result())
+    amain(
+        tmp_path, ["run", "mention"], "issue_comment", ISSUE_COMMENT_EVENT, gh, runner
+    )
+    [job] = runner.jobs
+    assert gh.comment_fetches == 0 and '"thread"' not in job.prompt
 
 
 def test_mention_prompt_embeds_event_as_plain_context():

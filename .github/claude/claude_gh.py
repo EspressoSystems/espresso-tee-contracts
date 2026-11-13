@@ -35,7 +35,7 @@ import os
 import re
 import sys
 from collections.abc import AsyncIterator, Awaitable, Callable, Mapping
-from dataclasses import asdict, dataclass, field
+from dataclasses import asdict, dataclass, field, replace
 from pathlib import Path
 from typing import Any, Literal, Protocol, get_args
 
@@ -221,6 +221,7 @@ class GitHub(Protocol):
     async def edit_comment(self, comment: Posted, body: str) -> None: ...
     async def thread(self, thread_id: str) -> Thread: ...
     async def resolve_thread(self, thread_id: str) -> None: ...
+    async def review_comments(self, pr: int) -> list[dict[str, Any]]: ...
 
 
 Runner = Callable[[Job], AsyncIterator[Message]]
@@ -259,6 +260,19 @@ def mention_from_event(name: str, event: dict) -> Mention:
     }
     context = {k: v for k, v in context.items() if v is not None}
     return Mention(target(event), reply_to, context)
+
+
+def thread_history(
+    comments: list[dict[str, Any]], root: int, current: int
+) -> list[dict[str, str]]:
+    """Comments in review thread `root` posted before `current`, oldest first.
+
+    Ids increase, so this drops `current` and later ones (the "Working" status)."""
+    return [
+        {"author": c["author"], "body": c["body"]}
+        for c in sorted(comments, key=lambda c: c["id"])
+        if root in (c["id"], c["in_reply_to_id"]) and c["id"] < current
+    ]
 
 
 def review_prompt(target: Target, head_sha: str, doc: str) -> str:
@@ -832,6 +846,24 @@ class GitHubKit:
     async def resolve_thread(self, thread_id: str) -> None:
         await self.gh.async_graphql(RESOLVE_MUTATION, {"id": thread_id})
 
+    async def review_comments(self, pr: int) -> list[dict[str, Any]]:
+        pages = self.gh.rest.paginate(
+            self.gh.rest.pulls.async_list_review_comments,
+            owner=self.owner,
+            repo=self.name,
+            pull_number=pr,
+            per_page=100,
+        )
+        return [
+            {
+                "id": c.id,
+                "in_reply_to_id": c.in_reply_to_id or None,
+                "author": login(c.user),
+                "body": c.body,
+            }
+            async for c in pages
+        ]
+
 
 THREAD_QUERY = """
 query($id: ID!) {
@@ -1063,8 +1095,11 @@ def build_job(
     head_sha: str | None,
     diff: str | None,
     tmp: Path,
+    thread: list[dict[str, str]] | None = None,
 ) -> Job:
-    """`head_sha` and `diff` are None for mention; `diff` also when GitHub refused it."""
+    """`head_sha` and `diff` are None for mention; `diff` also when GitHub refused it.
+
+    `thread`: earlier comments of the review thread a mention replies in."""
     append = None
     builtin = BUILTIN
     settings: list[SettingSource] = ["user"]  # PR head checkout: no project settings
@@ -1087,6 +1122,8 @@ def build_job(
         prompt = review_prompt(tgt, head_sha, doc)
     elif args.job == "mention":
         mention = mention_from_event(event_name, event)
+        if thread:
+            mention = replace(mention, context={**mention.context, "thread": thread})
         tgt = mention.target
         prompt = mention_prompt(mention, (CLAUDE_DIR / "mention.md").read_text())
         settings = ["user", "project"]  # default-branch checkout
@@ -1198,8 +1235,14 @@ async def amain(
         claude_tmp = work_tmp(args, tmp)
         claude_tmp.mkdir(parents=True, exist_ok=True)
         (claude_tmp / "pr.diff").write_text(diff)
+    thread = None
+    if args.job == "mention":
+        root = mention_from_event(name, event).reply_to
+        if root is not None:
+            comments = await gh.review_comments(target(event).number)
+            thread = thread_history(comments, root, event["comment"]["id"])
     secrets = load_secrets(env)
-    job = build_job(args, gh, secrets, name, event, head_sha, diff, tmp)
+    job = build_job(args, gh, secrets, name, event, head_sha, diff, tmp, thread)
     return await run(job, runner)
 
 

@@ -1,7 +1,9 @@
 # Claude on GitHub
 
-Ported from `EspressoSystems/espresso-network` (`.github/claude` at commit `51254487`). `claude_gh.py`, `mention.md`,
-`code-review.md`, `pyproject.toml` and `uv.lock` are unchanged copies, so fixes there can be copied over directly.
+Ported from `EspressoSystems/espresso-network` (`.github/claude` at commit `51254487`). `code-review.md`,
+`pyproject.toml` and `uv.lock` are unchanged copies. `claude_gh.py` and `mention.md` add one change: `@claude` replies
+in a review thread get the thread's earlier comments (`thread_history`). Keep it when copying fixes from upstream, or
+upstream it.
 `review-standard.md` and the severity list in `review.md` are written for this repo's contracts. Backport review mode
 and the offline eval were left out. `claude_gh.py` still picks `review-backport.md` (not shipped here) when
 `<workdir>/tmp/is-backport` exists. That branch is unreachable only because `claude-job.yml` runs `rm -rf pr/tmp`
@@ -26,6 +28,7 @@ Three workflows use it:
   when they are opened, reopened or marked ready for review.
 - `.github/workflows/claude.yml`: comment commands, for org owners, members and collaborators.
   - `@claude <question>` on an issue or PR: Claude replies in the thread. It never edits files, commits or pushes.
+    Replies in a review thread include the thread's earlier comments.
   - `/review` (owners and members): re-runs the review on the PR's current head.
   - `/code-review [low|medium|high|xhigh|max] [opus|sonnet|haiku|fable|claude-<id>]` (owners and members): runs Claude
     Code's built-in code review. Defaults: `high`, `opus`.
