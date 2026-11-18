@@ -91,7 +91,9 @@ contract EspressoNitroTEEVerifierTest is Test {
         espressoNitroTEEVerifier.registerService(output, proofBytes);
         vm.stopPrank();
 
-        assertTrue(espressoNitroTEEVerifier.isSignerValid(0x4D62fA8A2085f521f59D7bc7C30b64a46031dDaB));
+        assertTrue(
+            espressoNitroTEEVerifier.isSignerValid(0x4D62fA8A2085f521f59D7bc7C30b64a46031dDaB)
+        );
     }
 
     /**
