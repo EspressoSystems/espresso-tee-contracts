@@ -78,6 +78,22 @@ contract EspressoNitroTEEVerifierTest is Test {
         vm.stopPrank();
     }
 
+    // This currently covers SP1 v6 and may need updating when the proof version or verifier changes.
+    function testProofVersionCompatibility() public {
+        vm.startPrank(adminTEE);
+        vm.warp(1_794_492_072);
+        string memory proofPath = "/test/configs/proof.json";
+        string memory inputFile = string.concat(vm.projectRoot(), proofPath);
+        string memory json = vm.readFile(inputFile);
+        bytes memory output = vm.parseJsonBytes(json, ".raw_proof.journal");
+        bytes memory proofBytes = vm.parseJsonBytes(json, ".onchain_proof");
+
+        espressoNitroTEEVerifier.registerService(output, proofBytes);
+        vm.stopPrank();
+
+        assertTrue(espressoNitroTEEVerifier.isSignerValid(0x4D62fA8A2085f521f59D7bc7C30b64a46031dDaB));
+    }
+
     /**
      * Test register signer fails upon invalid attestation pcr0
      */
