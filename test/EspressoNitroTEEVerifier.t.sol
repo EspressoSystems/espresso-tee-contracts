@@ -34,6 +34,10 @@ contract EspressoNitroTEEVerifierTest is Test {
         vm.createSelectFork(
             "https://rpc.ankr.com/eth_sepolia/b4eb7cd43eb25061e06a5d07ecd191433c3a28988f14dd9bfb6be6a122355023"
         );
+        _setUpVerifiers();
+    }
+
+    function _setUpVerifiers() internal {
         espressoTEEVerifier = _deployTEEVerifierWithPlaceholders();
         espressoNitroTEEVerifier = _deployNitro(address(espressoTEEVerifier));
         vm.startPrank(adminTEE);
@@ -107,6 +111,10 @@ contract EspressoNitroTEEVerifierTest is Test {
      * Test invalid proof reverts the transaction
      */
     function testInvalidProof() public {
+        // Pin the external verifier state to the fixture's source block.
+        vm.rollFork(12_119_308);
+        _setUpVerifiers();
+
         vm.startPrank(adminTEE);
         vm.warp(1_794_492_072);
         string memory proofPath = "/test/configs/invalid_proof.json";
