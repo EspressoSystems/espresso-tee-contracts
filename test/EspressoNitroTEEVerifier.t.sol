@@ -28,6 +28,7 @@ contract EspressoNitroTEEVerifierTest is Test {
     EspressoTEEVerifier espressoTEEVerifier;
     EspressoNitroTEEVerifier espressoNitroTEEVerifier;
     bytes32 pcr0Hash = bytes32(0x0cdbf7a27799c3849a59c9e281ce87b1775fe1695e781692d2689f837f6c5ba6);
+    address private constant FIXTURE_SIGNER = 0x4D62fA8A2085f521f59D7bc7C30b64a46031dDaB;
 
     function setUp() public {
         vm.createSelectFork(
@@ -64,6 +65,7 @@ contract EspressoNitroTEEVerifierTest is Test {
 
     /**
      * Test register signer succeeds upon valid attestation and signature
+     * Covers SP1 v6 and may need updating when the proof version or verifier changes.
      */
     function testRegisterBatchPoster() public {
         vm.startPrank(adminTEE);
@@ -76,24 +78,8 @@ contract EspressoNitroTEEVerifierTest is Test {
 
         espressoNitroTEEVerifier.registerService(output, proofBytes);
         vm.stopPrank();
-    }
 
-    // This currently covers SP1 v6 and may need updating when the proof version or verifier changes.
-    function testProofVersionCompatibility() public {
-        vm.startPrank(adminTEE);
-        vm.warp(1_794_492_072);
-        string memory proofPath = "/test/configs/proof.json";
-        string memory inputFile = string.concat(vm.projectRoot(), proofPath);
-        string memory json = vm.readFile(inputFile);
-        bytes memory output = vm.parseJsonBytes(json, ".raw_proof.journal");
-        bytes memory proofBytes = vm.parseJsonBytes(json, ".onchain_proof");
-
-        espressoNitroTEEVerifier.registerService(output, proofBytes);
-        vm.stopPrank();
-
-        assertTrue(
-            espressoNitroTEEVerifier.isSignerValid(0x4D62fA8A2085f521f59D7bc7C30b64a46031dDaB)
-        );
+        assertTrue(espressoNitroTEEVerifier.isSignerValid(FIXTURE_SIGNER));
     }
 
     /**
@@ -187,8 +173,7 @@ contract EspressoNitroTEEVerifierTest is Test {
         // register and verify signer exists
         espressoNitroTEEVerifier.registerService(output, proofBytes);
 
-        address signer = 0x4D62fA8A2085f521f59D7bc7C30b64a46031dDaB;
-        assertTrue(espressoNitroTEEVerifier.isSignerValid(signer));
+        assertTrue(espressoNitroTEEVerifier.isSignerValid(FIXTURE_SIGNER));
 
         // start with incorrect admin address
         vm.stopPrank();
@@ -210,7 +195,7 @@ contract EspressoNitroTEEVerifierTest is Test {
         espressoTEEVerifier.deleteEnclaveHashes(enclaveHashes, IEspressoTEEVerifier.TeeType.NITRO);
 
         // Signer is NOT valid (hash deleted, automatic revocation)
-        assertFalse(espressoNitroTEEVerifier.isSignerValid(signer));
+        assertFalse(espressoNitroTEEVerifier.isSignerValid(FIXTURE_SIGNER));
         assertEq(espressoNitroTEEVerifier.registeredEnclaveHash(pcr0Hash), false);
     }
 
@@ -225,9 +210,8 @@ contract EspressoNitroTEEVerifierTest is Test {
 
         espressoNitroTEEVerifier.registerService(output, proofBytes);
 
-        address signer = 0x4D62fA8A2085f521f59D7bc7C30b64a46031dDaB;
         // Verify signer is valid after registration
-        assertTrue(espressoNitroTEEVerifier.isSignerValid(signer));
+        assertTrue(espressoNitroTEEVerifier.isSignerValid(FIXTURE_SIGNER));
 
         bytes32[] memory enclaveHashes = new bytes32[](1);
         enclaveHashes[0] = pcr0Hash;
@@ -235,7 +219,7 @@ contract EspressoNitroTEEVerifierTest is Test {
         assertEq(espressoNitroTEEVerifier.registeredEnclaveHash(pcr0Hash), false);
         // NOTE: Signers remain in registeredServices (not cleaned to avoid DoS)
         // But isSignerValid() checks if their hash is still approved (automatic revocation!)
-        assertFalse(espressoNitroTEEVerifier.isSignerValid(signer));
+        assertFalse(espressoNitroTEEVerifier.isSignerValid(FIXTURE_SIGNER));
     }
 
     // Test setting Nitro Enclave Verifier address for tee verifier and non-tee verifier
