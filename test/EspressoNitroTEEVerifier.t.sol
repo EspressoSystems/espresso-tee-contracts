@@ -18,6 +18,7 @@ import {
     INitroEnclaveVerifier,
     VerificationResult
 } from "aws-nitro-enclave-attestation/interfaces/INitroEnclaveVerifier.sol";
+import {FIXTURE_TIMESTAMP} from "./configs/ProofFixture.sol";
 
 contract EspressoNitroTEEVerifierTest is Test {
     // Owner of the ProxyAdmin contracts that get auto-created by TransparentUpgradeableProxy
@@ -73,7 +74,7 @@ contract EspressoNitroTEEVerifierTest is Test {
      */
     function testRegisterBatchPoster() public {
         vm.startPrank(adminTEE);
-        vm.warp(1_794_492_072);
+        vm.warp(FIXTURE_TIMESTAMP);
         string memory proofPath = "/test/configs/proof.json";
         string memory inputFile = string.concat(vm.projectRoot(), proofPath);
         string memory json = vm.readFile(inputFile);
@@ -91,7 +92,7 @@ contract EspressoNitroTEEVerifierTest is Test {
      */
     function testRegisterBatchPosterInvalidPCR0Hash() public {
         vm.startPrank(adminTEE);
-        vm.warp(1_794_492_072);
+        vm.warp(FIXTURE_TIMESTAMP);
         string memory proofPath = "/test/configs/proof.json";
         string memory inputFile = string.concat(vm.projectRoot(), proofPath);
         string memory json = vm.readFile(inputFile);
@@ -116,7 +117,7 @@ contract EspressoNitroTEEVerifierTest is Test {
         _setUpVerifiers();
 
         vm.startPrank(adminTEE);
-        vm.warp(1_794_492_072);
+        vm.warp(FIXTURE_TIMESTAMP);
         string memory proofPath = "/test/configs/invalid_proof.json";
         string memory inputFile = string.concat(vm.projectRoot(), proofPath);
         string memory json = vm.readFile(inputFile);
@@ -133,7 +134,7 @@ contract EspressoNitroTEEVerifierTest is Test {
     function testExpiredProof() public {
         vm.startPrank(adminTEE);
         // Valid proof, but past the verifier's 3-hour (maxTimeDiff) window.
-        vm.warp(1_794_492_072 + 3 hours + 1);
+        vm.warp(FIXTURE_TIMESTAMP + 3 hours + 1);
         string memory proofPath = "/test/configs/proof.json";
         string memory inputFile = string.concat(vm.projectRoot(), proofPath);
         string memory json = vm.readFile(inputFile);
@@ -171,7 +172,7 @@ contract EspressoNitroTEEVerifierTest is Test {
     function testDeleteRegisterBatchPosterOwnership() public {
         // register signer
         vm.startPrank(adminTEE);
-        vm.warp(1_794_492_072);
+        vm.warp(FIXTURE_TIMESTAMP);
         string memory proofPath = "/test/configs/proof.json";
         string memory inputFile = string.concat(vm.projectRoot(), proofPath);
         string memory json = vm.readFile(inputFile);
@@ -209,7 +210,7 @@ contract EspressoNitroTEEVerifierTest is Test {
 
     function testDeleteEnclaveHashes() public {
         vm.startPrank(adminTEE);
-        vm.warp(1_794_492_072);
+        vm.warp(FIXTURE_TIMESTAMP);
         string memory proofPath = "/test/configs/proof.json";
         string memory inputFile = string.concat(vm.projectRoot(), proofPath);
         string memory json = vm.readFile(inputFile);

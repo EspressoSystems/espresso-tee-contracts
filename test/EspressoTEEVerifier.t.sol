@@ -17,6 +17,7 @@ import {IEspressoNitroTEEVerifier} from "../src/interface/IEspressoNitroTEEVerif
 import {
     INitroEnclaveVerifier
 } from "aws-nitro-enclave-attestation/interfaces/INitroEnclaveVerifier.sol";
+import {FIXTURE_TIMESTAMP} from "./configs/ProofFixture.sol";
 
 contract EspressoTEEVerifierTest is Test {
     address adminTEE = address(141);
@@ -65,7 +66,7 @@ contract EspressoTEEVerifierTest is Test {
     }
 
     function testNitroRegisterService() public {
-        vm.warp(1_794_492_072);
+        vm.warp(FIXTURE_TIMESTAMP);
         string memory proofPath = "/test/configs/proof.json";
         string memory inputFile = string.concat(vm.projectRoot(), proofPath);
         string memory json = vm.readFile(inputFile);
@@ -77,7 +78,7 @@ contract EspressoTEEVerifierTest is Test {
     }
 
     function testNitroRegisteredSigners() public {
-        vm.warp(1_794_492_072);
+        vm.warp(FIXTURE_TIMESTAMP);
         string memory proofPath = "/test/configs/proof.json";
         string memory inputFile = string.concat(vm.projectRoot(), proofPath);
         string memory json = vm.readFile(inputFile);
@@ -103,7 +104,7 @@ contract EspressoTEEVerifierTest is Test {
 
     function testDeleteEnclaveHashesNitro() public {
         vm.startPrank(adminTEE);
-        vm.warp(1_794_492_072);
+        vm.warp(FIXTURE_TIMESTAMP);
         string memory proofPath = "/test/configs/proof.json";
         string memory inputFile = string.concat(vm.projectRoot(), proofPath);
         string memory json = vm.readFile(inputFile);
@@ -165,7 +166,7 @@ contract EspressoTEEVerifierTest is Test {
      */
     function testNitroRegisterServiceInvalidPCR0Hash() public {
         vm.startPrank(adminTEE);
-        vm.warp(1_794_492_072);
+        vm.warp(FIXTURE_TIMESTAMP);
         string memory proofPath = "/test/configs/proof.json";
         string memory inputFile = string.concat(vm.projectRoot(), proofPath);
         string memory json = vm.readFile(inputFile);
