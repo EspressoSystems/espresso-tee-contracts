@@ -120,12 +120,13 @@ contract EspressoNitroTEEVerifierTest is Test {
      */
     function testInvalidProof() public {
         vm.startPrank(adminTEE);
+        vm.warp(1_794_492_072);
         string memory proofPath = "/test/configs/invalid_proof.json";
         string memory inputFile = string.concat(vm.projectRoot(), proofPath);
         string memory json = vm.readFile(inputFile);
         bytes memory output = vm.parseJsonBytes(json, ".raw_proof.journal");
         bytes memory proofBytes = vm.parseJsonBytes(json, ".onchain_proof");
-        vm.expectRevert();
+        vm.expectRevert(bytes4(keccak256("ProofInvalid()")));
         espressoNitroTEEVerifier.registerService(output, proofBytes);
         vm.stopPrank();
     }
