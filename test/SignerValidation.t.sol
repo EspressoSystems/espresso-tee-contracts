@@ -9,6 +9,7 @@ import {EspressoNitroTEEVerifier} from "../src/EspressoNitroTEEVerifier.sol";
 import {
     INitroEnclaveVerifier
 } from "aws-nitro-enclave-attestation/interfaces/INitroEnclaveVerifier.sol";
+import {FIXTURE_TIMESTAMP} from "./configs/ProofFixture.sol";
 
 /**
  * @title Tests for isSignerValid() - Automatic Zombie Prevention
@@ -38,7 +39,7 @@ contract SignerValidationTest is Test {
      */
     function test_IsSignerValid_ValidSigner() public {
         vm.startPrank(adminTEE);
-        vm.warp(1_794_492_072);
+        vm.warp(FIXTURE_TIMESTAMP);
 
         string memory proofPath = "/test/configs/proof.json";
         string memory inputFile = string.concat(vm.projectRoot(), proofPath);
@@ -61,7 +62,7 @@ contract SignerValidationTest is Test {
      */
     function test_IsSignerValid_AfterHashDeletion() public {
         vm.startPrank(adminTEE);
-        vm.warp(1_794_492_072);
+        vm.warp(FIXTURE_TIMESTAMP);
 
         // Register signer
         string memory proofPath = "/test/configs/proof.json";
@@ -94,7 +95,7 @@ contract SignerValidationTest is Test {
      */
     function test_PreventsZombieSigners() public {
         vm.startPrank(adminTEE);
-        vm.warp(1_794_492_072);
+        vm.warp(FIXTURE_TIMESTAMP);
 
         // Register signer with vulnerable hash
         string memory proofPath = "/test/configs/proof.json";
