@@ -26,11 +26,11 @@ contract EspressoTEEVerifierTest is Test {
 
     EspressoTEEVerifier espressoTEEVerifier;
     EspressoNitroTEEVerifier espressoNitroTEEVerifier;
-    bytes32 pcr0Hash = bytes32(0x555797ae2413bb1e4c352434a901032b16d7ac9090322532a3fccb9947977e8b);
+    bytes32 pcr0Hash = bytes32(0x0cdbf7a27799c3849a59c9e281ce87b1775fe1695e781692d2689f837f6c5ba6);
 
     function _deployNitro(address teeVerifier) internal returns (EspressoNitroTEEVerifier) {
         return new EspressoNitroTEEVerifier(
-            teeVerifier, address(0x2D7fbBAD6792698Ba92e67b7e180f8010B9Ec788)
+            teeVerifier, address(0x50a24cc21Fa35054179Ebcc7611CC8E29fd70aDB)
         );
     }
 
@@ -65,7 +65,7 @@ contract EspressoTEEVerifierTest is Test {
     }
 
     function testNitroRegisterService() public {
-        vm.warp(1_764_889_188);
+        vm.warp(1_794_492_072);
         string memory proofPath = "/test/configs/proof.json";
         string memory inputFile = string.concat(vm.projectRoot(), proofPath);
         string memory json = vm.readFile(inputFile);
@@ -77,7 +77,7 @@ contract EspressoTEEVerifierTest is Test {
     }
 
     function testNitroRegisteredSigners() public {
-        vm.warp(1_764_889_188);
+        vm.warp(1_794_492_072);
         string memory proofPath = "/test/configs/proof.json";
         string memory inputFile = string.concat(vm.projectRoot(), proofPath);
         string memory json = vm.readFile(inputFile);
@@ -85,7 +85,7 @@ contract EspressoTEEVerifierTest is Test {
 
         // Extract onchain_proof
         bytes memory onchain = vm.parseJsonBytes(json, ".onchain_proof");
-        address signerAddr = 0xF8463E0aF00C1910402D2A51B3a8CecD0dC1c3fE;
+        address signerAddr = 0x4D62fA8A2085f521f59D7bc7C30b64a46031dDaB;
         espressoTEEVerifier.registerService(journal, onchain, IEspressoTEEVerifier.TeeType.NITRO);
 
         assertTrue(espressoNitroTEEVerifier.isSignerValid(signerAddr));
@@ -94,7 +94,7 @@ contract EspressoTEEVerifierTest is Test {
     function testNitroRegisteredEnclaveHash() public view {
         assertEq(
             espressoTEEVerifier.registeredEnclaveHashes(
-                bytes32(0x555797ae2413bb1e4c352434a901032b16d7ac9090322532a3fccb9947977e8b),
+                bytes32(0x0cdbf7a27799c3849a59c9e281ce87b1775fe1695e781692d2689f837f6c5ba6),
                 IEspressoTEEVerifier.TeeType.NITRO
             ),
             true
@@ -103,7 +103,7 @@ contract EspressoTEEVerifierTest is Test {
 
     function testDeleteEnclaveHashesNitro() public {
         vm.startPrank(adminTEE);
-        vm.warp(1_764_889_188);
+        vm.warp(1_794_492_072);
         string memory proofPath = "/test/configs/proof.json";
         string memory inputFile = string.concat(vm.projectRoot(), proofPath);
         string memory json = vm.readFile(inputFile);
@@ -112,7 +112,7 @@ contract EspressoTEEVerifierTest is Test {
 
         espressoTEEVerifier.registerService(output, proofBytes, IEspressoTEEVerifier.TeeType.NITRO);
 
-        address signer = 0xF8463E0aF00C1910402D2A51B3a8CecD0dC1c3fE;
+        address signer = 0x4D62fA8A2085f521f59D7bc7C30b64a46031dDaB;
         // Verify signer is valid after registration
         assertTrue(espressoNitroTEEVerifier.isSignerValid(signer));
 
@@ -165,7 +165,7 @@ contract EspressoTEEVerifierTest is Test {
      */
     function testNitroRegisterServiceInvalidPCR0Hash() public {
         vm.startPrank(adminTEE);
-        vm.warp(1_764_889_188);
+        vm.warp(1_794_492_072);
         string memory proofPath = "/test/configs/proof.json";
         string memory inputFile = string.concat(vm.projectRoot(), proofPath);
         string memory json = vm.readFile(inputFile);

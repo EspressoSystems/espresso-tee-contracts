@@ -18,7 +18,7 @@ contract SignerValidationTest is Test {
     address proxyAdminOwner = address(140);
     address adminTEE = address(141);
     EspressoNitroTEEVerifier espressoNitroTEEVerifier;
-    bytes32 pcr0Hash = bytes32(0x555797ae2413bb1e4c352434a901032b16d7ac9090322532a3fccb9947977e8b);
+    bytes32 pcr0Hash = bytes32(0x0cdbf7a27799c3849a59c9e281ce87b1775fe1695e781692d2689f837f6c5ba6);
 
     function setUp() public {
         vm.createSelectFork(
@@ -26,7 +26,7 @@ contract SignerValidationTest is Test {
         );
 
         espressoNitroTEEVerifier = new EspressoNitroTEEVerifier(
-            adminTEE, address(0x2D7fbBAD6792698Ba92e67b7e180f8010B9Ec788)
+            adminTEE, address(0x50a24cc21Fa35054179Ebcc7611CC8E29fd70aDB)
         );
 
         vm.prank(adminTEE);
@@ -38,7 +38,7 @@ contract SignerValidationTest is Test {
      */
     function test_IsSignerValid_ValidSigner() public {
         vm.startPrank(adminTEE);
-        vm.warp(1_764_889_188);
+        vm.warp(1_794_492_072);
 
         string memory proofPath = "/test/configs/proof.json";
         string memory inputFile = string.concat(vm.projectRoot(), proofPath);
@@ -48,7 +48,7 @@ contract SignerValidationTest is Test {
 
         espressoNitroTEEVerifier.registerService(output, proofBytes);
 
-        address signer = 0xF8463E0aF00C1910402D2A51B3a8CecD0dC1c3fE;
+        address signer = 0x4D62fA8A2085f521f59D7bc7C30b64a46031dDaB;
 
         // Signer should be valid
         assertTrue(espressoNitroTEEVerifier.isSignerValid(signer));
@@ -61,7 +61,7 @@ contract SignerValidationTest is Test {
      */
     function test_IsSignerValid_AfterHashDeletion() public {
         vm.startPrank(adminTEE);
-        vm.warp(1_764_889_188);
+        vm.warp(1_794_492_072);
 
         // Register signer
         string memory proofPath = "/test/configs/proof.json";
@@ -72,7 +72,7 @@ contract SignerValidationTest is Test {
 
         espressoNitroTEEVerifier.registerService(output, proofBytes);
 
-        address signer = 0xF8463E0aF00C1910402D2A51B3a8CecD0dC1c3fE;
+        address signer = 0x4D62fA8A2085f521f59D7bc7C30b64a46031dDaB;
 
         // Before deletion - signer should be valid
         assertTrue(espressoNitroTEEVerifier.isSignerValid(signer));
@@ -94,7 +94,7 @@ contract SignerValidationTest is Test {
      */
     function test_PreventsZombieSigners() public {
         vm.startPrank(adminTEE);
-        vm.warp(1_764_889_188);
+        vm.warp(1_794_492_072);
 
         // Register signer with vulnerable hash
         string memory proofPath = "/test/configs/proof.json";
@@ -104,7 +104,7 @@ contract SignerValidationTest is Test {
         bytes memory proofBytes = vm.parseJsonBytes(json, ".onchain_proof");
 
         espressoNitroTEEVerifier.registerService(output, proofBytes);
-        address signer = 0xF8463E0aF00C1910402D2A51B3a8CecD0dC1c3fE;
+        address signer = 0x4D62fA8A2085f521f59D7bc7C30b64a46031dDaB;
 
         // Signer is valid
         assertTrue(espressoNitroTEEVerifier.isSignerValid(signer));
