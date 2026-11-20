@@ -411,20 +411,17 @@ Check Automata's documentation for chain-specific addresses:
 
 - Nitro: https://github.com/automata-network/aws-nitro-enclave-attestation
 
-**Example: Current Mainnet Deployments**
+### Active TEE deployments
 
-```bash
-EspressoTEEVerifier Contracts (Our Deployments):
-  ApeChain (33139):      0x4fd6D0995B3016726D5674992c1Ec1bDe0989cF5
-  AppChain (466):        0xcC758349CBd99bAA7fAD0558634dAaB176c777D0
-  Huddle01:              0x2E01FA49cB3C3Ff09a5908165A5b5cB7f5cDF271
-  NodeOps:               0xE0032d5a83f082aC05E66C31dcAbd84bc461b767
-  Rufus:                 0xFcb6371757DE81DeaDbE8c13e36bFD7A261dD263
-  T3rn:                  0xf252DDe41C679B2959d7C3a2Ea0bC2fA9dE7Eab7
+Verified on 2026-11-20 at Ethereum block `26458073`, Arbitrum Sepolia block `331128332`, and Arbitrum One block `526007710`.
 
-✅ Each chain has a unique EspressoTEEVerifier address (correct!)
-✅ Each points at Espresso's shared NitroEnclaveVerifier for its settlement layer
-```
+| Integration | Settlement layer | EspressoTEEVerifier proxy | Main implementation source |
+| --- | --- | --- | --- |
+| AppChain mainnet | Ethereum Mainnet (`1`) | `0x809375C1e76653De11AdDE7E7bB59885af89b896` | [`v1.4.2`](https://repo.sourcify.dev/1/0x946fb276dFD92b50458170473711fd9C8cbf0FB2) |
+| ApeChain testnet | Arbitrum Sepolia (`421614`) | `0x9a1BbfD45De89b52De8cF3e50063334cc327fEba` | [`v1.4.2`](https://repo.sourcify.dev/421614/0x3F429F7d67c83Aca2f019cA2f3a524A07eab3005) |
+| ApeChain mainnet | Arbitrum One (`42161`) | `0x9440e52851706A261965c128A6CB3b5C455177Fb` | [`v1.3.0` / `v1.4.0` / `v1.4.1`](https://repo.sourcify.dev/42161/0xDc015036Da095a8453bd6bBf06D877377c6064B7) |
+
+Versions mean verified source-equivalence; identical sources across tags do not identify the original build tag. All three Nitro children match the unchanged `v1.3.0`–`v1.4.2` sources.
 
 ### Pre-Deployment Checklist
 
